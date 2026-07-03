@@ -1,4 +1,4 @@
 {
   "framework": "nextjs",
-  "node": "22.x"
+  "nodeVersion": "22.x"
 }
