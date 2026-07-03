@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>سبعة ٧ — Sabaa Coffee Platform</title>
+<!--
+  ==============================================================
+  هذا الملف التجريبي (demo) يعرض mock data مطابقة للـ seed data
+  في database/seed.sql. عند تشغيل seed.sql على Supabase، ستكون
+  نفس البيانات متاحة عبر API في التطبيق الرئيسي (Next.js).
+  
+  روابط المطابقة:
+    - المقاهي: id:1→Brew92, 2→قهوة السعودية, 3→إيليفن, 4→المختصة
+    - القهوة: black/سوداء, white/بيضاء, iced/مثلجة, spanish/إسباني, turkish/تركية, mocha/موكا
+    - الجوائز (rewards): ☕ قهوة مجانية (100), 🥐 كرواسان (50), 💰 خصم 50% (200), 📅 أسبوع مجاني (500)
+    - الشارات (badges): أول قهوة, أسبوع كامل, مكتشف, VIP, منسق, سهران, صوتي, مشترك
+  ==============================================================
+-->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        foam: '#FAF6F1', latte: '#EDE3D5', cream: '#F7F0E8',
+        espresso: '#1C110C', bark: '#3B1F13',
+        amber: '#C0692A', caramel: '#E5924B',
+        green: '#2A7A52', 'green-bg': '#E4F5EC',
+        blue: '#1A6FA8', 'blue-bg': '#E3F0FA',
+        red: '#C0392B', 'red-bg': '#FDECEA',
+        gold: '#D4AF37', purple: '#6B3FA0', 'purple-bg': '#F0E8FA',
+      },
+      fontFamily: { cairo: ['Cairo','sans-serif'], inter: ['Inter','sans-serif'] },
+      borderRadius: { sm: '12px', md: '24px', xl: '48px' },
+      transitionTimingFunction: {
+        kinetic: 'cubic-bezier(.34,1.2,.64,1)',
+      },
+    },
+  },
+};
+</script>
+<style>
+:root {
+  --bg: #FAF6F1; --surface: #FFFFFF; --surface-glass: rgba(255,255,255,.45);
+  --latte: #EDE3D5; --cream: #F7F0E8; --espresso: #1C110C; --bark: #3B1F13;
+  --amber: #C0692A; --caramel: #E5924B; --green: #2A7A52;
+  --green-bg: #E4F5EC; --blue: #1A6FA8; --blue-bg: #E3F0FA;
+  --red: #C0392B; --red-bg: #FDECEA; --gold: #D4AF37;
+  --purple: #6B3FA0; --purple-bg: #F0E8FA;
+  --text: #1C110C; --text-light: #7A6A5E; --text-muted: #B0A094;
+  --radius-sm: 12px; --radius-md: 24px; --radius-xl: 48px;
+  --kinetic: cubic-bezier(.34,1.2,.64,1);
+  --nav-h: 68px; --bottom-h: 64px;
+}
+[data-theme="dark"] {
+  --bg: #121212; --surface: #1E1E1E; --surface-glass: rgba(22,16,12,.5);
+  --latte: #2A2520; --cream: #1E1A16;
+  --text: #EDE3D5; --text-light: #9B8B7E; --text-muted: #6B5B4E;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);transition:background .35s var(--kinetic),color .35s var(--kinetic);overflow-x:hidden}
+.web-shell{display:flex;flex-direction:column;min-height:100dvh;max-width:480px;margin:0 auto;position:relative}
+/* Glassmorphism */
+.glass{background:var(--surface-glass) !important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.25);transition:background .35s var(--kinetic)}
+[data-theme="dark"] .glass{background:rgba(22,16,12,.5) !important}
+/* Kinetic transitions */
+.kinetic{transition:all .25s var(--kinetic)}
+.kinetic:hover{transform:scale(1.02)}
+.kinetic:active{transform:scale(.97)}
+/* Custom scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--latte);border-radius:4px}
+/* Toast */
+.toast-container{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;width:calc(100% - 32px);max-width:400px;pointer-events:none}
+.toast{pointer-events:all;padding:14px 18px;border-radius:var(--radius-sm);font-size:.85rem;font-weight:700;box-shadow:0 8px 32px rgba(0,0,0,.12);animation:slideIn .35s var(--kinetic);direction:rtl}
+.toast.success{background:var(--green-bg);color:var(--green);border-right:4px solid var(--green)}
+.toast.error{background:var(--red-bg);color:var(--red);border-right:4px solid var(--red)}
+.toast.info{background:var(--blue-bg);color:var(--blue);border-right:4px solid var(--blue)}
+@keyframes slideIn{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+/* Nav */
+.nav-top{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:var(--nav-h);background:var(--surface);border-bottom:1px solid var(--latte);position:sticky;top:0;z-index:100}
+.logo{font-size:1.5rem;font-weight:900;line-height:1}
+.logo span{color:var(--amber)}
+.nav-actions{display:flex;gap:8px}
+.nav-btn{width:38px;height:38px;border-radius:50%;border:none;background:var(--cream);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s var(--kinetic)}
+.nav-btn:hover{background:var(--latte);transform:scale(1.08)}
+/* Portal tabs */
+.portal-tabs{display:flex;gap:0;border-bottom:1px solid var(--latte)}
+.portal-tab{flex:1;padding:10px;text-align:center;font-size:.78rem;font-weight:700;color:var(--text-light);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .2s var(--kinetic);font-family:'Cairo',sans-serif}
+.portal-tab.active{color:var(--amber);border-bottom-color:var(--amber)}
+/* Bottom nav */
+.bottom-nav{display:flex;background:var(--surface);border-top:1px solid var(--latte);padding:6px 0 env(safe-area-inset-bottom);position:sticky;bottom:0;z-index:100}
+.bottom-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;border:none;background:transparent;font-size:.6rem;font-weight:700;color:var(--text-light);cursor:pointer;transition:all .2s var(--kinetic);font-family:'Cairo',sans-serif}
+.bottom-btn.active{color:var(--amber)}.bottom-btn .icon{font-size:1.3rem;transition:transform .2s}
+.bottom-btn.active .icon{transform:scale(1.15)}
+/* Hero */
+.hero{background:linear-gradient(135deg,var(--bark),var(--espresso));border-radius:var(--radius-md);padding:28px 20px;margin:12px 14px;position:relative;overflow:hidden;color:#fff}
+.hero-mono{position:absolute;font-size:8rem;font-weight:900;color:rgba(255,255,255,.04);top:-20px;left:-10px;line-height:1;pointer-events:none;user-select:none}
+.hero-greeting{font-size:.72rem;color:rgba(255,255,255,.5);margin-bottom:4px}
+.hero-name{font-size:1.3rem;font-weight:900}
+.hero-streak{display:inline-flex;align-items:center;gap:4px;margin-top:8px;background:rgba(255,255,255,.1);border-radius:40px;padding:4px 14px;font-size:.7rem;font-weight:700;backdrop-filter:blur(8px)}
+/* Bento */
+.bento{display:grid;gap:10px;padding:0 14px;margin-bottom:14px}
+.bento-2{grid-template-columns:1fr 1fr}
+.bento-full{grid-template-columns:1fr}
+.bento-card{background:var(--surface);border-radius:var(--radius-sm);padding:16px;border:1px solid var(--latte);transition:all .25s var(--kinetic)}
+.bento-card:hover{border-color:var(--amber)}
+.bento-card.glass{background:var(--surface-glass);backdrop-filter:blur(16px)}
+.bento-title{font-size:.82rem;font-weight:800;margin-bottom:8px}
+.bento-value{font-size:1.5rem;font-weight:900}
+.bento-sub{font-size:.68rem;color:var(--text-light);margin-top:2px}
+/* Reorder strip */
+.reorder-strip{display:flex;gap:8px;overflow-x:auto;padding:0 14px 4px;margin-bottom:14px;-ms-overflow-style:none;scrollbar-width:none}
+.reorder-strip::-webkit-scrollbar{display:none}
+.reorder-item{flex-shrink:0;background:var(--surface);border:1px solid var(--latte);border-radius:var(--radius-sm);padding:10px 14px;min-width:100px;cursor:pointer;transition:all .2s var(--kinetic)}
+.reorder-item:hover{border-color:var(--amber);transform:translateY(-2px)}
+.reorder-title{font-size:.78rem;font-weight:700}
+.reorder-meta{font-size:.6rem;color:var(--text-light)}
+.reorder-price{font-size:.72rem;color:var(--amber);font-weight:700;margin-top:4px}
+/* Cafe cards */
+.cafe-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;padding:0 14px}
+.cafe-card{background:var(--surface);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--latte);cursor:pointer;transition:all .2s var(--kinetic)}
+.cafe-card:hover{border-color:var(--amber);transform:translateY(-2px)}
+.cafe-card.closed{opacity:.5;pointer-events:none}
+.cafe-emoji{font-size:1.8rem;margin-bottom:6px}
+.cafe-name{font-size:.82rem;font-weight:800}
+.cafe-sub{font-size:.65rem;color:var(--text-light)}
+.cafe-stat{display:inline-flex;align-items:center;gap:4px;font-size:.62rem;color:var(--text-light);background:var(--cream);border-radius:40px;padding:2px 8px;margin-top:4px}
+.cafe-rating{font-size:.7rem;font-weight:700;margin-bottom:2px}
+.cafe-status{font-size:.58rem;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block}
+.cafe-status.open{background:var(--green-bg);color:var(--green)}
+.cafe-status.closed{background:var(--red-bg);color:var(--red)}
+/* Coffee grid */
+.coffee-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;padding:0 14px}
+.coffee-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 10px;background:var(--surface);border:1.5px solid var(--latte);border-radius:var(--radius-sm);cursor:pointer;font-family:'Cairo',sans-serif;transition:all .2s var(--kinetic);color:var(--text)}
+.coffee-btn:hover{border-color:var(--amber)}.coffee-btn.selected{border-color:var(--amber);background:var(--cream)}
+.coffee-btn .icon{font-size:1.6rem}.coffee-btn .label{font-size:.72rem;font-weight:700}
+/* Cart */
+.cart-panel{background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--latte);padding:16px;margin:0 14px 14px}
+.cart-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--latte)}
+.cart-total{display:flex;justify-content:space-between;align-items:center;padding:12px 0 0;font-weight:900;font-size:1rem;border-top:2px solid var(--latte);margin-top:8px}
+.qty-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--latte);background:var(--cream);font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s var(--kinetic)}
+.qty-btn:hover{background:var(--latte)}
+/* Filter pills */
+.pills{display:flex;gap:6px;padding:0 14px;margin-bottom:12px}
+.pill{padding:4px 14px;border-radius:40px;border:1px solid var(--latte);background:var(--surface);color:var(--text-light);font-size:.7rem;font-weight:600;cursor:pointer;font-family:'Cairo',sans-serif;transition:all .2s var(--kinetic);white-space:nowrap}
+.pill.active{background:var(--amber);color:#fff;border-color:var(--amber)}
+/* Map */
+.map-box{background:var(--latte);border-radius:var(--radius-sm);height:160px;margin:0 14px 14px;position:relative;overflow:hidden}
+.map-dot{position:absolute;width:14px;height:14px;border-radius:50%;border:2px solid #fff;transform:translate(-50%,-50%);cursor:pointer;transition:all .2s var(--kinetic)}
+.map-dot:hover{transform:translate(-50%,-50%) scale(1.3)}
+.map-dot.open{background:var(--amber)}.map-dot.closed{background:var(--red)}
+/* Loyalty */
+.loyalty-card{background:linear-gradient(135deg,var(--bark),var(--espresso));border-radius:var(--radius-md);padding:22px 18px;color:#fff;margin:0 14px 14px}
+.loyalty-tier{font-size:.8rem;font-weight:700;color:rgba(255,255,255,.6)}
+.loyalty-points{font-size:1.8rem;font-weight:900;margin:4px 0}
+.tier-bar{height:6px;background:rgba(255,255,255,.2);border-radius:4px;overflow:hidden;margin-top:8px}
+.tier-fill{height:100%;background:var(--caramel);border-radius:4px;transition:width .6s var(--kinetic)}
+/* Wallet */
+.wallet-card{background:linear-gradient(135deg,var(--bark),var(--espresso));border-radius:var(--radius-md);padding:22px 18px;color:#fff;margin:0 14px 14px;text-align:center}
+.wallet-balance{font-size:2.5rem;font-weight:900}
+.wallet-label{font-size:.7rem;color:rgba(255,255,255,.5)}
+.wallet-actions{display:flex;gap:8px;justify-content:center;margin-top:14px}
+.wallet-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:8px 18px;border-radius:var(--radius-sm);font-size:.75rem;font-weight:600;cursor:pointer;font-family:'Cairo',sans-serif;transition:all .2s var(--kinetic)}
+.wallet-btn:hover{background:rgba(255,255,255,.2)}
+/* Calendar */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:0 4px}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:600;border-radius:50%;color:var(--text-light)}
+.cal-day.has-order{background:var(--amber);color:#fff;font-weight:800}
+.cal-day-label{text-align:center;font-size:.58rem;font-weight:700;color:var(--text-muted);padding:4px 0}
+/* Partner portal */
+.partner-header{background:linear-gradient(135deg,var(--bark),var(--espresso));border-radius:var(--radius-md);padding:18px;margin:12px 14px;color:#fff;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center}
+.partner-stat-label{font-size:.6rem;color:rgba(255,255,255,.5)}
+.partner-stat-val{font-size:1.2rem;font-weight:900;color:var(--caramel)}
+.fulfillment-card{background:var(--surface);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--latte);margin:0 14px 10px;border-right:4px solid var(--amber);transition:all .2s var(--kinetic)}
+.fulfillment-card:hover{border-color:var(--amber)}
+.pickup-code{font-size:1.6rem;font-weight:900;text-align:center;letter-spacing:6px;font-family:'Inter',monospace;padding:8px;background:var(--cream);border-radius:var(--radius-sm);margin:6px 0;color:var(--amber)}
+.elapsed{font-size:.65rem;color:var(--text-light);text-align:center}
+/* Inventory */
+.inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px;margin-bottom:14px}
+.inv-item{background:var(--surface);border-radius:var(--radius-sm);padding:12px;border:1px solid var(--latte)}
+.inv-name{font-size:.78rem;font-weight:700;margin-bottom:4px}
+.inv-level{font-size:.7rem;color:var(--text-light);margin-bottom:6px}
+.inv-bar{height:6px;background:var(--latte);border-radius:4px;overflow:hidden}
+.inv-fill{height:100%;border-radius:4px;transition:width .5s var(--kinetic)}
+/* Staff */
+.staff-card{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:var(--radius-sm);border:1px solid var(--latte);margin:0 14px 8px}
+.staff-avatar{width:36px;height:36px;border-radius:50%;background:var(--latte);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.85rem}
+.staff-name{font-size:.82rem;font-weight:700}
+.staff-role{font-size:.62rem;color:var(--text-light)}
+/* Admin */
+.admin-shell{display:flex;min-height:100vh}
+.admin-sidebar{width:220px;background:#1C1C2E;display:flex;flex-direction:column;position:fixed;top:0;right:0;bottom:0;z-index:200}
+.admin-main{flex:1;margin-right:220px;display:flex;flex-direction:column;min-height:100vh}
+.admin-topbar{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;background:var(--surface);border-bottom:1px solid var(--latte);position:sticky;top:0;z-index:50}
+.admin-content{flex:1;padding:20px 24px;overflow-y:auto;background:var(--bg)}
+.admin-logo{padding:24px 16px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.admin-logo-text{font-size:1.4rem;font-weight:900;color:#fff}
+.admin-logo-sub{font-size:.58rem;color:rgba(255,255,255,.3);letter-spacing:1.5px;text-transform:uppercase}
+.admin-nav{padding:8px 0;flex:1;overflow-y:auto}
+.admin-nav-section{padding:12px 16px 4px;font-size:.6rem;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:1.5px}
+.admin-nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:.78rem;color:rgba(255,255,255,.6);cursor:pointer;transition:all .2s;border-right:3px solid transparent}
+.admin-nav-item:hover{background:rgba(255,255,255,.04);color:#fff}
+.admin-nav-item.active{background:rgba(192,105,42,.12);color:var(--caramel);font-weight:700;border-right-color:var(--amber)}
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi-card{background:var(--surface);border-radius:var(--radius-sm);padding:16px;transition:all .25s var(--kinetic)}
+.kpi-label{font-size:.68rem;color:var(--text-light);margin-bottom:4px}
+.kpi-val{font-size:1.3rem;font-weight:900}
+.kpi-delta{font-size:.68rem;font-weight:700}
+.kpi-delta.up{color:var(--green)}.kpi-delta.down{color:var(--red)}
+/* Ticker */
+.ticker{display:flex;align-items:stretch;background:var(--surface);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:16px;border:1px solid var(--latte)}
+.ticker-badge{background:var(--red);color:#fff;padding:8px 14px;font-size:.68rem;font-weight:800;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.ticker-track{flex:1;overflow:hidden;padding:8px 14px;display:flex;align-items:center;font-size:.75rem;color:var(--text-light)}
+.ticker-anim{white-space:nowrap;animation:scroll 25s linear infinite}
+@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+/* Admin Table */
+.admin-table-wrap{background:var(--surface);border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--latte);margin-bottom:16px}
+.admin-table{width:100%;border-collapse:collapse;font-size:.78rem}
+.admin-table th{padding:10px 14px;text-align:right;font-size:.68rem;color:var(--text-light);font-weight:700;border-bottom:1px solid var(--latte);white-space:nowrap}
+.admin-table td{padding:10px 14px;border-bottom:1px solid var(--latte)}
+.admin-table tr:hover td{background:var(--cream)}
+.badge{display:inline-block;padding:2px 10px;border-radius:40px;font-size:.65rem;font-weight:700}
+.badge-green{background:var(--green-bg);color:var(--green)}
+.badge-blue{background:var(--blue-bg);color:var(--blue)}
+.badge-amber{background:rgba(192,105,42,.12);color:var(--amber)}
+.badge-red{background:var(--red-bg);color:var(--red)}
+/* Responsive */
+@media(max-width:768px){
+  .admin-sidebar{width:180px}
+  .admin-main{margin-right:180px}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .cafe-grid,.coffee-grid,.inv-grid{grid-template-columns:1fr}
+  .bento-2{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .admin-sidebar{width:60px}
+  .admin-sidebar .admin-nav-item span:not(.nav-icon){display:none}
+  .admin-sidebar .admin-logo-text{display:none}
+  .admin-sidebar .admin-nav-section{display:none}
+  .admin-main{margin-right:60px}
+  .admin-content{padding:12px}
+  .admin-topbar{padding:12px 16px}
+  .admin-topbar-title{font-size:.9rem}
+}
+/* Utils */
+.hidden{display:none!important}
+/* Status toggle */
+.toggle-track{width:48px;height:26px;border-radius:40px;cursor:pointer;position:relative;transition:background .25s;flex-shrink:0}
+.toggle-track.on{background:var(--green)}.toggle-track.off{background:var(--latte)}
+.toggle-knob{width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:3px;transition:all .2s var(--kinetic)}
+.toggle-track.on .toggle-knob{right:3px}.toggle-track.off .toggle-knob{right:3px}
+/* Promo card */
+.promo-card{background:var(--surface);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--latte);display:flex;justify-content:space-between;align-items:center;margin:0 14px 8px;border-right:3px solid var(--green)}
+/* Order status dots */
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-left:4px}
+.dot-green{background:var(--green)}.dot-amber{background:var(--amber)}.dot-red{background:var(--red)}
+/* Monogram watermark */
+.watermark{position:absolute;font-size:10rem;font-weight:900;color:rgba(255,255,255,.03);pointer-events:none;user-select:none;line-height:1}
+</style>
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ============================== CUSTOMER PORTAL ============================== -->
+<div id="portalCustomer" class="web-shell">
+  <!-- Top Nav -->
+  <div class="nav-top">
+    <div class="logo">سبعة <span>٧</span></div>
+    <div class="nav-actions">
+      <button class="nav-btn" onclick="toggleTheme()" title="الوضع الليلي">🌙</button>
+      <button class="nav-btn" onclick="showToast('🇸🇦 العربية','info')" title="اللغة">🌐</button>
+      <button class="nav-btn" onclick="showToast('🔔 لا توجد إشعارات جديدة','info')" title="الإشعارات">🔔</button>
+    </div>
+  </div>
+  <!-- Portal Tabs -->
+  <div class="portal-tabs">
+    <button class="portal-tab active" onclick="switchPortal('customer')">☕ عميل</button>
+    <button class="portal-tab" onclick="switchPortal('partner')">🏪 شريك</button>
+    <button class="portal-tab" onclick="switchPortal('admin')">🛡️ مشرف</button>
+  </div>
+
+  <!-- Pages -->
+  <div id="customerPages" style="flex:1;display:flex;flex-direction:column">
+    <!-- Page: Order -->
+    <div id="custOrder" class="page active" style="flex:1;overflow-y:auto">
+      <div class="hero">
+        <div class="hero-mono">٧</div>
+        <div class="hero-greeting">🌅 صباح الخير</div>
+        <div class="hero-name">أهلاً بك في سبعة</div>
+        <div class="hero-streak">🔥 5 أيام متتالية</div>
+      </div>
+
+      <div class="reorder-strip" id="reorderStrip"></div>
+
+      <div class="pills" id="filterPills">
+        <button class="pill active" onclick="filterCafe('all',this)">الكل</button>
+        <button class="pill" onclick="filterCafe('open',this)">🟢 مفتوح</button>
+        <button class="pill" onclick="filterCafe('fav',this)">❤️ المفضلة</button>
+      </div>
+
+      <div class="map-box" id="cafeMap"></div>
+
+      <div class="cafe-grid" id="cafeGrid"></div>
+
+      <div class="pills" id="coffeePills">
+        <button class="pill active" onclick="filterCoffee('all',this)">☕ الكل</button>
+        <button class="pill" onclick="filterCoffee('hot',this)">🔥 ساخن</button>
+        <button class="pill" onclick="filterCoffee('cold',this)">🧊 بارد</button>
+        <button class="pill" onclick="filterCoffee('special',this)">✨ مميز</button>
+      </div>
+      <div class="coffee-grid" id="coffeeGrid"></div>
+      <div class="cart-panel hidden" id="cartPanel"></div>
+    </div>
+
+    <!-- Page: Rewards -->
+    <div id="custRewards" class="page hidden" style="flex:1;overflow-y:auto">
+      <div class="loyalty-card">
+        <div class="loyalty-tier">🏅 الفئة الذهبية</div>
+        <div class="loyalty-points">1,240 نقطة</div>
+        <div style="font-size:.72rem;color:rgba(255,255,255,.5)">500 نقطة للوصول إلى 💎 بلاتينيوم</div>
+        <div class="tier-bar"><div class="tier-fill" style="width:62%"></div></div>
+      </div>
+      <div style="padding:0 14px;margin-bottom:12px"><strong style="font-size:.85rem">🏆 إنجازاتي</strong></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 14px;margin-bottom:16px" id="badgeGrid"></div>
+      <div style="padding:0 14px;margin-bottom:8px"><strong style="font-size:.85rem">🎁 المكافآت</strong></div>
+      <div id="rewardList" style="padding:0 14px"></div>
+    </div>
+
+    <!-- Page: Wallet -->
+    <div id="custWallet" class="page hidden" style="flex:1;overflow-y:auto">
+      <div class="wallet-card">
+        <div class="wallet-label">رصيد المحفظة</div>
+        <div class="wallet-balance">150.00</div>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.5)">ريال سعودي</div>
+        <div class="wallet-actions">
+          <button class="wallet-btn" onclick="showToast('💳 تم شحن 50 ⃁ بنجاح','success')">💳 شحن</button>
+          <button class="wallet-btn" onclick="showToast('📅 إدارة الاشتراكات','info')">📅 اشتراك</button>
+        </div>
+      </div>
+      <div style="padding:0 14px;margin-bottom:8px"><strong style="font-size:.85rem">📋 آخر المعاملات</strong></div>
+      <div id="txList" style="padding:0 14px"></div>
+    </div>
+
+    <!-- Page: History -->
+    <div id="custHistory" class="page hidden" style="flex:1;overflow-y:auto">
+      <div style="padding:14px 14px 8px"><strong style="font-size:.85rem">📋 سجل الطلبات</strong></div>
+      <div id="historyList" style="padding:0 14px"></div>
+      <div style="padding:14px 14px 8px;margin-top:8px"><strong style="font-size:.85rem">📅 التقويم</strong></div>
+      <div style="padding:0 14px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <button class="pill" onclick="prevMonth()">◀</button>
+          <strong id="calMonthLabel" style="font-size:.85rem"></strong>
+          <button class="pill" onclick="nextMonth()">▶</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+    </div>
+
+    <!-- Page: Profile -->
+    <div id="custProfile" class="page hidden" style="flex:1;overflow-y:auto">
+      <div style="background:linear-gradient(135deg,var(--bark),var(--espresso));border-radius:var(--radius-md);padding:24px 18px;margin:14px;text-align:center;color:#fff">
+        <div style="width:72px;height:72px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:900;margin:0 auto 10px;border:3px solid rgba(255,255,255,.3)">م</div>
+        <div style="font-size:1.1rem;font-weight:900">محمد علي</div>
+        <div style="font-size:.72rem;color:rgba(255,255,255,.5)">+966 50 123 4567</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 14px;margin-bottom:16px">
+        <div class="bento-card" style="text-align:center"><div style="font-size:1.2rem;font-weight:900">47</div><div style="font-size:.6rem;color:var(--text-light)">طلبات</div></div>
+        <div class="bento-card" style="text-align:center"><div style="font-size:1.2rem;font-weight:900">1,240</div><div style="font-size:.6rem;color:var(--text-light)">نقاط</div></div>
+        <div class="bento-card" style="text-align:center"><div style="font-size:1.2rem;font-weight:900">🥇</div><div style="font-size:.6rem;color:var(--text-light)">ذهبي</div></div>
+      </div>
+      <div style="padding:0 14px 14px">
+        <button class="wallet-btn" style="width:100%;color:var(--text);border-color:var(--latte);background:var(--surface);margin-bottom:8px" onclick="showToast('📥 تم تصدير البيانات','success')">📥 تصدير البيانات</button>
+        <button class="wallet-btn" style="width:100%;color:var(--red);border-color:var(--red);background:transparent" onclick="showToast('👋 تسجيل الخروج','info')">🚪 تسجيل خروج</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <button class="bottom-btn active" onclick="switchCustomerPage('custOrder',this)"><span class="icon">☕</span><span>طلب</span></button>
+    <button class="bottom-btn" onclick="switchCustomerPage('custRewards',this)"><span class="icon">🏆</span><span>مكافآت</span></button>
+    <button class="bottom-btn" onclick="switchCustomerPage('custWallet',this)"><span class="icon">💰</span><span>محفظة</span></button>
+    <button class="bottom-btn" onclick="switchCustomerPage('custHistory',this)"><span class="icon">📋</span><span>السجل</span></button>
+    <button class="bottom-btn" onclick="switchCustomerPage('custProfile',this)"><span class="icon">👤</span><span>حسابي</span></button>
+  </div>
+</div>
+
+<!-- ============================== PARTNER PORTAL ============================== -->
+<div id="portalPartner" class="web-shell hidden">
+  <div class="nav-top">
+    <div class="logo">سبعة <span>٧</span> <span style="font-size:.6rem;color:var(--text-light)">• شريك</span></div>
+    <div class="nav-actions">
+      <button class="nav-btn" onclick="toggleTheme()">🌙</button>
+      <button class="nav-btn" onclick="showToast('🔔 3 طلبات جديدة','info')">🔔</button>
+    </div>
+  </div>
+  <div class="portal-tabs">
+    <button class="portal-tab" onclick="switchPortal('customer')">☕ عميل</button>
+    <button class="portal-tab active" onclick="switchPortal('partner')">🏪 شريك</button>
+    <button class="portal-tab" onclick="switchPortal('admin')">🛡️ مشرف</button>
+  </div>
+
+  <div style="flex:1;overflow-y:auto;padding:12px 0">
+    <div class="partner-header">
+      <div><div class="partner-stat-label">أرباح اليوم</div><div class="partner-stat-val">345.00 ⃁</div></div>
+      <div><div class="partner-stat-label">الطلبات</div><div class="partner-stat-val">8</div></div>
+      <div><div class="partner-stat-label">المخزون</div><div class="partner-stat-val">87%</div></div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin:0 14px 14px;padding:14px 18px;border-radius:var(--radius-sm);border:2px solid var(--green);background:var(--green-bg)">
+      <span style="font-size:1.8rem">🟢</span>
+      <div style="flex:1"><div style="font-size:.9rem;font-weight:900;color:var(--green)">المقهى مفتوح</div><div style="font-size:.7rem;color:var(--green)">الطلبات تصلك الآن</div></div>
+      <div class="toggle-track on" onclick="this.classList.toggle('on');this.classList.toggle('off');showToast(this.classList.contains('on')?'🟢 المقهى مفتوح':'🔴 المقهى مغلق','info')"><div class="toggle-knob"></div></div>
+    </div>
+
+    <div style="padding:0 14px;margin-bottom:8px"><strong style="font-size:.85rem">📋 الطلبات الحالية</strong></div>
+    <div id="partnerOrdersList"></div>
+
+    <div style="padding:14px 14px 8px"><strong style="font-size:.85rem">📦 المخزون</strong></div>
+    <div class="inv-grid" id="invGrid"></div>
+
+    <div style="padding:14px 14px 8px"><strong style="font-size:.85rem">👥 الموظفون</strong></div>
+    <div id="staffList"></div>
+  </div>
+</div>
+
+<!-- ============================== ADMIN PORTAL ============================== -->
+<div id="portalAdmin" class="admin-shell hidden">
+  <div class="admin-sidebar">
+    <div class="admin-logo">
+      <div class="admin-logo-text">سبعة ٧</div>
+      <div class="admin-logo-sub">Power Admin</div>
+      <div style="background:rgba(192,105,42,.15);color:var(--caramel);font-size:.62rem;padding:2px 10px;border-radius:40px;display:inline-block;margin-top:8px;font-weight:700">Super Admin</div>
+    </div>
+    <div class="admin-nav">
+      <div class="admin-nav-section">الرئيسية</div>
+      <div class="admin-nav-item active" onclick="switchAdminPage('dash',this)"><span>📊</span><span>لوحة التحكم</span></div>
+      <div class="admin-nav-item" onclick="switchAdminPage('live',this)"><span>🚨</span><span>غرفة العمليات</span></div>
+      <div class="admin-nav-section">الإدارة</div>
+      <div class="admin-nav-item" onclick="switchAdminPage('partners',this)"><span>🏪</span><span>الشركاء</span></div>
+      <div class="admin-nav-item" onclick="switchAdminPage('menu',this)"><span>☕</span><span>القوائم</span></div>
+      <div class="admin-nav-item" onclick="switchAdminPage('users',this)"><span>👥</span><span>المستخدمين</span></div>
+      <div class="admin-nav-section">المالية</div>
+      <div class="admin-nav-item" onclick="switchAdminPage('finance',this)"><span>💰</span><span>المركز المالي</span></div>
+      <div class="admin-nav-item" onclick="switchAdminPage('analytics',this)"><span>📈</span><span>التحليلات</span></div>
+      <div class="admin-nav-section">النظام</div>
+      <div class="admin-nav-item" onclick="switchAdminPage('notifs',this)"><span>🔔</span><span>الإشعارات</span></div>
+      <div class="admin-nav-item" onclick="switchAdminPage('audit',this)"><span>📋</span><span>سجل التدقيق</span></div>
+      <div class="admin-nav-item" onclick="switchAdminPage('settings',this)"><span>⚙️</span><span>الإعدادات</span></div>
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid rgba(255,255,255,.06)">
+      <button class="portal-tab" style="color:rgba(255,255,255,.6);padding:6px;font-size:.72rem" onclick="switchPortal('customer')">🚪 العودة</button>
+    </div>
+  </div>
+
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <div class="admin-topbar-title" id="adminTitle">📊 لوحة التحكم</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="display:flex;align-items:center;gap:6px;font-size:.7rem;color:var(--text-light);background:var(--cream);padding:4px 10px;border-radius:40px"><span class="dot dot-green"></span> النظام يعمل</div>
+        <button class="nav-btn" onclick="toggleTheme()" style="width:34px;height:34px">🌙</button>
+      </div>
+    </div>
+    <div class="admin-content" id="adminContent"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const cafes = [
+  { id:1, name:'Brew92', sub:'شارع التحلية، الرياض', emoji:'☕', rating:4.8, dist:'1.2 كم', wait:'4 دق', isOpen:true, fav:false, x:25, y:40 },
+  { id:2, name:'قهوة السعودية', sub:'طريق الملك فهد', emoji:'🇸🇦', rating:4.5, dist:'2.5 كم', wait:'6 دق', isOpen:true, fav:false, x:65, y:55 },
+  { id:3, name:'إيليفن', sub:'شارع الأمير محمد', emoji:'🔟', rating:4.9, dist:'3.1 كم', wait:'8 دق', isOpen:false, fav:false, x:45, y:70 },
+  { id:4, name:'المختصة', sub:'حي العليا', emoji:'🎯', rating:4.7, dist:'0.8 كم', wait:'3 دق', isOpen:true, fav:true, x:30, y:20 },
+];
+
+const coffees = [
+  { type:'black', icon:'☕', label:'سوداء', price:7, cat:'hot' },
+  { type:'white', icon:'🥛', label:'بيضاء', price:7, cat:'hot' },
+  { type:'iced', icon:'🧊', label:'مثلجة', price:7, cat:'cold' },
+  { type:'spanish', icon:'🍯', label:'إسباني', price:9, cat:'hot' },
+  { type:'turkish', icon:'🫖', label:'تركية', price:8, cat:'hot' },
+  { type:'mocha', icon:'🍫', label:'موكا', price:10, cat:'cold' },
+  { type:'american', icon:'☕', label:'أمريكانو', price:7, cat:'hot' },
+  { type:'latte', icon:'🥛', label:'لاتيه', price:9, cat:'hot' },
+  { type:'cappuccino', icon:'☕', label:'كابوتشينو', price:9, cat:'hot' },
+  { type:'flatwhite', icon:'🥛', label:'فلات وايت', price:10, cat:'hot' },
+  { type:'cortado', icon:'☕', label:'كورتادو', price:8, cat:'hot' },
+  { type:'icedtea', icon:'🧊', label:'آيس تي', price:8, cat:'cold' },
+];
+
+const orders = [
+  { id:'SB-1040', cafe:'المختصة', coffee:'إسباني', amount:10.35, status:'completed', icon:'🍯', code:'K9P2', date:'2026-06-10' },
+  { id:'SB-1041', cafe:'Brew92', coffee:'مثلجة', amount:8.05, status:'ready', icon:'🧊', code:'B2M4', date:'2026-06-12' },
+  { id:'SB-1042', cafe:'Brew92', coffee:'سوداء', amount:8.05, status:'completed', icon:'☕', code:'A7X9', date:'2026-06-11' },
+  { id:'SB-1043', cafe:'قهوة السعودية', coffee:'قهوة سعودية', amount:6.90, status:'pending', icon:'🇸🇦', code:'X9K2', date:'2026-06-13' },
+  { id:'SB-1044', cafe:'Brew92', coffee:'مثلجة', amount:8.05, status:'ready', icon:'🧊', code:'L3W8', date:'2026-06-13' },
+  { id:'SB-1045', cafe:'إيليفن', coffee:'سبانيش لاتيه', amount:13.80, status:'preparing', icon:'🍯', code:'M7N1', date:'2026-06-13' },
+  { id:'SB-1046', cafe:'Brew92', coffee:'إسباني', amount:10.35, status:'pending', icon:'🍯', code:'Q5R8', date:'2026-06-13' },
+];
+
+const partnerOrders = [
+  { id:'SB-1043', customer:'سارة خالد', item:'قهوة سعودية', time:'08:45', status:'pending', code:'X9K2', elapsed:'12 د' },
+  { id:'SB-1044', customer:'محمد علي', item:'مثلجة', time:'09:00', status:'ready', code:'L3W8', elapsed:'3 د' },
+  { id:'SB-1045', customer:'فهد سعد', item:'سبانيش لاتيه', time:'09:15', status:'preparing', code:'M7N1', elapsed:'8 د' },
+  { id:'SB-1046', customer:'فهد سعد', item:'إسباني', time:'09:30', status:'pending', code:'Q5R8', elapsed:'5 د' },
+];
+
+const inventory = [
+  { name:'حبوب عربية', level:85, unit:'كجم' }, { name:'حليب طازج', level:12, unit:'لتر' },
+  { name:'أكواب ورقية', level:45, unit:'قطعة' }, { name:'سكر', level:90, unit:'كجم' },
+];
+
+const staff = [
+  { name:'أحمد', role:'باريستا', shift:'صباحي', status:'active' },
+  { name:'نورة', role:'كاشير', shift:'صباحي', status:'active' },
+  { name:'خالد', role:'باريستا', shift:'مسائي', status:'off' },
+];
+
+const badges = [
+  { id:'first', icon:'🎯', name:'القهوة الأولى', earned:true },
+  { id:'streak7', icon:'🔥', name:'أسبوع كامل', earned:true },
+  { id:'explorer', icon:'🗺️', name:'المكتشف', earned:true },
+  { id:'vip', icon:'👑', name:'VIP', earned:false },
+  { id:'group', icon:'👥', name:'منسق', earned:false },
+  { id:'night', icon:'🌙', name:'سهران', earned:false },
+  { id:'voice', icon:'🎙️', name:'صوتي', earned:false },
+  { id:'sub', icon:'📅', name:'مشترك', earned:false },
+];
+
+const rewards = [
+  { id:'r1', icon:'☕', title:'قهوة مجانية', desc:'أي نوع في أي مقهى', cost:100, redeemed:false },
+  { id:'r2', icon:'🥐', title:'كرواسان مجاني', desc:'مع أي طلب', cost:50, redeemed:false },
+  { id:'r3', icon:'💰', title:'خصم 50%', desc:'على الطلب التالي', cost:200, redeemed:false },
+  { id:'r4', icon:'📅', title:'أسبوع مجاني', desc:'اشتراك الباس لأسبوع', cost:500, redeemed:false },
+];
+
+const transactions = [
+  { title:'شحن محفظة', amount:'+100 ⃁', type:'credit', date:'2026-06-10' },
+  { title:'طلب Brew92 - سوداء', amount:'-8.05 ⃁', type:'debit', date:'2026-06-11' },
+  { title:'مكافأة ولاء 15 نقطة', amount:'+15 ⃁', type:'credit', date:'2026-06-12' },
+  { title:'طلب Brew92 - سوداء', amount:'-8.05 ⃁', type:'debit', date:'2026-06-11' },
+  { title:'شحن محفظة', amount:'+50 ⃁', type:'credit', date:'2026-06-09' },
+  { title:'طلب قهوة السعودية', amount:'-6.90 ⃁', type:'debit', date:'2026-06-12' },
+  { title:'طلب إيليفن - سبانيش لاتيه', amount:'-13.80 ⃁', type:'debit', date:'2026-06-13' },
+];
+
+const adminOrders = [
+  { id:'SB-1046', customer:'أحمد محمد', cafe:'Brew92', amount:8.05, vat:1.21, status:'pending', code:'X9K2' },
+  { id:'SB-1045', customer:'فهد سعد', cafe:'إيليفن', amount:10.35, vat:1.55, status:'ready', code:'M7N1' },
+  { id:'SB-1044', customer:'سارة علي', cafe:'Brew92', amount:8.05, vat:1.21, status:'completed', code:'L3W8' },
+];
+
+const users = [
+  { name:'محمد علي', email:'mohd@example.com', role:'عميل', status:'نشط', orders:45, spent:1230 },
+  { name:'سارة خالد', email:'sara@example.com', role:'عميل', status:'نشط', orders:28, spent:845 },
+  { name:'أحمد فهد', email:'ahmed@brew92.com', role:'شريك', status:'نشط', orders:0, spent:0 },
+];
+
+const auditLogs = [
+  { time:'2026-06-13 00:10', user:'محمد علي', action:'تسجيل دخول', type:'login', severity:'معلومات' },
+  { time:'2026-06-12 23:45', user:'النظام', action:'إنشاء طلب SB-1046', type:'order', severity:'معلومات' },
+  { time:'2026-06-12 22:30', user:'سارة أحمد', action:'شحن محفظة +50', type:'finance', severity:'معلومات' },
+  { time:'2026-06-12 20:15', user:'خالد', action:'تحديث حالة الطلب', type:'order', severity:'تحذير' },
+];
+
+let cart = [];
+let calMonth = new Date().getMonth();
+let calYear = new Date().getFullYear();
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg, type = 'info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(() => t.remove(), 300); }, 3000);
+}
+
+// ============================================================
+// THEME
+// ============================================================
+function toggleTheme() {
+  const d = document.documentElement;
+  const isDark = d.getAttribute('data-theme') === 'dark';
+  d.setAttribute('data-theme', isDark ? 'light' : 'dark');
+}
+
+// ============================================================
+// PORTAL SWITCHING
+// ============================================================
+function switchPortal(portal) {
+  document.querySelectorAll('.web-shell, .admin-shell').forEach(el => el.classList.add('hidden'));
+  document.getElementById('portalCustomer').classList.add('hidden');
+  document.getElementById('portalPartner').classList.add('hidden');
+  document.getElementById('portalAdmin').classList.add('hidden');
+
+  if (portal === 'customer') document.getElementById('portalCustomer').classList.remove('hidden');
+  else if (portal === 'partner') document.getElementById('portalPartner').classList.remove('hidden');
+  else if (portal === 'admin') {
+    document.getElementById('portalAdmin').classList.remove('hidden');
+    renderAdminDashboard();
+  }
+
+  document.querySelectorAll('.portal-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll(`.portal-tab`).forEach(t => {
+    if ((portal === 'customer' && t.textContent.includes('عميل')) ||
+        (portal === 'partner' && t.textContent.includes('شريك')) ||
+        (portal === 'admin' && t.textContent.includes('مشرف'))) t.classList.add('active');
+  });
+}
+
+// ============================================================
+// CUSTOMER PAGES
+// ============================================================
+function switchCustomerPage(pageId, btn) {
+  document.querySelectorAll('#customerPages .page').forEach(p => p.classList.add('hidden'));
+  document.getElementById(pageId).classList.remove('hidden');
+  document.querySelectorAll('.bottom-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+// ============================================================
+// RENDER CAFES
+// ============================================================
+function renderCafes(filter = 'all') {
+  const grid = document.getElementById('cafeGrid');
+  const map = document.getElementById('cafeMap');
+  grid.innerHTML = '';
+  map.innerHTML = '';
+
+  cafes.forEach(c => {
+    if (filter === 'open' && !c.isOpen) return;
+    if (filter === 'fav' && !c.fav) return;
+
+    grid.innerHTML += `
+      <div class="cafe-card ${c.isOpen ? '' : 'closed'}" onclick="selectCafe(${c.id})">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <div class="cafe-emoji">${c.emoji}</div>
+          <button class="qty-btn" style="font-size:.7rem;width:26px;height:26px;background:${c.fav?'var(--red-bg)':'transparent'};border-color:transparent" onclick="event.stopPropagation();toggleFav(${c.id})">${c.fav?'❤️':'🤍'}</button>
+        </div>
+        <div class="cafe-name">${c.name}</div>
+        <div class="cafe-sub">${c.sub}</div>
+        <div class="cafe-stat">⭐ ${c.rating} • ⏱️ ${c.wait} • 📍 ${c.dist}</div>
+        <div style="margin-top:6px"><span class="cafe-status ${c.isOpen ? 'open' : 'closed'}">${c.isOpen ? '🟢 مفتوح' : '🔴 مغلق'}</span></div>
+      </div>`;
+
+    map.innerHTML += `<div class="map-dot ${c.isOpen ? 'open' : 'closed'}" style="top:${c.y}%;left:${c.x}%;" title="${c.name}"></div>`;
+  });
+}
+
+function filterCafe(f, btn) {
+  document.querySelectorAll('#filterPills .pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  renderCafes(f);
+}
+
+function toggleFav(id) {
+  const c = cafes.find(c => c.id === id);
+  if (c) { c.fav = !c.fav; renderCafes(); showToast(c.fav ? '❤️ أضيف للمفضلة' : '🤍 أُزيل من المفضلة', 'info'); }
+}
+
+let selectedCafe = null;
+function selectCafe(id) {
+  selectedCafe = id;
+  const c = cafes.find(c => c.id === id);
+  if (c) showToast(`📍 تم اختيار ${c.name}`, 'success');
+  document.querySelectorAll('.cafe-card').forEach((el, i) => {
+    el.style.borderColor = cafes[i].id === id ? 'var(--amber)' : '';
+    el.style.background = cafes[i].id === id ? 'var(--cream)' : '';
+  });
+}
+
+// ============================================================
+// RENDER COFFEES
+// ============================================================
+function renderCoffees(filter = 'all') {
+  const grid = document.getElementById('coffeeGrid');
+  grid.innerHTML = '';
+  coffees.forEach(c => {
+    if (filter !== 'all' && c.cat !== filter) return;
+    const inCart = cart.find(i => i.type === c.type);
+    grid.innerHTML += `
+      <button class="coffee-btn ${inCart ? 'selected' : ''}" onclick="addToCart('${c.type}')">
+        <span class="icon">${c.icon}</span>
+        <span class="label">${c.label}</span>
+        <span style="font-size:.65rem;color:var(--amber);font-weight:700">${c.price} ⃁</span>
+      </button>`;
+  });
+}
+
+function filterCoffee(f, btn) {
+  document.querySelectorAll('#coffeePills .pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  renderCoffees(f);
+}
+
+function addToCart(type) {
+  const item = coffees.find(c => c.type === type);
+  if (!item) return;
+  const exist = cart.find(c => c.type === type);
+  if (exist) exist.qty++;
+  else cart.push({ type: type, qty: 1, price: item.price, label: item.label, icon: item.icon });
+  renderCoffees(document.querySelector('#coffeePills .pill.active')?.textContent?.includes('الكل') ? 'all' : '');
+  renderCart();
+  showToast(`🛒 ${item.label} أضيفت للسلة`, 'success');
+}
+
+function updateQty(type, delta) {
+  const item = cart.find(c => c.type === type);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) cart = cart.filter(c => c.type !== type);
+  renderCoffees(document.querySelector('#coffeePills .pill.active')?.textContent?.includes('الكل') ? 'all' : '');
+  renderCart();
+}
+
+function renderCart() {
+  const panel = document.getElementById('cartPanel');
+  if (cart.length === 0) { panel.classList.add('hidden'); return; }
+  panel.classList.remove('hidden');
+  let html = '<div style="font-size:.85rem;font-weight:800;margin-bottom:10px">🛒 سلة الطلب</div>';
+  let total = 0;
+  cart.forEach(c => { total += c.price * c.qty;
+    html += `<div class="cart-item"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:1.2rem">${c.icon}</span><div><div style="font-size:.8rem;font-weight:700">${c.label}</div><div style="font-size:.65rem;color:var(--text-light)">${c.price} ⃁ × ${c.qty}</div></div></div><div class="qty-btn" style="display:flex;align-items:center;gap:6px"><button class="qty-btn" onclick="updateQty('${c.type}',-1)">−</button><span style="font-weight:800;min-width:18px;text-align:center">${c.qty}</span><button class="qty-btn" onclick="updateQty('${c.type}',1)">+</button></div><div style="font-weight:900;color:var(--amber)">${(c.price*c.qty).toFixed(2)} ⃁</div></div>`;
+  });
+  html += `<div class="cart-total"><span>الإجمالي</span><span>${total.toFixed(2)} ⃁</span></div>`;
+  html += `<div style="display:flex;gap:8px;margin-top:10px"><button class="qty-btn" style="flex:1;border-radius:var(--radius-sm);padding:10px;height:auto;width:auto;font-size:.78rem" onclick="clearCart()">🗑️ إفراغ</button><button class="qty-btn" style="flex:2;border-radius:var(--radius-sm);padding:10px;height:auto;width:auto;font-size:.78rem;background:var(--amber);color:#fff;border-color:var(--amber)" onclick="placeOrder()">🛒 تأكيد الطلب</button></div>`;
+  panel.innerHTML = html;
+}
+
+function clearCart() { cart = []; renderCart(); renderCoffees('all'); showToast('🗑️ تم إفراغ السلة', 'info'); }
+
+function placeOrder() {
+  if (cart.length === 0) { showToast('⚠️ السلة فارغة', 'error'); return; }
+  if (!selectedCafe) { showToast('⚠️ اختر مقهى أولاً', 'error'); return; }
+  showToast('🎉 تم تأكيد الطلب! كود الاستلام: ' + Math.random().toString(36).substring(2,6).toUpperCase(), 'success');
+  cart = [];
+  renderCart();
+  renderCoffees('all');
+}
+
+// ============================================================
+// RENDER REWARDS
+// ============================================================
+function renderRewards() {
+  document.getElementById('badgeGrid').innerHTML = badges.map(b =>
+    `<div style="background:var(--surface);border-radius:var(--radius-sm);padding:10px;text-align:center;border:1px solid var(--latte);${b.earned?'':'opacity:.4'}">
+      <div style="font-size:1.6rem;margin-bottom:4px">${b.earned ? b.icon : '🔒'}</div>
+      <div style="font-size:.58rem;font-weight:700">${b.name}</div>
+    </div>`
+  ).join('');
+
+  document.getElementById('rewardList').innerHTML = rewards.map(r =>
+    `<div style="display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--latte);margin-bottom:8px;${r.redeemed?'opacity:.5':''};cursor:pointer" onclick="redeemReward('${r.id}')">
+      <div style="font-size:1.8rem">${r.icon}</div>
+      <div style="flex:1"><div style="font-size:.82rem;font-weight:700">${r.title}</div><div style="font-size:.65rem;color:var(--text-light)">${r.desc}</div></div>
+      <div style="font-size:.72rem;color:var(--amber);font-weight:700">${r.redeemed ? '✓ تم' : r.cost + ' نقطة'}</div>
+    </div>`
+  ).join('');
+}
+
+function redeemReward(id) {
+  const r = rewards.find(r => r.id === id);
+  if (!r || r.redeemed) return;
+  r.redeemed = true;
+  renderRewards();
+  showToast(`🎉 تم استبدال ${r.title}`, 'success');
+}
+
+// ============================================================
+// RENDER WALLET
+// ============================================================
+function renderWallet() {
+  document.getElementById('txList').innerHTML = transactions.map(t =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--latte)">
+      <div><div style="font-size:.8rem;font-weight:700">${t.title}</div><div style="font-size:.62rem;color:var(--text-light)">${t.date}</div></div>
+      <div style="font-size:.85rem;font-weight:900;color:${t.type === 'credit' ? 'var(--green)' : 'var(--red)'}">${t.amount}</div>
+    </div>`
+  ).join('');
+}
+
+// ============================================================
+// RENDER HISTORY + CALENDAR
+// ============================================================
+function renderHistory() {
+  document.getElementById('historyList').innerHTML = orders.map(o =>
+    `<div style="display:flex;gap:10px;align-items:center;background:var(--surface);border-radius:var(--radius-sm);padding:12px 14px;border:1px solid var(--latte);margin-bottom:8px">
+      <div style="font-size:1.4rem">${o.icon}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:.82rem;font-weight:700">${o.cafe} - ${o.coffee}</div><div style="font-size:.65rem;color:var(--text-light)">${o.date}</div><div style="font-size:.62rem;color:var(--green);font-weight:700;margin-top:2px"><span class="dot dot-${o.status === 'completed' ? 'green' : 'amber'}"></span>${o.status === 'completed' ? 'مكتمل' : 'جاهز'}</div></div>
+      <div style="text-align:left"><div style="font-size:.85rem;font-weight:900;color:var(--amber)">${o.amount.toFixed(2)} ⃁</div><div style="font-size:.58rem;color:var(--text-light)">كود: <strong style="color:var(--bark)">${o.code}</strong></div></div>
+    </div>`
+  ).join('');
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const orderDays = orders.map(o => new Date(o.date).getDate());
+  const monthLabel = new Date(calYear, calMonth).toLocaleString('ar-SA', { month:'long', year:'numeric' });
+  document.getElementById('calMonthLabel').textContent = monthLabel;
+  let html = '';
+  ['أحد','إثن','ثل','أر','خم','جم','سب'].forEach(d => { html += `<div class="cal-day-label">${d}</div>`; });
+  for (let i = 0; i < firstDay; i++) html += '<div></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    html += `<div class="cal-day ${orderDays.includes(d) ? 'has-order' : ''}">${d}</div>`;
+  }
+  document.getElementById('calGrid').innerHTML = html;
+}
+
+function prevMonth() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); }
+function nextMonth() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); }
+
+// ============================================================
+// RENDER PARTNER
+// ============================================================
+function renderPartner() {
+  document.getElementById('partnerOrdersList').innerHTML = partnerOrders.map(o =>
+    `<div class="fulfillment-card" style="border-right-color:${o.status === 'pending' ? 'var(--amber)' : o.status === 'ready' ? 'var(--green)' : 'var(--blue)'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="font-size:.65rem;color:var(--text-light)">#${o.id}</div>
+        <span style="font-size:.68rem;font-weight:700;padding:3px 10px;border-radius:40px;background:${o.status === 'pending' ? '#FFF4E0' : o.status === 'ready' ? 'var(--green-bg)' : 'var(--blue-bg)'};color:${o.status === 'pending' ? '#B07D1A' : o.status === 'ready' ? 'var(--green)' : 'var(--blue)'}">
+          ${o.status === 'pending' ? '⏳ معلق' : o.status === 'ready' ? '✅ جاهز' : '🔄 تحضير'}
+        </span>
+      </div>
+      <div class="pickup-code">${o.code}</div>
+      <div class="elapsed">⏱️ ${o.elapsed}</div>
+      <div style="font-size:.78rem;margin-top:8px"><div>👤 ${o.customer}</div><div>☕ ${o.item}</div><div>🕐 ${o.time}</div></div>
+      ${o.status !== 'completed' ? `
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <input style="flex:1;padding:8px;border:1.5px solid var(--latte);border-radius:var(--radius-sm);font-size:.78rem;text-align:center;letter-spacing:3px;font-weight:900;font-family:'Inter',monospace;background:var(--cream);outline:none" placeholder="أدخل كود الاستلام" oninput="checkCode(this,'${o.code}','${o.id}')" />
+        <button class="qty-btn" style="padding:8px 16px;height:auto;width:auto;border-radius:var(--radius-sm);background:var(--green);color:#fff;font-size:.75rem;font-weight:700;border-color:var(--green)" onclick="verifyOrder('${o.id}')">تحقق ✅</button>
+      </div>` : ''}
+    </div>`
+  ).join('');
+
+  document.getElementById('invGrid').innerHTML = inventory.map(i => {
+    const color = i.level < 20 ? 'var(--red)' : i.level < 50 ? 'var(--amber)' : 'var(--green)';
+    return `<div class="inv-item" style="${i.level < 20 ? 'border-color:var(--red)' : ''}">
+      <div class="inv-name">${i.name}</div>
+      <div class="inv-level">${i.level} ${i.unit} ${i.level < 20 ? '⚠️' : ''}</div>
+      <div class="inv-bar"><div class="inv-fill" style="width:${i.level}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('staffList').innerHTML = staff.map(s =>
+    `<div class="staff-card">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="staff-avatar">${s.name.charAt(0)}</div>
+        <div><div class="staff-name">${s.name}</div><div class="staff-role">${s.role} • ${s.shift}</div></div>
+      </div>
+      <span class="badge ${s.status === 'active' ? 'badge-green' : 'badge-amber'}">${s.status === 'active' ? '🟢 نشط' : '🟠 إجازة'}</span>
+    </div>`
+  ).join('');
+}
+
+function checkCode(input, expected, id) {
+  if (input.value.toUpperCase() === expected) {
+    input.style.borderColor = 'var(--green)';
+    input.style.background = 'var(--green-bg)';
+    showToast(`✅ تم التحقق من الطلب ${id}`, 'success');
+  }
+}
+
+function verifyOrder(id) {
+  showToast(`✅ تم تأكيد استلام الطلب ${id}`, 'success');
+}
+
+// ============================================================
+// ADMIN PAGES
+// ============================================================
+function switchAdminPage(page, btn) {
+  document.querySelectorAll('.admin-nav-item').forEach(i => i.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  const titles = { dash:'📊 لوحة التحكم', live:'🚨 غرفة العمليات', partners:'🏪 الشركاء', menu:'☕ القوائم', users:'👥 المستخدمين', finance:'💰 المركز المالي', analytics:'📈 التحليلات', notifs:'🔔 الإشعارات', audit:'📋 سجل التدقيق', settings:'⚙️ الإعدادات' };
+  document.getElementById('adminTitle').textContent = titles[page] || 'لوحة التحكم';
+
+  const renderers = { dash: renderAdminDashboard, live: renderAdminLiveOps, partners: renderAdminPartners, menu: renderAdminMenu, users: renderAdminUsers, finance: renderAdminFinance, analytics: renderAdminAnalytics, notifs: renderAdminNotifs, audit: renderAdminAudit, settings: renderAdminSettings };
+  if (renderers[page]) renderers[page]();
+}
+
+function renderAdminDashboard() {
+  const c = document.getElementById('adminContent');
+  c.innerHTML = `
+    <div class="ticker">
+      <div class="ticker-badge"><span class="dot dot-red" style="animation:blink 1s infinite"></span> LIVE</div>
+      <div class="ticker-track"><div class="ticker-anim">SB-1046: طلب جديد من أحمد محمد - Brew92 - 8.05 ⃁ • SB-1045: تم التحضير - قهوة إسباني • مستخدم جديد: فهد سعد</div></div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card glass"><div class="kpi-label">إجمالي الإيرادات</div><div class="kpi-val">8,715 ⃁</div><div class="kpi-delta up">▲ 12%</div></div>
+      <div class="kpi-card glass"><div class="kpi-label">إيرادات اليوم</div><div class="kpi-val">1,240 ⃁</div><div class="kpi-delta up">▲ 8%</div></div>
+      <div class="kpi-card glass"><div class="kpi-label">طلبات اليوم</div><div class="kpi-val">142</div><div class="kpi-delta up">▲ 15%</div></div>
+      <div class="kpi-card glass"><div class="kpi-label">العملاء النشطون</div><div class="kpi-val">3,890</div><div class="kpi-delta up">▲ 5%</div></div>
+    </div>
+    <div class="admin-table-wrap">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--latte)">
+        <div style="font-size:.85rem;font-weight:800">📋 آخر الطلبات</div>
+        <input style="padding:6px 14px;border:1px solid var(--latte);border-radius:40px;font-size:.75rem;background:var(--cream);width:160px;font-family:'Cairo',sans-serif;outline:none" placeholder="🔍 بحث..." />
+      </div>
+      <table class="admin-table">
+        <thead><tr><th>الطلب</th><th>العميل</th><th>المقهى</th><th>المبلغ</th><th>ض.ق.م</th><th>الحالة</th><th>كود</th></tr></thead>
+        <tbody>${adminOrders.map(o => `<tr>
+          <td><strong>${o.id}</strong></td><td>${o.customer}</td><td>${o.cafe}</td>
+          <td>${o.amount.toFixed(2)}</td><td>${o.vat.toFixed(2)}</td>
+          <td><span class="badge badge-${o.status === 'completed' ? 'green' : o.status === 'ready' ? 'blue' : 'amber'}">${o.status === 'pending' ? '⏳ معلق' : o.status === 'ready' ? '✅ جاهز' : '✓ مكتمل'}</span></td>
+          <td><code style="font-family:'Inter',monospace;font-size:.7rem">${o.code}</code></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+function renderAdminLiveOps() {
+  document.getElementById('adminContent').innerHTML = `
+    <div class="ticker"><div class="ticker-badge"><span class="dot dot-red"></span> LIVE</div><div class="ticker-track"><div class="ticker-anim">3 طلبات قيد التنفيذ • متوسط وقت التحضير: 4.2 دقيقة</div></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div class="kpi-card"><div class="kpi-label">⏳ معلقة</div><div class="kpi-val" style="color:var(--amber)">2</div></div>
+      <div class="kpi-card"><div class="kpi-label">✅ جاهزة</div><div class="kpi-val" style="color:var(--green)">1</div></div>
+    </div>
+    <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>الطلب</th><th>العميل</th><th>المقهى</th><th>المبلغ</th><th>الحالة</th><th>إجراء</th></tr></thead>
+    <tbody>${adminOrders.map(o => `<tr><td><strong>${o.id}</strong></td><td>${o.customer}</td><td>${o.cafe}</td><td>${o.amount.toFixed(2)} ⃁</td><td><span class="badge badge-${o.status === 'completed' ? 'green' : o.status === 'ready' ? 'blue' : 'amber'}">${o.status}</span></td><td><button class="qty-btn" style="padding:4px 12px;height:auto;width:auto;font-size:.68rem">${o.status === 'pending' ? '➡ تحضير' : '✅ تسليم'}</button></td></tr>`).join('')}</tbody></table></div>`;
+}
+
+function renderAdminPartners() {
+  document.getElementById('adminContent').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><strong style="font-size:1rem">🏪 إدارة الشركاء</strong><button class="qty-btn" style="padding:8px 16px;height:auto;width:auto;font-size:.75rem;background:var(--amber);color:#fff;border-color:var(--amber)">➕ إضافة مقهى</button></div>
+    <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>الاسم</th><th>البريد</th><th>الخدمة</th><th>الحالة</th></tr></thead>
+    <tbody>${cafes.map(c => `<tr><td><strong>${c.name}</strong></td><td>info@${c.name.toLowerCase().replace(/ /g,'')}.com</td><td>متخصصة</td><td><span class="badge ${c.isOpen ? 'badge-green' : 'badge-amber'}">${c.isOpen ? 'نشط' : 'غير نشط'}</span></td></tr>`).join('')}</tbody></table></div>`;
+}
+
+function renderAdminMenu() {
+  document.getElementById('adminContent').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><strong style="font-size:1rem">☕ إدارة القوائم</strong><button class="qty-btn" style="padding:8px 16px;height:auto;width:auto;font-size:.75rem;background:var(--amber);color:#fff;border-color:var(--amber)">➕ إضافة عنصر</button></div>
+    <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th></th><th>الاسم</th><th>السعر</th><th>التصنيف</th><th>الحالة</th></tr></thead>
+    <tbody>${coffees.map(c => `<tr><td>${c.icon}</td><td><strong>${c.label}</strong></td><td><input type="number" value="${c.price}" style="width:60px;padding:4px 6px;border-radius:6px;border:1px solid var(--latte);font-size:.78rem" /></td><td>${c.cat === 'hot' ? '🔥 ساخن' : '🧊 بارد'}</td><td><span class="badge badge-green">متاح</span></td></tr>`).join('')}</tbody></table></div>`;
+}
+
+function renderAdminUsers() {
+  document.getElementById('adminContent').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><strong style="font-size:1rem">👥 المستخدمين</strong><input style="padding:6px 14px;border:1px solid var(--latte);border-radius:40px;font-size:.75rem;background:var(--cream);width:160px;font-family:'Cairo',sans-serif" placeholder="🔍 بحث..." /></div>
+    <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>الاسم</th><th>البريد</th><th>الدور</th><th>الحالة</th><th>الطلبات</th><th>الإنفاق</th></tr></thead>
+    <tbody>${users.map(u => `<tr><td><strong>${u.name}</strong></td><td>${u.email}</td><td><span class="badge badge-blue">${u.role}</span></td><td><span class="badge badge-green">${u.status}</span></td><td>${u.orders}</td><td>${u.spent} ⃁</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+function renderAdminFinance() {
+  document.getElementById('adminContent').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+      <div class="kpi-card"><div class="kpi-label">الإيرادات الكلية</div><div class="kpi-val" style="color:var(--green)">87,250 ⃁</div><div class="kpi-delta up">▲ 18.5%</div></div>
+      <div class="kpi-card"><div class="kpi-label">إيرادات الشهر</div><div class="kpi-val" style="color:var(--blue)">12,480 ⃁</div><div class="kpi-delta up">▲ 8.2%</div></div>
+      <div class="kpi-card"><div class="kpi-label">العمولات</div><div class="kpi-val" style="color:var(--amber)">6,544 ⃁</div><div class="kpi-delta">7.5%</div></div>
+      <div class="kpi-card"><div class="kpi-label">المستحقات</div><div class="kpi-val" style="color:var(--red)">2,180 ⃁</div><div class="kpi-down">4 شركاء</div></div>
+    </div>
+    <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>المعاملة</th><th>التاريخ</th><th>النوع</th><th>المبلغ</th><th>الحالة</th></tr></thead>
+    <tbody><tr><td>TXN-001</td><td>2026-06-12</td><td><span class="badge badge-green">مبيعات</span></td><td>9.26 ⃁</td><td><span class="badge badge-green">مكتمل</span></td></tr>
+    <tr><td>TXN-002</td><td>2026-06-11</td><td><span class="badge badge-green">مبيعات</span></td><td>7.76 ⃁</td><td><span class="badge badge-green">مكتمل</span></td></tr>
+    <tr><td>TXN-003</td><td>2026-06-10</td><td><span class="badge badge-blue">عمولة</span></td><td>612.00 ⃁</td><td><span class="badge badge-amber">معلق</span></td></tr></tbody></table></div>`;
+}
+
+function renderAdminAnalytics() {
+  document.getElementById('adminContent').innerHTML = `
+    <div class="admin-table-wrap" style="margin-bottom:16px">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--latte);font-weight:800;font-size:.85rem">🔥 أفضل المشروبات</div>
+      <table class="admin-table"><thead><tr><th>#</th><th>المشروب</th><th>المبيعات</th><th>الإيرادات</th><th>الشهرة</th></tr></thead>
+      <tbody>${['قهوة إسباني','سبانيش لاتيه','كورتادو','موكا','أمريكانو'].map((n,i) => `<tr><td style="font-weight:800;color:${i<3?'var(--amber)':'var(--text-light)'}">#${i+1}</td><td><strong>${n}</strong></td><td>${[1280,960,720,540,410][i].toLocaleString()}</td><td>${[10240,7680,5040,4320,2870][i].toLocaleString()} ⃁</td><td><div style="height:6px;background:var(--latte);border-radius:4px;overflow:hidden"><div style="height:6px;width:${100-(i*15)}%;background:${i===0?'var(--amber)':i===1?'var(--green)':i===2?'var(--blue)':'var(--text-light)'};border-radius:4px"></div></div></td></tr>`).join('')}</tbody></table>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="kpi-card"><div style="font-size:.8rem;font-weight:700;margin-bottom:10px">توزيع الفئات</div><div style="display:flex;gap:12px;flex-wrap:wrap;font-size:.7rem">${['🟠 إسباني 45%','🟢 لاتيه 25%','🔵 كورتادو 18%','🟤 موكا 12%'].map(s => `<span>${s}</span>`).join('')}</div></div>
+      <div class="kpi-card"><div style="font-size:.8rem;font-weight:700;margin-bottom:10px">أوقات الذروة</div><div style="display:flex;align-items:flex-end;gap:4px;height:120px">${[20,15,30,55,70,85,65,45,25,10,5,15].map((h,i) => `<div style="flex:1;background:${i>=4&&i<=7?'var(--amber)':'var(--latte)'};height:${h}%;border-radius:4px 4px 0 0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:2px;font-size:.5rem;color:var(--text-light)">${h}</div>`).join('')}</div></div>
+    </div>`;
+}
+
+function renderAdminNotifs() {
+  document.getElementById('adminContent').innerHTML = `
+    <div class="admin-table-wrap" style="max-width:500px;margin-bottom:16px">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--latte);font-weight:800;font-size:.85rem">🔔 إرسال إشعار</div>
+      <div style="padding:16px">
+        <select style="width:100%;padding:10px;margin-bottom:10px;background:var(--cream);border:1px solid var(--latte);border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;outline:none"><option>الجميع</option><option>العملاء</option><option>الشركاء</option></select>
+        <input style="width:100%;padding:10px;margin-bottom:10px;background:var(--cream);border:1px solid var(--latte);border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;outline:none" placeholder="عنوان الإشعار" />
+        <textarea style="width:100%;padding:10px;margin-bottom:10px;background:var(--cream);border:1px solid var(--latte);border-radius:var(--radius-sm);font-family:'Cairo',sans-serif;outline:none;resize:vertical;min-height:60px" placeholder="نص الإشعار"></textarea>
+        <button class="qty-btn" style="width:100%;padding:10px;height:auto;background:var(--amber);color:#fff;border-color:var(--amber);font-size:.82rem;font-weight:700" onclick="showToast('📨 تم إرسال الإشعار','success')">📨 إرسال</button>
+      </div>
+    </div>
+    <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>التاريخ</th><th>العنوان</th><th>الحالة</th></tr></thead>
+    <tbody><tr><td>2026-06-12 10:30</td><td>عرض الجمعة</td><td><span class="badge badge-green">تم الإرسال</span></td></tr>
+    <tr><td>2026-06-11 14:00</td><td>تحديث التطبيق</td><td><span class="badge badge-green">تم الإرسال</span></td></tr></tbody></table></div>`;
+}
+
+function renderAdminAudit() {
+  document.getElementById('adminContent').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><strong style="font-size:1rem">📋 سجل التدقيق</strong><button class="qty-btn" style="padding:6px 14px;height:auto;width:auto;font-size:.72rem" onclick="showToast('📥 تم التصدير','success')">📥 تصدير</button></div>
+    <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>التاريخ</th><th>المستخدم</th><th>الإجراء</th><th>النوع</th><th>الخطورة</th></tr></thead>
+    <tbody>${auditLogs.map(l => `<tr><td style="font-size:.72rem">${l.time}</td><td>${l.user}</td><td>${l.action}</td><td><span class="badge badge-${l.severity === 'تحذير' ? 'amber' : 'blue'}">${l.type}</span></td><td><span class="badge badge-${l.severity === 'تحذير' ? 'amber' : 'green'}">${l.severity}</span></td></tr>`).join('')}</tbody></table></div>`;
+}
+
+function renderAdminSettings() {
+  document.getElementById('adminContent').innerHTML = `
+    <div class="admin-table-wrap" style="max-width:500px">
+      <div style="padding:16px">
+        ${[
+          ['الوضع الليلي','تغيير مظهر التطبيق', `<div class="toggle-track off" onclick="this.classList.toggle('on');this.classList.toggle('off');toggleTheme()"><div class="toggle-knob"></div></div>`],
+          ['الإشعارات','إشعارات الطلبات الجديدة', `<div class="toggle-track on"><div class="toggle-knob"></div></div>`],
+          ['ضريبة القيمة المضافة','النسبة الحالية: 15%', `<input type="number" value="15" style="width:70px;padding:6px;border:1px solid var(--latte);border-radius:6px;font-size:.8rem" />`],
+        ].map(([title,desc,action]) => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--latte)">
+            <div><strong style="font-size:.82rem">${title}</strong><div style="font-size:.68rem;color:var(--text-light)">${desc}</div></div>
+            ${action}
+          </div>`
+        ).join('')}
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  renderCafes();
+  renderCoffees();
+  renderRewards();
+  renderWallet();
+  renderHistory();
+  renderPartner();
+}
+
+init();
+</script>
+</body>
+</html>

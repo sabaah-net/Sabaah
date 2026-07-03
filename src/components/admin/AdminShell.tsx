@@ -1,0 +1,109 @@
+'use client';
+import { useState } from 'react';
+import { useAppStore } from '../../store/useAppStore';
+import { t } from '../../i18n';
+import AdminDashboard from './AdminDashboard';
+import AdminLiveOps from './AdminLiveOps';
+import AdminPartners from './AdminPartners';
+import AdminMenus from './AdminMenus';
+import AdminUsers from './AdminUsers';
+import AdminFinancials from './AdminFinancials';
+import AdminAnalytics from './AdminAnalytics';
+import AdminNotifications from './AdminNotifications';
+import AdminAudit from './AdminAudit';
+import AdminSettings from './AdminSettings';
+
+type AdminPage = 'apDashboard' | 'apLiveOps' | 'apPartners' | 'apMenus' | 'apUsers' | 'apFinancials' | 'apAnalytics' | 'apReports' | 'apNotifications' | 'apAudit' | 'apSettings';
+
+export default function AdminShell() {
+  const [page, setPage] = useState<AdminPage>('apDashboard');
+  const { setRole, lang } = useAppStore();
+
+  const navItems: { id: AdminPage; icon: string; labelKey: string; sectionKey?: string }[] = [
+    { id: 'apDashboard', icon: '📊', labelKey: 'admin_dashboard', sectionKey: 'main_section' },
+    { id: 'apLiveOps', icon: '🚨', labelKey: 'admin_live_ops' },
+    { id: 'apPartners', icon: '🏪', labelKey: 'admin_partners', sectionKey: 'management_section' },
+    { id: 'apMenus', icon: '☕', labelKey: 'admin_menus' },
+    { id: 'apUsers', icon: '👥', labelKey: 'admin_users' },
+    { id: 'apFinancials', icon: '💰', labelKey: 'admin_financials', sectionKey: 'finance_section' },
+    { id: 'apAnalytics', icon: '📈', labelKey: 'admin_analytics' },
+    { id: 'apReports', icon: '📄', labelKey: 'admin_reports' },
+    { id: 'apNotifications', icon: '🔔', labelKey: 'admin_notifications', sectionKey: 'security_section' },
+    { id: 'apAudit', icon: '📋', labelKey: 'admin_audit' },
+    { id: 'apSettings', icon: '⚙️', labelKey: 'admin_settings' },
+  ];
+
+  let lastSection = '';
+  const pageTitles: Record<AdminPage, string> = {
+    apDashboard: t('admin_dashboard', lang), apLiveOps: t('admin_live_ops', lang),
+    apPartners: t('admin_partners', lang), apMenus: t('admin_menus', lang),
+    apUsers: t('admin_users', lang), apFinancials: t('admin_financials', lang),
+    apAnalytics: t('admin_analytics', lang), apReports: t('admin_reports', lang),
+    apNotifications: t('admin_notifications', lang), apAudit: t('admin_audit', lang),
+    apSettings: t('admin_settings', lang),
+  };
+
+  return (
+    <div className="admin-shell show">
+      <nav className="admin-sidebar">
+        <div className="admin-logo">
+          <div className="admin-logo-mark">سبعة ٧</div>
+          <div style={{ fontSize: '.62rem', color: 'rgba(255,255,255,.4)', letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 2 }}>
+            {t('power_admin', lang)}
+          </div>
+          <div className="admin-role-badge">Super Admin</div>
+        </div>
+        <div className="admin-nav">
+          {navItems.map((item) => {
+            const showSection = item.sectionKey && t(item.sectionKey, lang) !== lastSection;
+            if (item.sectionKey) lastSection = t(item.sectionKey, lang);
+            return (
+              <div key={item.id}>
+                {item.sectionKey && <div className="admin-nav-section">{t(item.sectionKey, lang)}</div>}
+                <div className={`admin-nav-item ${page === item.id ? 'active' : ''}`} onClick={() => setPage(item.id)}>
+                  <span>{item.icon}</span> {t(item.labelKey, lang)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="admin-bottom">
+          <button className="action-btn secondary" style={{ fontSize: '.75rem', padding: 7 }} onClick={() => setRole('customer')}>{t('back_to_app', lang)}</button>
+        </div>
+      </nav>
+
+      <div className="admin-main">
+        <div className="admin-topbar">
+          <div className="admin-topbar-title">{pageTitles[page]}</div>
+          <div style={{ display: 'flex', gap: 9, alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '.75rem', color: 'var(--text-light)', background: 'var(--foam)', padding: '4px 10px', borderRadius: 20 }}>
+              <span style={{ width: 8, height: 8, background: 'var(--green)', borderRadius: '50%', display: 'inline-block' }} />
+              {t('system_online', lang)}
+            </div>
+            <button className="action-btn secondary" style={{ width: 'auto', padding: '7px 16px', fontSize: '.8rem', margin: 0 }}>{t('refresh', lang)}</button>
+            <button className="action-btn secondary" style={{ width: 'auto', padding: '7px 16px', fontSize: '.8rem', margin: 0 }}>{t('export', lang)}</button>
+          </div>
+        </div>
+
+        <div className="admin-content">
+          {page === 'apDashboard' && <AdminDashboard />}
+          {page === 'apLiveOps' && <AdminLiveOps />}
+          {page === 'apPartners' && <AdminPartners />}
+          {page === 'apMenus' && <AdminMenus />}
+          {page === 'apUsers' && <AdminUsers />}
+          {page === 'apFinancials' && <AdminFinancials />}
+          {page === 'apAnalytics' && <AdminAnalytics />}
+          {page === 'apNotifications' && <AdminNotifications />}
+          {page === 'apAudit' && <AdminAudit />}
+          {page === 'apSettings' && <AdminSettings />}
+          {page === 'apReports' && (
+            <div className="admin-page" id="apReports">
+              <div style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: 16 }}>📄 {t('admin_reports', lang)}</div>
+              <p style={{ color: 'var(--text-light)' }}>{t('coming_soon', lang)}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

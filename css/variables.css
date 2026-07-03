@@ -1,0 +1,56 @@
+:root {
+  --espresso: #1C110C;
+  --bark: #3B1F13;
+  --amber: #C0692A;
+  --caramel: #E5924B;
+  --cream: #F7F0E8;
+  --latte: #EDE3D5;
+  --foam: #FAF6F1;
+  --text-main: #1C110C;
+  --text-mid: #5C4033;
+  --text-light: #9B7B68;
+  --green: #2A7A52;
+  --green-bg: #E4F5EC;
+  --green-dark: #1F5C3D;
+  --blue: #1A6FA8;
+  --blue-bg: #E3F0FA;
+  --blue-dark: #124D77;
+  --red: #C0392B;
+  --red-bg: #FDECEA;
+  --red-dark: #962D22;
+  --purple: #6B3FA0;
+  --purple-bg: #F0E8FA;
+  --purple-dark: #4E2F77;
+  --orange: #D35400;
+  --orange-bg: #FCE5D8;
+  --gold: #D4AF37;
+  --gold-bg: #FCF8E8;
+  --r-sm: 12px;
+  --r-md: 20px;
+  --r-lg: 32px;
+  --r-xl: 48px;
+  --sh-sm: 0 2px 8px rgba(28,17,12,.07);
+  --sh-md: 0 6px 24px rgba(28,17,12,.12);
+  --sh-lg: 0 12px 40px rgba(28,17,12,.18);
+  --transition: all .25s cubic-bezier(.34,1.2,.64,1);
+}
+
+[data-theme="dark"] {
+  --espresso: #0A0604;
+  --bark: #1C110C;
+  --amber: #E5924B;
+  --caramel: #F0B27A;
+  --cream: #1E1814;
+  --latte: #2A201A;
+  --foam: #16100C;
+  --text-main: #F7F0E8;
+  --text-mid: #C4B5A8;
+  --text-light: #8B7B6B;
+  --green-bg: #1A3A2A;
+  --blue-bg: #1A3040;
+  --red-bg: #3A1A16;
+  --purple-bg: #2A1A3A;
+  --green-dark: #3AAF7A;
+  --blue-dark: #4A9FD8;
+  --red-dark: #E74C3C;
+}
