@@ -11,6 +11,7 @@ interface PendingPartner {
   email: string;
   phone: string;
   city: string;
+  cr_file_url?: string;
   created_at: string;
 }
 
@@ -24,7 +25,7 @@ export default function AdminApprovals() {
     setLoading(true);
     const { data } = await supabase
       .from('profiles')
-      .select('id, auth_id, first_name, last_name, email, phone, city, created_at')
+      .select('id, auth_id, first_name, last_name, email, phone, city, cr_file_url, created_at')
       .eq('role', 'Partner')
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
@@ -85,7 +86,7 @@ export default function AdminApprovals() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Location</th><th>Date</th><th>Actions</th>
+                <th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Location</th><th>CR</th><th>Date</th><th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -96,6 +97,7 @@ export default function AdminApprovals() {
                   <td>{p.email}</td>
                   <td>{p.phone || '-'}</td>
                   <td style={{ fontSize: '.8rem', color: 'var(--text-light)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.city}</td>
+                  <td>{p.cr_file_url ? <a href={p.cr_file_url} target="_blank" rel="noopener" style={{ color: 'var(--amber)', fontWeight: 700, fontSize: '.8rem' }}>📄 View</a> : <span style={{ color: 'var(--text-light)', fontSize: '.75rem' }}>—</span>}</td>
                   <td style={{ fontSize: '.8rem' }}>{new Date(p.created_at).toLocaleDateString('en-US')}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 6 }}>

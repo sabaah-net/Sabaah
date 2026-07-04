@@ -67,17 +67,16 @@ export default function AuthModal() {
         const authUserId = authData?.user?.id;
         if (!authUserId) throw new Error('Account creation failed');
 
-        let crFileBase64 = '';
-        let crFileName = '';
+        let crFileUrl = '';
         if (crFile) {
-          crFileName = crFile.name;
-          const reader = new FileReader();
-          crFileBase64 = await new Promise<string>((resolve, reject) => {
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(crFile);
+          const ext = crFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+          const filePath = `cr_${authUserId}_${Date.now()}.${ext}`;
+          const { error: uploadError } = await supabase.storage.from('partner_docs').upload(filePath, crFile, {
+            cacheControl: '3600', upsert: true,
           });
-          localStorage.setItem(`sabaa_cr_${authUserId}`, JSON.stringify({ name: crFileName, data: crFileBase64 }));
+          if (uploadError) throw uploadError;
+          const { data: pubData } = supabase.storage.from('partner_docs').getPublicUrl(filePath);
+          crFileUrl = pubData?.publicUrl || '';
         }
 
         const { error: profileError } = await supabase.from('profiles').insert({
@@ -93,6 +92,7 @@ export default function AuthModal() {
           loyalty_points: 0,
           loyalty_tier: 'bronze',
           streak: 0,
+          cr_file_url: crFileUrl || null,
         }).select().single();
         if (profileError) throw profileError;
 

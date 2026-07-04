@@ -89,7 +89,7 @@ export const useAppStore = create<AppState>((set, get) => {
     theme: (saved.theme as Theme) || 'light',
     isLoggedIn: saved.isLoggedIn || false,
     currentUser: saved.currentUser || null,
-    wallet: saved.wallet ?? 150,
+    wallet: saved.isLoggedIn ? (saved.wallet ?? 0) : 0,
     cart: saved.cart || [],
     selectedCafe: null,
     selectedPickupSlot: null,
@@ -324,8 +324,8 @@ export const useAppStore = create<AppState>((set, get) => {
         await supabaseSignOut();
       } catch {}
       set((s) => {
-        saveState({ ...s, isLoggedIn: false, currentUser: null, cart: [] });
-        return { isLoggedIn: false, currentUser: null, cart: [] };
+        saveState({ ...s, isLoggedIn: false, currentUser: null, cart: [], wallet: 0 });
+        return { isLoggedIn: false, currentUser: null, cart: [], wallet: 0 };
       });
     },
 
