@@ -184,11 +184,12 @@ export const useAppStore = create<AppState>((set, get) => {
       return { isLoggedIn: v, currentUser: user ?? null };
     }),
     setWallet: (wallet) => {
+      const pid = useAppStore.getState().currentUser?.profileId;
+      if (pid) {
+        supabase.from('profiles').update({ wallet_balance: wallet }).eq('id', pid).then(() => {});
+      }
       set((s) => {
         saveState({ ...s, wallet });
-        if (s.currentUser?.profileId) {
-          supabase.from('profiles').update({ wallet_balance: wallet }).eq('id', s.currentUser.profileId);
-        }
         return { wallet };
       });
     },
