@@ -410,7 +410,8 @@ export const useAppStore = create<AppState>((set, get) => {
         }
       } catch {}
 
-      const earnedPoints = Math.floor(total * 0.5);
+      const totalDrinks = s.cart.reduce((sum, i) => sum + i.qty, 0);
+      const earnedPoints = totalDrinks * 10;
       const newPoints = (s.currentUser?.points || 0) + earnedPoints;
       const updatedUser = s.currentUser ? { ...s.currentUser, points: newPoints } : null;
 
@@ -427,7 +428,12 @@ export const useAppStore = create<AppState>((set, get) => {
       const newNotifs = [notifItem, ...s.notifications];
 
       if (updatedUser?.profileId) {
-        try { await supabase.from('profiles').update({ loyalty_points: newPoints }).eq('id', updatedUser.profileId); } catch {}
+        try {
+          await supabase.from('profiles').update({
+            loyalty_points: newPoints,
+            wallet_balance: newWallet,
+          }).eq('id', updatedUser.profileId);
+        } catch {}
       }
 
       saveState({ ...s, currentUser: updatedUser, wallet: newWallet, orders: newOrders, transactions: newTransactions, cart: [], notifications: newNotifs });

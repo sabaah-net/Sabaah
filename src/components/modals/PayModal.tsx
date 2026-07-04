@@ -37,7 +37,7 @@ function formatTime(d: Date): string {
   return `${en} - ${ar}`;
 }
 
-const POINTS_PER_SAR = 0.5;
+const POINTS_PER_DRINK = 10;
 
 export default function PayModal() {
   const store = useAppStore();
@@ -124,7 +124,7 @@ export default function PayModal() {
             <span><PriceTag value={total} /></span>
           </div>
           <div style={{ fontSize: '.75rem', color: 'var(--amber)', textAlign: 'left', padding: '4px 0 0', fontWeight: 700 }}>
-            ⭐ {t('earn_points', store.lang) || 'Earn'} {Math.floor(total * POINTS_PER_SAR)} {t('loyalty_points_label', store.lang)}
+            ⭐ {store.lang === 'ar' ? 'ستحصل على' : "You'll earn"} {store.cart.reduce((s, i) => s + i.qty, 0) * POINTS_PER_DRINK} {t('loyalty_points_label', store.lang)}
           </div>
         </div>
 
