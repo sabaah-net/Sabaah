@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { supabase, updateProfile, updateProfileRole, addAuditLog } from '../../lib/supabase';
+import { supabase, updateProfile, updateProfileRole, addAuditLog, createProfile, signUp as supabaseSignUp } from '../../lib/supabase';
 import { t } from '../../i18n';
 
 interface UserRow {
@@ -22,12 +22,12 @@ export default function AdminUsers() {
   const { lang } = useAppStore();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [search, setSearch] = useState('');
-  const [modalMode, setModalMode] = useState<'edit' | null>(null);
+  const [modalMode, setModalMode] = useState<'edit' | 'create' | null>(null);
   const [editUser, setEditUser] = useState<UserRow | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [form, setForm] = useState({ role: '', status: '', wallet_balance: 0, city: '' });
+  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', phone: '', password: '', role: 'Customer', status: 'active', wallet_balance: 0, city: '' });
 
   const fetchUsers = async () => {
     const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
@@ -44,33 +44,55 @@ export default function AdminUsers() {
 
   const openEdit = (u: UserRow) => {
     setEditUser(u);
-    setForm({ role: u.role, status: u.status, wallet_balance: u.wallet_balance, city: u.city });
+    setForm({ first_name: u.first_name, last_name: u.last_name, email: u.email, phone: u.phone || '', password: '', role: u.role, status: u.status, wallet_balance: u.wallet_balance, city: u.city });
     setModalMode('edit'); setError(''); setSuccess('');
   };
 
+  const openCreate = () => {
+    setEditUser(null);
+    setForm({ first_name: '', last_name: '', email: '', phone: '', password: '', role: 'Customer', status: 'active', wallet_balance: 0, city: 'riyadh' });
+    setModalMode('create'); setError(''); setSuccess('');
+  };
+
   const handleSave = async () => {
-    if (!editUser) return;
     setLoading(true); setError(''); setSuccess('');
     try {
-      if (form.role !== editUser.role) {
-        const { error: err } = await updateProfileRole(editUser.id, form.role);
+      if (modalMode === 'create') {
+        if (!form.first_name || !form.email || !form.password) {
+          setError(t('error_email_password', lang));
+          setLoading(false); return;
+        }
+        const { data: authData, error: authError } = await supabaseSignUp(form.email, form.password, { first_name: form.first_name, last_name: form.last_name });
+        if (authError) throw authError;
+        const authUserId = authData?.user?.id;
+        if (!authUserId) throw new Error('User creation failed');
+
+        const { error: profileError } = await createProfile({
+          auth_id: authUserId,
+          phone: form.phone,
+          email: form.email,
+          first_name: form.first_name,
+          last_name: form.last_name,
+          role: form.role,
+        });
+        if (profileError) throw profileError;
+
+        await supabase.from('profiles').update({ status: form.status, wallet_balance: form.wallet_balance, city: form.city }).eq('id', authUserId);
+        await supabase.from('profiles').update({ password: form.password }).eq('auth_id', authUserId);
+
+        addAuditLog({ user_name: t('audit_supervisor', lang), action_ar: `Create user: ${form.first_name} ${form.last_name}`, action_type: 'user', details: `Role: ${form.role}` }).catch(() => {});
+        setSuccess(`✅ ${form.first_name} ${form.last_name} created`);
+      } else if (modalMode === 'edit' && editUser) {
+        if (form.role !== editUser.role) {
+          const { error: err } = await updateProfileRole(editUser.id, form.role);
+          if (err) throw err;
+        }
+        const { error: err } = await updateProfile(editUser.id, { status: form.status, wallet_balance: form.wallet_balance, city: form.city });
         if (err) throw err;
+        addAuditLog({ user_name: t('audit_supervisor', lang), action_ar: `Edit user: ${editUser.first_name} ${editUser.last_name}`, action_type: 'user', details: `Role: ${editUser.role} → ${form.role}` }).catch(() => {});
+        setSuccess(`✅ ${editUser.first_name} ${editUser.last_name} updated`);
       }
-      const { error: err } = await updateProfile(editUser.id, {
-        status: form.status,
-        wallet_balance: form.wallet_balance,
-        city: form.city,
-      });
-      if (err) throw err;
 
-      addAuditLog({
-        user_name: t('audit_supervisor', lang),
-        action_ar: `Edit user: ${editUser.first_name} ${editUser.last_name}`,
-        action_type: 'user',
-        details: `Role: ${editUser.role} → ${form.role}, Status: ${editUser.status} → ${form.status}`,
-      }).catch(() => {});
-
-      setSuccess(`✅ ${editUser.first_name} ${editUser.last_name} ${t('admin_settings_saved', lang) || 'updated'}`);
       setModalMode(null);
       fetchUsers();
     } catch (e: any) {
@@ -88,6 +110,7 @@ export default function AdminUsers() {
         <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{t('user_management', lang)}</div>
         <div style={{ display: 'flex', gap: 8 }}>
           <input className="admin-search" placeholder={t('search_users', lang)} value={search} onChange={(e) => setSearch(e.target.value)} />
+          <button className="action-btn" style={{ width: 'auto', padding: '8px 14px', fontSize: '.8rem' }} onClick={openCreate}>➕ {t('add_cafe_btn', lang).replace('مقهى', 'User').replace('Cafe', 'User')}</button>
         </div>
       </div>
 
@@ -109,9 +132,9 @@ export default function AdminUsers() {
                 <td dir="ltr" style={{ fontSize: '.82rem' }}>{u.phone || '-'}</td>
                 <td>{u.email}</td>
                 <td><span className={`table-badge badge-${u.role === 'Partner' ? 'blue' : u.role === 'Super Admin' || u.role === 'Admin' ? 'amber' : 'green'}`}>{u.role}</span></td>
-                <td><span className={`table-badge badge-${u.status === 'active' ? 'green' : 'red'}`} style={{ cursor: 'pointer' }}>{statusLabel[u.status] || u.status}</span></td>
+                <td><span className={`table-badge badge-${u.status === 'active' ? 'green' : 'red'}`}>{statusLabel[u.status] || u.status}</span></td>
                 <td>{(u.wallet_balance || 0).toFixed(2)} ⃁</td>
-                <td style={{ fontSize: '.78rem', color: 'var(--text-light)' }}>{u.last_login ? new Date(u.last_login).toLocaleDateString() : '-'}</td>
+                <td style={{ fontSize: '.78rem', color: 'var(--text-light)' }}>{u.last_login ? new Date(u.last_login).toLocaleDateString('en-US') : '-'}</td>
                 <td>
                   <button className="action-btn secondary" style={{ width: 'auto', padding: '4px 10px', fontSize: '.72rem', margin: 0 }}
                     onClick={() => openEdit(u)}>
@@ -124,15 +147,25 @@ export default function AdminUsers() {
         </table>
       </div>
 
-      {modalMode === 'edit' && editUser && (
+      {modalMode && (
         <div className="modal-overlay open" onClick={() => setModalMode(null)}>
           <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="modal-handle" />
-            <div className="modal-title">✏️ {t('edit', lang)}: {editUser.first_name} {editUser.last_name}</div>
+            <div className="modal-title">{modalMode === 'create' ? '➕ ' + t('register_tab', lang) : `✏️ ${t('edit', lang)}: ${editUser?.first_name || ''}`}</div>
             {error && <div style={{ background: 'var(--red)', color: '#fff', padding: '8px 12px', borderRadius: 8, marginBottom: 12, fontSize: '.8rem' }}>{error}</div>}
             {success && <div style={{ background: 'var(--green)', color: '#fff', padding: '8px 12px', borderRadius: 8, marginBottom: 12, fontSize: '.8rem' }}>{success}</div>}
 
-            <label style={{ fontSize: '.78rem', color: 'var(--text-light)', marginBottom: 4, display: 'block' }}>{t('role', lang)}</label>
+            {modalMode === 'create' && (
+              <>
+                <input className="coffee-input" placeholder={t('name_placeholder', lang)} value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} />
+                <input className="coffee-input" placeholder={t('f_name_en', lang) || 'Last Name'} value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
+                <input className="coffee-input" placeholder={t('phone_placeholder', lang)} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                <input className="coffee-input" type="email" placeholder={t('email_placeholder', lang)} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <input className="coffee-input" type="password" placeholder={t('password_placeholder', lang)} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+              </>
+            )}
+
+            <label style={{ fontSize: '.78rem', color: 'var(--text-light)', marginBottom: 4, display: 'block', marginTop: modalMode === 'edit' ? 0 : 8 }}>{t('role', lang)}</label>
             <select className="coffee-input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
               <option value="Customer">Customer</option>
               <option value="Partner">Partner</option>
@@ -153,7 +186,7 @@ export default function AdminUsers() {
             <input className="coffee-input" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
 
             <button className="action-btn" style={{ width: '100%', marginTop: 12, opacity: loading ? 0.6 : 1 }} disabled={loading} onClick={handleSave}>
-              {loading ? t('report_loading', lang) : `💾 ${t('save_btn', lang)}`}
+              {loading ? t('report_loading', lang) : (modalMode === 'create' ? '✅ ' + t('create_account', lang) : `💾 ${t('save_btn', lang)}`)}
             </button>
           </div>
         </div>

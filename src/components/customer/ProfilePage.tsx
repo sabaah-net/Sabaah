@@ -5,16 +5,6 @@ import { t } from '../../i18n';
 export default function ProfilePage() {
   const store = useAppStore();
 
-  const handleExport = () => {
-    const data = { user: store.currentUser, orders: store.orders, transactions: store.transactions, exported: new Date().toISOString() };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sabaa-data-${Date.now()}.json`;
-    a.click();
-  };
-
   return (
     <div id="pageProfile">
       <div style={{
@@ -67,12 +57,6 @@ export default function ProfilePage() {
           <span style={{ fontSize: '.85rem' }}>{t('dark_mode', store.lang)}</span>
           <button className="action-btn secondary" style={{ width: 'auto', padding: '4px 12px', fontSize: '.7rem' }} onClick={() => store.toggleTheme()}>
             {t('toggle_label', store.lang)}
-          </button>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' }}>
-          <span style={{ fontSize: '.85rem' }}>{t('export_data', store.lang)}</span>
-          <button className="action-btn secondary" style={{ width: 'auto', padding: '4px 12px', fontSize: '.7rem' }} onClick={handleExport}>
-            {t('export_json', store.lang)}
           </button>
         </div>
       </div>

@@ -14,7 +14,7 @@ export default function HistoryPage() {
   const orderDays = store.orders.map((o) => new Date(o.date).getDate());
 
   const monthLabel = new Date(calYear, calMonth).toLocaleString(
-    store.lang === 'ar' ? 'ar-SA' : 'en-US',
+    'en-US',
     { month: 'long', year: 'numeric' }
   );
 

@@ -362,55 +362,89 @@ body{background:var(--latte);font-family:'Cairo',system-ui,sans-serif;color:var(
     color: var(--green) !important;
 }
 
-/* Pickup Time Slots */
-.time-slots-container {
+/* Currency */
+.price {
+    display: inline-flex;
+    align-items: baseline;
+    direction: ltr;
+    unicode-bidi: bidi-override;
+}
+.currency-sym {
+    font-size: 1.25em;
+    font-weight: 900;
+    margin-inline-end: 1px;
+}
+
+/* iOS-style Time Wheel Picker */
+.time-wheel-container {
     background: #fff;
     border-radius: var(--r-md);
-    padding: 16px;
+    padding: 10px 0;
     margin-bottom: 14px;
     box-shadow: var(--sh-sm);
+    position: relative;
+    overflow: hidden;
 }
-.time-slots-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-top: 10px;
+.time-wheel-container::before,
+.time-wheel-container::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 44px;
+    pointer-events: none;
+    z-index: 2;
 }
-.time-slot-btn {
-    background: var(--cream);
-    border: 2px solid transparent;
-    border-radius: var(--r-sm);
-    padding: 10px 6px;
-    font-family: inherit;
-    font-size: 0.78rem;
-    font-weight: 700;
+.time-wheel-container::before {
+    top: 0;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 100%);
+}
+.time-wheel-container::after {
+    bottom: 0;
+    background: linear-gradient(to top, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 100%);
+}
+.time-wheel-mask {
+    height: 132px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scroll-snap-type: y mandatory;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    z-index: 1;
+}
+.time-wheel-mask::-webkit-scrollbar {
+    display: none;
+}
+.time-wheel-item {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    scroll-snap-align: center;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-light);
     cursor: pointer;
-    transition: 0.2s;
-    text-align: center;
+    transition: color 0.15s, font-size 0.15s;
+    user-select: none;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 1px;
 }
-.time-slot-btn:hover {
-    border-color: var(--caramel);
-    background: var(--latte);
+.time-wheel-item.selected {
+    color: var(--bark);
+    font-size: 1.2rem;
+    font-weight: 800;
 }
-.time-slot-btn.selected {
-    background: var(--amber);
-    color: #fff;
-    border-color: var(--bark);
-}
-.time-slot-btn.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    background: var(--latte);
-}
-.time-slot-btn .slot-time {
-    font-size: 0.85rem;
-    font-weight: 900;
-    display: block;
-}
-.time-slot-btn .slot-label {
-    font-size: 0.65rem;
-    opacity: 0.8;
-    margin-top: 2px;
+.time-wheel-highlight {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    top: 44px;
+    height: 44px;
+    border-radius: var(--r-sm);
+    background: var(--cream);
+    pointer-events: none;
+    z-index: 0;
 }
 
 /* Multi-item Cart */

@@ -1,27 +1,26 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
 import { useToast } from '../shared/Toast';
+import PriceTag from '../shared/PriceTag';
 
-function generatePickupSlots(avgWaitMin: number = 5): { time: Date; label: string; disabled: boolean }[] {
+function generateAllSlots(avgWaitMin: number = 5): Date[] {
   const now = new Date();
   let firstOffset = Math.max(15, avgWaitMin);
   firstOffset = Math.ceil(firstOffset / 15) * 15;
-  const slots: { time: Date; label: string; disabled: boolean }[] = [];
-  for (let i = 0; i < 4; i++) {
-    const offset = firstOffset + i * 15;
-    const slotTime = new Date(now.getTime() + offset * 60 * 1000);
-    slots.push({
-      time: slotTime,
-      label: i === 0 ? 'priority' : '',
-      disabled: false,
-    });
+  const slots: Date[] = [];
+  const endOfDay = new Date(now);
+  endOfDay.setHours(23, 45, 0, 0);
+  for (let offset = firstOffset; ; offset += 15) {
+    const slot = new Date(now.getTime() + offset * 60 * 1000);
+    if (slot > endOfDay) break;
+    slots.push(slot);
   }
   return slots;
 }
 
-function formatTime(d: Date, lang: string): string {
+function formatTime(d: Date): string {
   const h = d.getHours().toString().padStart(2, '0');
   const m = d.getMinutes().toString().padStart(2, '0');
   return `${h}:${m}`;
@@ -32,19 +31,36 @@ export default function PayModal() {
   const { show } = useToast();
   const [method, setMethod] = useState<'wallet' | 'card' | 'cash'>('wallet');
   const cafeWaitMin = store.selectedCafe?.avg_wait_min || 5;
-  const slots = useMemo(() => generatePickupSlots(cafeWaitMin), [cafeWaitMin]);
+  const slots = useMemo(() => generateAllSlots(cafeWaitMin), [cafeWaitMin]);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState(0);
+  const wheelRef = useRef<HTMLDivElement>(null);
 
   const total = store.cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const subtotal = total / 1.15;
-  const vat = total - subtotal;
+
+  useEffect(() => {
+    if (wheelRef.current && slots.length > 0) {
+      const el = wheelRef.current;
+      const itemHeight = 44;
+      el.scrollTop = selectedSlotIndex * itemHeight;
+    }
+  }, []);
+
+  const handleScroll = () => {
+    if (!wheelRef.current) return;
+    const el = wheelRef.current;
+    const itemHeight = 44;
+    const idx = Math.round(el.scrollTop / itemHeight);
+    if (idx >= 0 && idx < slots.length) {
+      setSelectedSlotIndex(idx);
+    }
+  };
 
   const handlePay = () => {
     if (method === 'wallet' && store.wallet < total) {
       show(t('insufficient_balance', store.lang), 'error');
       return;
     }
-    store.setSelectedPickupSlot(formatTime(slots[selectedSlotIndex].time, store.lang));
+    store.setSelectedPickupSlot(formatTime(slots[selectedSlotIndex]));
     store.processPayment(method);
     show(t('payment_successful', store.lang), 'success');
     closeModal();
@@ -84,33 +100,41 @@ export default function PayModal() {
                 <span style={{ fontSize: '1.2rem' }}>{item.icon}</span>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: '.82rem' }}>{item.name}</div>
-                  <div style={{ fontSize: '.65rem', color: 'var(--text-light)' }}>{item.qty} × {item.price.toFixed(2)} ⃁</div>
+                  <div style={{ fontSize: '.65rem', color: 'var(--text-light)' }}>{item.qty} × <PriceTag value={item.price} /></div>
                 </div>
               </div>
-              <div style={{ fontWeight: 900, fontSize: '.88rem', color: 'var(--bark)' }}>{(item.price * item.qty).toFixed(2)} ⃁</div>
+              <div style={{ fontWeight: 900, fontSize: '.88rem', color: 'var(--bark)' }}><PriceTag value={item.price * item.qty} /></div>
             </div>
           ))}
           <div className="cart-total-row" style={{ fontSize: '.95rem', padding: '8px 0 0' }}>
             <span>{t('cart_total', store.lang)}</span>
-            <span>{total.toFixed(2)} ⃁</span>
+            <span><PriceTag value={total} /></span>
           </div>
         </div>
 
-        {/* Pickup time slots */}
-        <div className="time-slots-container" style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: '.82rem', fontWeight: 700, marginBottom: 8 }}>⏱️ {t('pickup_time', store.lang) || 'Pickup Time'}</div>
-          <div className="time-slots-grid">
+        {/* iOS-style time wheel */}
+        <div className="time-wheel-container">
+          <div style={{ fontSize: '.82rem', fontWeight: 700, padding: '0 14px 6px', textAlign: 'center' }}>
+            ⏱️ {t('pickup_time', store.lang) || 'Pickup Time'}
+          </div>
+          <div className="time-wheel-highlight" />
+          <div className="time-wheel-mask" ref={wheelRef} onScroll={handleScroll}>
+            <div style={{ height: 44 }} />
             {slots.map((slot, i) => (
-              <button
+              <div
                 key={i}
-                className={`time-slot-btn ${selectedSlotIndex === i ? 'selected' : ''} ${slot.disabled ? 'disabled' : ''}`}
-                onClick={() => !slot.disabled && setSelectedSlotIndex(i)}
-                disabled={slot.disabled}
+                className={`time-wheel-item ${selectedSlotIndex === i ? 'selected' : ''}`}
+                onClick={() => {
+                  setSelectedSlotIndex(i);
+                  if (wheelRef.current) {
+                    wheelRef.current.scrollTop = i * 44;
+                  }
+                }}
               >
-                <span className="slot-time">{formatTime(slot.time, store.lang)}</span>
-                <span className="slot-label">{slot.label === 'priority' ? (store.lang === 'ar' ? 'أقرب موعد' : 'Earliest') : ''}</span>
-              </button>
+                {formatTime(slot)}
+              </div>
             ))}
+            <div style={{ height: 44 }} />
           </div>
         </div>
 
@@ -135,13 +159,13 @@ export default function PayModal() {
             color: store.wallet >= total ? 'var(--green)' : 'var(--red)',
             textAlign: 'center', marginBottom: 12, fontWeight: 700,
           }}>
-            {t('wallet_balance', store.lang)}: {store.wallet.toFixed(2)} ⃁
+            {t('wallet_balance', store.lang)}: <PriceTag value={store.wallet} />
             {store.wallet < total && ` — ${t('insufficient_balance', store.lang)}`}
           </div>
         )}
 
         <button className="action-btn" style={{ width: '100%', padding: 14, fontSize: '1rem' }} onClick={handlePay}>
-          {t('confirm_payment', store.lang)} — {total.toFixed(2)} ⃁
+          {t('confirm_payment', store.lang)} — <PriceTag value={total} />
         </button>
       </div>
     </div>

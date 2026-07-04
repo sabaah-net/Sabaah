@@ -30,12 +30,12 @@ export default function RewardsPage() {
     <div id="pageRewards">
       <div className="loyalty-hero">
         <div className="loyalty-tier">{cfg.label}</div>
-        <div className="loyalty-points">{(store.currentUser?.points || 0).toLocaleString()} {t('points_label', store.lang)}</div>
+        <div className="loyalty-points">{(store.currentUser?.points || 0).toLocaleString('en-US')} {t('points_label', store.lang)}</div>
         <div className="tier-progress">
           <div className="tier-progress-fill" style={{ width: `${progress}%` }} />
         </div>
         <div className="tier-next">
-          {cfg.next.toLocaleString()} {t('points_to_next', store.lang)} {cfg.nextTier} 💎
+          {cfg.next.toLocaleString('en-US')} {t('points_to_next', store.lang)} {cfg.nextTier} 💎
         </div>
       </div>
 

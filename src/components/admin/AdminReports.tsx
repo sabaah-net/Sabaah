@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
-import { downloadCSV, downloadJSON } from '../../lib/export';
+import { downloadCSV, downloadJSON, downloadPDF } from '../../lib/export';
 import { getSalesSummary, getSalesByCafe, getBestSellingItems, getCustomerSummary, getTopCustomers } from '../../lib/reports';
+import { supabase } from '../../lib/supabase';
 import type { SalesReportSummary, SalesByCafe, BestSellingItem, CustomerReportSummary, TopCustomer } from '../../types';
 
 type ReportTab = 'sales' | 'customers';
@@ -22,12 +23,16 @@ export default function AdminReports() {
   const [bestSellers, setBestSellers] = useState<BestSellingItem[]>([]);
   const [custSummary, setCustSummary] = useState<CustomerReportSummary | null>(null);
   const [topCust, setTopCust] = useState<TopCustomer[]>([]);
+  const [liveOrders, setLiveOrders] = useState<number>(0);
   const [error, setError] = useState('');
 
   const fetchData = async () => {
     setLoading(true);
     setError('');
     try {
+      const { count } = await supabase.from('orders').select('*', { count: 'exact', head: true });
+      setLiveOrders(count || 0);
+
       if (tab === 'sales') {
         const [s, bc, bs] = await Promise.all([
           getSalesSummary(from || undefined, to || undefined),
@@ -54,7 +59,8 @@ export default function AdminReports() {
 
   useEffect(() => { fetchData(); }, [tab]);
 
-  const exportCSV = () => {
+  const exportCSV = async () => {
+    await fetchData();
     if (tab === 'sales') {
       downloadCSV(bestSellers.map((b, i) => ({ rank: i + 1, name: b.name, sales: b.sales, revenue: b.revenue })), `sales_report_${from}_${to}`);
       downloadCSV(byCafe.map(b => ({ cafe: b.cafeName, orders: b.orders, revenue: b.revenue })), `sales_by_cafe_${from}_${to}`);
@@ -63,11 +69,60 @@ export default function AdminReports() {
     }
   };
 
-  const exportJSON = () => {
+  const exportJSON = async () => {
+    await fetchData();
     if (tab === 'sales') {
       downloadJSON({ summary, byCafe, bestSellers }, `sales_report_${from}_${to}`);
     } else {
       downloadJSON({ summary: custSummary, topCustomers: topCust }, `customers_report_${from}_${to}`);
+    }
+  };
+
+  const exportPDF = async () => {
+    await fetchData();
+    const dateLabel = `${from} → ${to}`;
+    if (tab === 'sales' && summary) {
+      const kpiTables = {
+        caption: t('report_summary', lang) || 'Summary',
+        headers: [t('report_total_orders', lang), t('report_total_revenue', lang), t('report_net_revenue', lang), t('report_avg_order', lang), 'VAT'],
+        rows: [[
+          String(summary.totalOrders),
+          `${summary.totalRevenue.toFixed(2)} SAR`,
+          `${summary.netRevenue.toFixed(2)} SAR`,
+          `${summary.avgOrderValue.toFixed(2)} SAR`,
+          `${summary.totalVat.toFixed(2)} SAR`,
+        ]],
+      };
+      const bestTables = bestSellers.length > 0 ? {
+        caption: t('report_best_selling', lang),
+        headers: ['#', t('th_drink', lang), t('th_sales', lang), t('th_revenue', lang)],
+        rows: bestSellers.slice(0, 15).map((b, i) => [`#${i + 1}`, b.name, String(b.sales), `${b.revenue.toFixed(2)} SAR`]),
+      } : null;
+      const cafeTables = byCafe.length > 0 ? {
+        caption: t('report_by_cafe', lang),
+        headers: [t('th_rank', lang), t('th_name', lang), t('th_sales', lang), t('th_revenue', lang), t('th_percentage', lang)],
+        rows: byCafe.map((c, i) => [`#${i + 1}`, c.cafeName, String(c.orders), `${c.revenue.toFixed(2)} SAR`, `${summary.totalRevenue > 0 ? ((c.revenue / summary.totalRevenue) * 100).toFixed(1) : '0'}%`]),
+      } : null;
+
+      downloadPDF(`Sales Report ${dateLabel}`, [kpiTables, ...(bestTables ? [bestTables] : []), ...(cafeTables ? [cafeTables] : [])]);
+    } else if (tab === 'customers' && custSummary) {
+      const kpiTables = {
+        caption: t('report_customer_summary', lang) || 'Customer Summary',
+        headers: [t('report_customer_total', lang), t('report_customer_active', lang), t('report_customer_new', lang)],
+        rows: [[String(custSummary.total), String(custSummary.active), String(custSummary.newThisPeriod)]],
+      };
+      const tierTables = custSummary.byTier.length > 0 ? {
+        caption: t('admin_tiers', lang) || 'Loyalty Tiers',
+        headers: [t('th_tier', lang) || 'Tier', t('th_count', lang) || 'Count', '%'],
+        rows: custSummary.byTier.map(t => [t.tier, String(t.count), `${custSummary.total > 0 ? ((t.count / custSummary.total) * 100).toFixed(1) : '0'}%`]),
+      } : null;
+      const topTables = topCust.length > 0 ? {
+        caption: t('report_top_customers', lang),
+        headers: ['#', t('th_name', lang), t('th_email', lang), t('th_sales', lang), t('th_revenue', lang), t('th_tier', lang)],
+        rows: topCust.map((c, i) => [`#${i + 1}`, c.name, c.email, String(c.orders), `${c.totalSpent.toFixed(2)} SAR`, c.tier]),
+      } : null;
+
+      downloadPDF(`Customer Report ${dateLabel}`, [kpiTables, ...(tierTables ? [tierTables] : []), ...(topTables ? [topTables] : [])]);
     }
   };
 
@@ -89,12 +144,23 @@ export default function AdminReports() {
         <button className="action-btn primary" style={{ width: 'auto', padding: '7px 18px', fontSize: '.8rem' }} onClick={fetchData}>
           🔄 {t('report_filter', lang)}
         </button>
+
+        <div style={{ width: 1, height: 28, background: 'var(--latte)' }} />
+
         <button className="action-btn secondary" style={{ width: 'auto', padding: '7px 14px', fontSize: '.78rem' }} onClick={exportCSV}>
-          📥 {t('report_export_csv', lang)}
+          📥 CSV
         </button>
         <button className="action-btn secondary" style={{ width: 'auto', padding: '7px 14px', fontSize: '.78rem' }} onClick={exportJSON}>
-          📥 {t('report_export_json', lang)}
+          📥 JSON
         </button>
+        <button className="action-btn secondary" style={{ width: 'auto', padding: '7px 14px', fontSize: '.78rem' }} onClick={exportPDF}>
+          📄 {t('report_export_pdf', lang) || 'PDF'}
+        </button>
+      </div>
+
+      <div style={{ background: 'var(--foam)', borderRadius: 12, padding: '10px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: '.85rem', fontWeight: 700 }}>{t('live_orders_label', lang) || 'Live Orders'}</span>
+        <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--green)' }}>{liveOrders.toLocaleString('en-US')}</span>
       </div>
 
       {error && <div style={{ background: 'var(--red)', color: '#fff', padding: '10px 16px', borderRadius: 8, marginBottom: 16, fontSize: '.85rem' }}>{error}</div>}
@@ -105,7 +171,7 @@ export default function AdminReports() {
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
             {[
-              { label: t('report_total_orders', lang), val: summary.totalOrders.toLocaleString(), color: 'var(--green)' },
+              { label: t('report_total_orders', lang), val: summary.totalOrders.toLocaleString('en-US'), color: 'var(--green)' },
               { label: t('report_total_revenue', lang), val: `${summary.totalRevenue.toFixed(2)} ⃁`, color: 'var(--blue)' },
               { label: t('report_net_revenue', lang), val: `${summary.netRevenue.toFixed(2)} ⃁`, color: 'var(--purple)' },
               { label: t('report_avg_order', lang), val: `${summary.avgOrderValue.toFixed(2)} ⃁`, color: 'var(--amber)' },
@@ -130,7 +196,7 @@ export default function AdminReports() {
                     <tr key={i}>
                       <td style={{ fontWeight: 800, color: i < 3 ? 'var(--amber)' : 'var(--text-light)' }}>#{i + 1}</td>
                       <td><strong>{item.name}</strong></td>
-                      <td>{item.sales.toLocaleString()}</td>
+                      <td>{item.sales.toLocaleString('en-US')}</td>
                       <td>{item.revenue.toFixed(2)} ⃁</td>
                       <td style={{ fontSize: '.8rem', color: 'var(--text-light)' }}>{item.cafeName}</td>
                     </tr>
@@ -157,7 +223,7 @@ export default function AdminReports() {
                       <tr key={cafe.cafeId}>
                         <td style={{ fontWeight: 800, color: i < 3 ? 'var(--amber)' : 'var(--text-light)' }}>#{i + 1}</td>
                         <td><strong>{cafe.cafeName}</strong></td>
-                        <td>{cafe.orders.toLocaleString()}</td>
+                        <td>{cafe.orders.toLocaleString('en-US')}</td>
                         <td>{cafe.revenue.toFixed(2)} ⃁</td>
                         <td><span className="table-badge badge-green">{pct}%</span></td>
                       </tr>
@@ -174,9 +240,9 @@ export default function AdminReports() {
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
             {[
-              { label: t('report_customer_total', lang), val: custSummary.total.toLocaleString(), color: 'var(--blue)' },
-              { label: t('report_customer_active', lang), val: custSummary.active.toLocaleString(), color: 'var(--green)' },
-              { label: t('report_customer_new', lang), val: custSummary.newThisPeriod.toLocaleString(), color: 'var(--amber)' },
+              { label: t('report_customer_total', lang), val: custSummary.total.toLocaleString('en-US'), color: 'var(--blue)' },
+              { label: t('report_customer_active', lang), val: custSummary.active.toLocaleString('en-US'), color: 'var(--green)' },
+              { label: t('report_customer_new', lang), val: custSummary.newThisPeriod.toLocaleString('en-US'), color: 'var(--amber)' },
             ].map((k, i) => (
               <div key={i} style={{ background: 'var(--foam)', borderRadius: 12, padding: 14 }}>
                 <div style={{ fontSize: '.72rem', color: 'var(--text-light)' }}>{k.label}</div>
@@ -196,7 +262,7 @@ export default function AdminReports() {
                   {custSummary.byTier.map((tier) => (
                     <tr key={tier.tier}>
                       <td><span className="table-badge badge-blue">{tier.tier}</span></td>
-                      <td>{tier.count.toLocaleString()}</td>
+                      <td>{tier.count.toLocaleString('en-US')}</td>
                       <td>{custSummary.total > 0 ? ((tier.count / custSummary.total) * 100).toFixed(1) : '0'}%</td>
                     </tr>
                   ))}
