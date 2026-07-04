@@ -87,6 +87,7 @@ export default function AuthModal() {
           first_name: firstName,
           last_name: lastNamePart,
           role: 'Partner',
+          status: 'pending',
           city: mapsUrl || 'riyadh',
           wallet_balance: 0,
           loyalty_points: 0,

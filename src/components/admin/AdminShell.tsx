@@ -13,8 +13,9 @@ import AdminNotifications from './AdminNotifications';
 import AdminAudit from './AdminAudit';
 import AdminSettings from './AdminSettings';
 import AdminReports from './AdminReports';
+import AdminApprovals from './AdminApprovals';
 
-type AdminPage = 'apDashboard' | 'apLiveOps' | 'apPartners' | 'apMenus' | 'apUsers' | 'apFinancials' | 'apAnalytics' | 'apReports' | 'apNotifications' | 'apAudit' | 'apSettings';
+type AdminPage = 'apDashboard' | 'apLiveOps' | 'apPartners' | 'apMenus' | 'apUsers' | 'apFinancials' | 'apAnalytics' | 'apReports' | 'apNotifications' | 'apAudit' | 'apSettings' | 'apApprovals';
 
 export default function AdminShell() {
   const [page, setPage] = useState<AdminPage>('apDashboard');
@@ -25,6 +26,7 @@ export default function AdminShell() {
     { id: 'apLiveOps', icon: '🚨', labelKey: 'admin_live_ops' },
     { id: 'apPartners', icon: '🏪', labelKey: 'admin_partners', sectionKey: 'management_section' },
     { id: 'apMenus', icon: '☕', labelKey: 'admin_menus' },
+    { id: 'apApprovals', icon: '✅', labelKey: 'admin_approvals' },
     { id: 'apUsers', icon: '👥', labelKey: 'admin_users' },
     { id: 'apFinancials', icon: '💰', labelKey: 'admin_financials', sectionKey: 'finance_section' },
     { id: 'apAnalytics', icon: '📈', labelKey: 'admin_analytics' },
@@ -38,7 +40,7 @@ export default function AdminShell() {
   const pageTitles: Record<AdminPage, string> = {
     apDashboard: t('admin_dashboard', lang), apLiveOps: t('admin_live_ops', lang),
     apPartners: t('admin_partners', lang), apMenus: t('admin_menus', lang),
-    apUsers: t('admin_users', lang), apFinancials: t('admin_financials', lang),
+    apApprovals: '✅ Approvals', apUsers: t('admin_users', lang), apFinancials: t('admin_financials', lang),
     apAnalytics: t('admin_analytics', lang), apReports: t('admin_reports', lang),
     apNotifications: t('admin_notifications', lang), apAudit: t('admin_audit', lang),
     apSettings: t('admin_settings', lang),
@@ -91,6 +93,7 @@ export default function AdminShell() {
           {page === 'apLiveOps' && <AdminLiveOps />}
           {page === 'apPartners' && <AdminPartners />}
           {page === 'apMenus' && <AdminMenus />}
+          {page === 'apApprovals' && <AdminApprovals />}
           {page === 'apUsers' && <AdminUsers />}
           {page === 'apFinancials' && <AdminFinancials />}
           {page === 'apAnalytics' && <AdminAnalytics />}

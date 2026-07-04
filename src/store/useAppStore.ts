@@ -226,6 +226,10 @@ export const useAppStore = create<AppState>((set, get) => {
 
         if (!profile) throw new Error(t('error_user_not_found', lang));
 
+        if (profile.role === 'Partner' && profile.status === 'pending') {
+          throw new Error('Your account is pending admin approval');
+        }
+
         const user: CurrentUser = {
           name: `${profile.first_name} ${profile.last_name}`,
           phone: profile.phone,
@@ -401,6 +405,10 @@ export const useAppStore = create<AppState>((set, get) => {
         }
       } catch {}
 
+      const earnedPoints = Math.floor(total * 0.5);
+      const newPoints = (s.currentUser?.points || 0) + earnedPoints;
+      const updatedUser = s.currentUser ? { ...s.currentUser, points: newPoints } : null;
+
       const newWallet = method === 'wallet' ? s.wallet - total : s.wallet;
       const newOrders = [newOrder, ...s.orders];
       const txn: Transaction = {
@@ -412,8 +420,13 @@ export const useAppStore = create<AppState>((set, get) => {
       };
       const newTransactions = [...s.transactions, txn];
       const newNotifs = [notifItem, ...s.notifications];
-      saveState({ ...s, wallet: newWallet, orders: newOrders, transactions: newTransactions, cart: [], notifications: newNotifs });
-      set({ wallet: newWallet, orders: newOrders, transactions: newTransactions, cart: [], lastOrder: newOrder, notifications: newNotifs });
+
+      if (updatedUser?.profileId) {
+        try { await supabase.from('profiles').update({ loyalty_points: newPoints }).eq('id', updatedUser.profileId); } catch {}
+      }
+
+      saveState({ ...s, currentUser: updatedUser, wallet: newWallet, orders: newOrders, transactions: newTransactions, cart: [], notifications: newNotifs });
+      set({ currentUser: updatedUser, wallet: newWallet, orders: newOrders, transactions: newTransactions, cart: [], lastOrder: newOrder, notifications: newNotifs });
     },
 
     updatePrices: (_cafeId, _items) => {

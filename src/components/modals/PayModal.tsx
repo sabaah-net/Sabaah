@@ -20,11 +20,24 @@ function generateAllSlots(avgWaitMin: number = 5): Date[] {
   return slots;
 }
 
-function formatTime(d: Date): string {
-  const h = d.getHours().toString().padStart(2, '0');
-  const m = d.getMinutes().toString().padStart(2, '0');
-  return `${h}:${m}`;
+function toArabicNumeral(s: string): string {
+  const arabicDigits = '٠١٢٣٤٥٦٧٨٩';
+  return s.split('').map(ch => arabicDigits[parseInt(ch)] || ch).join('');
 }
+
+function formatTime(d: Date): string {
+  const h = d.getHours();
+  const m = d.getMinutes().toString().padStart(2, '0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const ampmAr = h >= 12 ? 'م' : 'ص';
+  const h12 = (h % 12 || 12).toString().padStart(2, '0');
+  const h24 = h.toString().padStart(2, '0');
+  const en = `${h24}:${m} ${ampm}`;
+  const ar = `${ampmAr} ${toArabicNumeral(h24)}:${toArabicNumeral(m)}`;
+  return `${en} - ${ar}`;
+}
+
+const POINTS_PER_SAR = 0.5;
 
 export default function PayModal() {
   const store = useAppStore();
@@ -109,6 +122,9 @@ export default function PayModal() {
           <div className="cart-total-row" style={{ fontSize: '.95rem', padding: '8px 0 0' }}>
             <span>{t('cart_total', store.lang)}</span>
             <span><PriceTag value={total} /></span>
+          </div>
+          <div style={{ fontSize: '.75rem', color: 'var(--amber)', textAlign: 'left', padding: '4px 0 0', fontWeight: 700 }}>
+            ⭐ {t('earn_points', store.lang) || 'Earn'} {Math.floor(total * POINTS_PER_SAR)} {t('loyalty_points_label', store.lang)}
           </div>
         </div>
 

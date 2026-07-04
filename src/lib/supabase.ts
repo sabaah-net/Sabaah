@@ -191,6 +191,25 @@ export async function getUserSubscription(userId: string) {
   return supabase.from('user_subscriptions').select('*, subscription_plans(*)').eq('user_id', userId).maybeSingle();
 }
 
+export async function subscribeUser(userId: string, planId: string) {
+  const { data: existing } = await supabase.from('user_subscriptions')
+    .select('id').eq('user_id', userId).maybeSingle();
+  if (existing) {
+    const { error } = await supabase.from('user_subscriptions').update({ plan_id: planId, start_date: new Date().toISOString(), status: 'active' }).eq('id', existing.id);
+    if (!error) {
+      await supabase.from('profiles').update({ current_subscription_id: existing.id }).eq('id', userId);
+    }
+    return { data: existing, error };
+  }
+  const { data, error } = await supabase.from('user_subscriptions').insert({
+    user_id: userId, plan_id: planId, start_date: new Date().toISOString(), status: 'active',
+  }).select().single();
+  if (data && !error) {
+    await supabase.from('profiles').update({ current_subscription_id: data.id }).eq('id', userId);
+  }
+  return { data, error };
+}
+
 // ---- CAMPAIGNS ----
 export async function getCampaigns() {
   return supabase.from('notification_campaigns').select('*').order('created_at', { ascending: false });

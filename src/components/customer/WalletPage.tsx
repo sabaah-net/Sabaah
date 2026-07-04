@@ -1,12 +1,16 @@
 'use client';
 import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
+import SubscriptionModal from '../modals/SubscriptionModal';
 
 export default function WalletPage() {
   const store = useAppStore();
 
+  const openSubs = () => document.getElementById('subModal')?.classList.add('open');
+
   return (
     <div id="pageWallet">
+      <SubscriptionModal />
       <div className="wallet-hero">
         <div style={{ fontSize: '.68rem', color: 'rgba(255,255,255,.6)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 5 }}>
           {t('wallet_balance_label', store.lang)}
@@ -17,7 +21,7 @@ export default function WalletPage() {
           <button className="wallet-action-btn" onClick={() => {
             store.setWallet(store.wallet + 50);
           }}>{t('topup_btn', store.lang)}</button>
-          <button className="wallet-action-btn">{t('subscriptions', store.lang)}</button>
+          <button className="wallet-action-btn" onClick={openSubs}>{t('subscriptions', store.lang)}</button>
         </div>
       </div>
 
