@@ -12,6 +12,7 @@ type Tab = 'orders' | 'inventory' | 'staff' | 'promos';
 
 export default function PartnerPortal() {
   const store = useAppStore();
+  const { signOut } = useAppStore();
   const lang = store.lang;
   const [activeTab, setActiveTab] = useState<Tab>('orders');
   const [isOpen, setIsOpen] = useState(true);
@@ -56,6 +57,7 @@ export default function PartnerPortal() {
           <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--caramel)' }}>87%</div>
         </div>
       </div>
+      <button className="action-btn secondary" style={{ width: 'auto', padding: '6px 14px', fontSize: '.75rem', marginBottom: 10 }} onClick={signOut}>{t('logout_label', lang)}</button>
 
       <div style={{
         background: isOpen ? 'var(--green-bg)' : 'var(--red-bg)',

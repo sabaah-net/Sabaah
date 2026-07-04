@@ -62,7 +62,7 @@ export default function ProfilePage() {
       </div>
 
       {store.isLoggedIn && (
-        <button className="action-btn red-btn" onClick={() => store.setLoggedIn(false, null)}>
+        <button className="action-btn red-btn" onClick={() => store.signOut()}>
           {t('logout_label', store.lang)}
         </button>
       )}

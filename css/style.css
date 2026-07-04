@@ -16,9 +16,6 @@ body{background:var(--latte);font-family:'Cairo',system-ui,sans-serif;color:var(
 .header-right{display:flex;align-items:center;gap:8px}
 .lang-btn,.auth-header-btn,.theme-btn{background:rgba(255,255,255,.12);border:none;color:#fff;font-family:inherit;font-size:.75rem;font-weight:700;padding:6px 12px;border-radius:20px;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:4px}
 .auth-header-btn{background:var(--amber)}
-.role-tabs{display:grid;grid-template-columns:1fr 1fr 1fr;background:rgba(255,255,255,.1);border-radius:var(--r-sm);padding:3px;gap:3px}
-.role-tab{background:transparent;border:none;color:rgba(255,255,255,.6);padding:8px 0;border-radius:9px;font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer;transition:.2s}
-.role-tab.active{background:var(--amber);color:#fff}
 .bottom-nav{background:var(--bark);display:grid;grid-template-columns:repeat(5,1fr);padding:6px 2px max(8px,env(safe-area-inset-bottom));position:sticky;bottom:0;z-index:150;transition:background .3s}
 .nav-btn{background:transparent;border:none;color:rgba(255,255,255,.5);font-family:inherit;font-size:.6rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 1px;transition:color .2s;position:relative}
 .nav-btn .nav-icon{font-size:1.2rem}
@@ -618,3 +615,12 @@ body{background:var(--latte);font-family:'Cairo',system-ui,sans-serif;color:var(
 .item-toggle input:checked + .item-toggle-slider::before {
     transform: translateX(20px);
 }
+.sub-card{background:#fff;border-radius:var(--r-md);padding:16px;margin-bottom:10px;box-shadow:var(--sh-sm);border:2px solid transparent;transition:var(--transition);cursor:pointer}
+.sub-card:hover{border-color:var(--caramel)}
+.sub-card.active{border-color:var(--green);background:var(--green-bg)}
+.sub-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.sub-name{font-size:.95rem;font-weight:900}
+.sub-price{font-size:1.1rem;font-weight:900;color:var(--green)}
+.sub-desc{font-size:.75rem;color:var(--text-light);margin-bottom:10px}
+.sub-features{display:flex;flex-wrap:wrap;gap:6px}
+.sub-feature{font-size:.65rem;background:var(--latte);padding:3px 8px;border-radius:20px;font-weight:700}

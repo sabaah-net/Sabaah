@@ -20,7 +20,7 @@ type AdminPage = 'apDashboard' | 'apLiveOps' | 'apPartners' | 'apMenus' | 'apUse
 
 export default function AdminShell() {
   const [page, setPage] = useState<AdminPage>('apDashboard');
-  const { setRole, lang, loadFromSupabase } = useAppStore();
+  const { signOut, lang, loadFromSupabase } = useAppStore();
 
   const navItems: { id: AdminPage; icon: string; labelKey: string; sectionKey?: string }[] = [
     { id: 'apDashboard', icon: '📊', labelKey: 'admin_dashboard', sectionKey: 'main_section' },
@@ -73,7 +73,7 @@ export default function AdminShell() {
           })}
         </div>
         <div className="admin-bottom">
-          <button className="action-btn secondary" style={{ fontSize: '.75rem', padding: 7 }} onClick={() => setRole('customer')}>{t('back_to_app', lang)}</button>
+          <button className="action-btn secondary" style={{ fontSize: '.75rem', padding: 7 }} onClick={signOut}>{t('logout_label', lang)}</button>
         </div>
       </nav>
 

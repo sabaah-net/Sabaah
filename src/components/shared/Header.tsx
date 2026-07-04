@@ -10,15 +10,7 @@ interface HeaderProps {
 }
 
 export default function Header({ onOpenAuth, onOpenNotif, onOpenLang }: HeaderProps) {
-  const { lang, isLoggedIn, currentUser, theme, toggleTheme, role, setRole } = useAppStore();
-  const { show } = useToast();
-
-  const handleRoleSwitch = (newRole: 'customer' | 'partner' | 'superadmin') => {
-    if (newRole === 'superadmin') {
-      show(t('admin_dashboard', lang), 'info');
-    }
-    setRole(newRole);
-  };
+  const { lang, isLoggedIn, currentUser, theme, toggleTheme } = useAppStore();
 
   return (
     <header className="header">
@@ -40,17 +32,6 @@ export default function Header({ onOpenAuth, onOpenNotif, onOpenLang }: HeaderPr
             </button>
           )}
         </div>
-      </div>
-      <div className="role-tabs">
-        <button className={`role-tab ${role === 'customer' ? 'active' : ''}`} onClick={() => handleRoleSwitch('customer')}>
-          {t('customer', lang)}
-        </button>
-        <button className={`role-tab ${role === 'partner' ? 'active' : ''}`} onClick={() => handleRoleSwitch('partner')}>
-          {t('partner', lang)}
-        </button>
-        <button className={`role-tab ${role === 'superadmin' ? 'active' : ''}`} onClick={() => handleRoleSwitch('superadmin')}>
-          {t('admin', lang)}
-        </button>
       </div>
     </header>
   );
