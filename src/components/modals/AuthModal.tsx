@@ -19,11 +19,18 @@ export default function AuthModal() {
   const [crFile, setCrFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const crExtensions = ['pdf', 'png', 'jpg', 'jpeg'];
   const handleCrFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    if (!crExtensions.includes(ext)) {
+      show('Only PDF, PNG, JPG files are allowed', 'error');
+      e.target.value = '';
+      return;
+    }
     if (file.size > 2 * 1024 * 1024) {
-      show(t('error_file_size', lang) || 'File must be under 2 MB', 'error');
+      show('File must be under 2 MB', 'error');
       e.target.value = '';
       return;
     }
@@ -85,7 +92,6 @@ export default function AuthModal() {
           loyalty_points: 0,
           loyalty_tier: 'bronze',
           streak: 0,
-          notes: crFileName ? JSON.stringify({ cr_file: crFileName }) : null,
         }).select().single();
         if (profileError) throw profileError;
 
@@ -123,14 +129,17 @@ export default function AuthModal() {
         <div style={{ display: 'flex', gap: 0, marginBottom: 16, borderRadius: 10, overflow: 'hidden', border: '2px solid var(--latte)' }}>
           {tabBtn('login', t('sign_in_tab', lang))}
           {tabBtn('register', t('register_tab', lang))}
-          {tabBtn('partner', t('partner_register', lang) || 'Partner')}
+          {tabBtn('partner', 'Partner')}
         </div>
 
-        {tab !== 'login' && (
-          <input className="coffee-input" placeholder={t('f_name_en', lang) || 'First Name'} value={name} onChange={(e) => setName(e.target.value)} />
+        {tab !== 'login' && tab === 'register' && (
+          <input className="coffee-input" placeholder={t('name_placeholder', lang)} value={name} onChange={(e) => setName(e.target.value)} />
         )}
         {tab === 'partner' && (
-          <input className="coffee-input" placeholder={t('l_name_en', lang) || 'Last Name'} value={lastName} onChange={(e) => setLastName(e.target.value)} />
+          <input className="coffee-input" placeholder="First Name" value={name} onChange={(e) => setName(e.target.value)} />
+        )}
+        {tab === 'partner' && (
+          <input className="coffee-input" placeholder="Last Name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
         )}
         {tab !== 'login' && (
           <input className="coffee-input" placeholder={t('phone_placeholder', lang)} value={phone} onChange={(e) => setPhone(e.target.value)} />
@@ -138,16 +147,16 @@ export default function AuthModal() {
 
         {tab === 'partner' && (
           <>
-            <input className="coffee-input" placeholder={t('maps_link_placeholder', lang) || 'Google Maps Location URL'} value={mapsUrl} onChange={(e) => setMapsUrl(e.target.value)} />
+            <input className="coffee-input" placeholder="Google Maps Location URL" value={mapsUrl} onChange={(e) => setMapsUrl(e.target.value)} />
             <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: '.75rem', fontWeight: 700, color: 'var(--text-mid)', marginBottom: 4 }}>{t('cr_file_label', lang) || 'CR Copy (max 2 MB)'}</div>
+              <div style={{ fontSize: '.75rem', fontWeight: 700, color: 'var(--text-mid)', marginBottom: 4 }}>CR Copy (max 2 MB)</div>
               <label style={{
                 display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
                 border: '2px dashed var(--latte)', borderRadius: 10, cursor: 'pointer', fontSize: '.82rem',
               }}>
                 <span style={{ fontSize: '1.2rem' }}>📎</span>
                 <span style={{ color: crFile ? 'var(--text)' : 'var(--text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {crFile ? crFile.name : (t('upload_file_btn', lang) || 'Choose file ...')}
+                  {crFile ? crFile.name : 'Choose file ...'}
                 </span>
                 <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleCrFile} style={{ display: 'none' }} />
               </label>
