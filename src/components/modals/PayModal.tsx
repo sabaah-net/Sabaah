@@ -4,6 +4,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
 import { useToast } from '../shared/Toast';
 import PriceTag from '../shared/PriceTag';
+import { getUserSubscription } from '../../lib/supabase';
 
 function generateAllSlots(avgWaitMin: number = 5): Date[] {
   const now = new Date();
@@ -47,8 +48,21 @@ export default function PayModal() {
   const slots = useMemo(() => generateAllSlots(cafeWaitMin), [cafeWaitMin]);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState(0);
   const wheelRef = useRef<HTMLDivElement>(null);
+  const [subDiscount, setSubDiscount] = useState(0);
 
-  const total = store.cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const rawTotal = store.cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const discountAmount = rawTotal * (subDiscount / 100);
+  const total = rawTotal - discountAmount;
+
+  useEffect(() => {
+    if (store.currentUser?.profileId) {
+      getUserSubscription(store.currentUser.profileId).then(({ data }) => {
+        if (data && (data as any).status === 'active') {
+          setSubDiscount((data as any).subscription_plans?.discount_percent || 0);
+        }
+      }).catch(() => {});
+    }
+  }, []);
 
   useEffect(() => {
     if (wheelRef.current && slots.length > 0) {
@@ -120,6 +134,16 @@ export default function PayModal() {
             </div>
           ))}
           <div className="cart-total-row" style={{ fontSize: '.95rem', padding: '8px 0 0' }}>
+            <span>{t('cart_total', store.lang)}</span>
+            <span><PriceTag value={rawTotal} /></span>
+          </div>
+          {subDiscount > 0 && (
+            <div className="cart-total-row" style={{ fontSize: '.82rem', padding: '4px 0', color: 'var(--green)' }}>
+              <span>💎 {t('sub_discount', store.lang) || 'Sub discount'} (-{subDiscount}%)</span>
+              <span>-<PriceTag value={discountAmount} /></span>
+            </div>
+          )}
+          <div className="cart-total-row" style={{ fontSize: '1rem', fontWeight: 900, padding: '4px 0 0', borderTop: '1px solid var(--latte)' }}>
             <span>{t('cart_total', store.lang)}</span>
             <span><PriceTag value={total} /></span>
           </div>

@@ -193,18 +193,20 @@ export async function getAllSubscriptionPlans() {
 
 export async function createSubscriptionPlan(plan: {
   name_ar: string; name_en: string; description_ar: string; description_en: string;
-  price_weekly: number; features: string[];
+  price_weekly: number; features: string[]; discount_percent: number; free_delivery: boolean;
 }) {
   return supabase.from('subscription_plans').insert({
     name_ar: plan.name_ar, name_en: plan.name_en || plan.name_ar,
     description_ar: plan.description_ar, description_en: plan.description_en || plan.description_ar,
     price_weekly: plan.price_weekly, features: JSON.stringify(plan.features),
+    discount_percent: plan.discount_percent, free_delivery: plan.free_delivery,
   }).select().single();
 }
 
 export async function updateSubscriptionPlan(id: string, plan: {
   name_ar?: string; name_en?: string; description_ar?: string; description_en?: string;
   price_weekly?: number; features?: string[]; is_active?: boolean;
+  discount_percent?: number; free_delivery?: boolean;
 }) {
   const updates: Record<string, any> = {};
   if (plan.name_ar !== undefined) updates.name_ar = plan.name_ar;
@@ -214,6 +216,8 @@ export async function updateSubscriptionPlan(id: string, plan: {
   if (plan.price_weekly !== undefined) updates.price_weekly = plan.price_weekly;
   if (plan.features !== undefined) updates.features = JSON.stringify(plan.features);
   if (plan.is_active !== undefined) updates.is_active = plan.is_active;
+  if (plan.discount_percent !== undefined) updates.discount_percent = plan.discount_percent;
+  if (plan.free_delivery !== undefined) updates.free_delivery = plan.free_delivery;
   return supabase.from('subscription_plans').update(updates).eq('id', id);
 }
 

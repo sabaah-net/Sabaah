@@ -4,7 +4,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { getSubscriptionPlans, getUserSubscription, subscribeUser, cancelSubscription } from '../../lib/supabase';
 import { useToast } from '../shared/Toast';
 
-interface Plan { id: string; name_ar: string; name_en: string; price_weekly: number; features: string[]; }
+interface Plan { id: string; name_ar: string; name_en: string; price_weekly: number; features: string[]; discount_percent: number; free_delivery: boolean; }
 interface UserSub { id: string; plan_id: string; status: string; start_date: string; end_date: string | null; auto_renew: boolean; subscription_plans: Plan; }
 
 export default function SubscriptionModal() {
@@ -88,7 +88,13 @@ export default function SubscriptionModal() {
                 border: isActive ? '2px solid var(--green)' : '1px solid var(--latte)',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <div style={{ fontSize: '1rem', fontWeight: 800 }}>{store.lang === 'ar' ? plan.name_ar : plan.name_en}</div>
+                  <div>
+                    <div style={{ fontSize: '1rem', fontWeight: 800 }}>{store.lang === 'ar' ? plan.name_ar : plan.name_en}</div>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                      {plan.discount_percent > 0 && <span style={{ fontSize: '.7rem', background: 'var(--green-bg)', color: 'var(--green)', padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>-{plan.discount_percent}%</span>}
+                      {plan.free_delivery && <span style={{ fontSize: '.7rem', background: 'var(--cream)', color: 'var(--amber)', padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>🚚</span>}
+                    </div>
+                  </div>
                   <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--bark)' }}>{plan.price_weekly.toFixed(2)} ⃁<span style={{ fontSize: '.7rem', fontWeight: 400, color: 'var(--text-light)' }}>/{store.lang === 'ar' ? 'شهر' : 'mo'}</span></div>
                 </div>
                 {Array.isArray(plan.features) && plan.features.length > 0 && (
