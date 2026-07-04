@@ -187,6 +187,40 @@ export async function getSubscriptionPlans() {
   return supabase.from('subscription_plans').select('*').eq('is_active', true);
 }
 
+export async function getAllSubscriptionPlans() {
+  return supabase.from('subscription_plans').select('*').order('price_weekly', { ascending: true });
+}
+
+export async function createSubscriptionPlan(plan: {
+  name_ar: string; name_en: string; description_ar: string; description_en: string;
+  price_weekly: number; features: string[];
+}) {
+  return supabase.from('subscription_plans').insert({
+    name_ar: plan.name_ar, name_en: plan.name_en || plan.name_ar,
+    description_ar: plan.description_ar, description_en: plan.description_en || plan.description_ar,
+    price_weekly: plan.price_weekly, features: JSON.stringify(plan.features),
+  }).select().single();
+}
+
+export async function updateSubscriptionPlan(id: string, plan: {
+  name_ar?: string; name_en?: string; description_ar?: string; description_en?: string;
+  price_weekly?: number; features?: string[]; is_active?: boolean;
+}) {
+  const updates: Record<string, any> = {};
+  if (plan.name_ar !== undefined) updates.name_ar = plan.name_ar;
+  if (plan.name_en !== undefined) updates.name_en = plan.name_en;
+  if (plan.description_ar !== undefined) updates.description_ar = plan.description_ar;
+  if (plan.description_en !== undefined) updates.description_en = plan.description_en;
+  if (plan.price_weekly !== undefined) updates.price_weekly = plan.price_weekly;
+  if (plan.features !== undefined) updates.features = JSON.stringify(plan.features);
+  if (plan.is_active !== undefined) updates.is_active = plan.is_active;
+  return supabase.from('subscription_plans').update(updates).eq('id', id);
+}
+
+export async function deleteSubscriptionPlan(id: string) {
+  return supabase.from('subscription_plans').delete().eq('id', id);
+}
+
 export async function getUserSubscription(userId: string) {
   return supabase.from('user_subscriptions').select('*, subscription_plans(*)').eq('user_id', userId).maybeSingle();
 }
@@ -208,6 +242,13 @@ export async function subscribeUser(userId: string, planId: string) {
     await supabase.from('profiles').update({ current_subscription_id: data.id }).eq('id', userId);
   }
   return { data, error };
+}
+
+export async function cancelSubscription(userId: string) {
+  const { data: sub } = await supabase.from('user_subscriptions')
+    .select('id').eq('user_id', userId).eq('status', 'active').maybeSingle();
+  if (!sub) return { error: new Error('No active subscription') };
+  return supabase.from('user_subscriptions').update({ status: 'cancelled', end_date: new Date().toISOString() }).eq('id', sub.id);
 }
 
 // ---- CAMPAIGNS ----

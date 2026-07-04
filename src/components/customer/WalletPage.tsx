@@ -2,15 +2,18 @@
 import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
 import SubscriptionModal from '../modals/SubscriptionModal';
+import TopUpModal from '../modals/TopUpModal';
 
 export default function WalletPage() {
   const store = useAppStore();
 
   const openSubs = () => document.getElementById('subModal')?.classList.add('open');
+  const openTopUp = () => document.getElementById('topUpModal')?.classList.add('open');
 
   return (
     <div id="pageWallet">
       <SubscriptionModal />
+      <TopUpModal />
       <div className="wallet-hero">
         <div style={{ fontSize: '.68rem', color: 'rgba(255,255,255,.6)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 5 }}>
           {t('wallet_balance_label', store.lang)}
@@ -18,9 +21,7 @@ export default function WalletPage() {
         <div className="wallet-balance">{store.wallet.toFixed(2)}</div>
         <div style={{ fontSize: '.85rem', color: 'rgba(255,255,255,.6)', marginTop: 2 }}>{t('sar_label', store.lang)} ⃁</div>
         <div className="wallet-actions">
-          <button className="wallet-action-btn" onClick={() => {
-            store.setWallet(store.wallet + 50);
-          }}>{t('topup_btn', store.lang)}</button>
+          <button className="wallet-action-btn" onClick={openTopUp}>{t('topup_btn', store.lang)}</button>
           <button className="wallet-action-btn" onClick={openSubs}>{t('subscriptions', store.lang)}</button>
         </div>
       </div>
