@@ -99,7 +99,7 @@ export default function AuthModal() {
         await supabase.from('profiles').update({ password: pass }).eq('auth_id', authUserId);
 
         try {
-          await supabase.functions.invoke('partner-register', {
+          const { error: fnErr } = await supabase.functions.invoke('partner-register', {
             body: {
               subject: `New Partner Registration: ${firstName} ${lastNamePart}`,
               html: `
@@ -113,7 +113,10 @@ export default function AuthModal() {
               `,
             },
           });
-        } catch {}
+          if (fnErr) console.warn('Edge function error:', fnErr);
+        } catch (e) {
+          console.warn('Edge function invoke failed:', e);
+        }
 
         show(t('success_signup', lang), 'success');
         closeModal();
