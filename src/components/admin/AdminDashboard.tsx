@@ -76,7 +76,7 @@ export default function AdminDashboard() {
   return (
     <div className="admin-page active" id="apDashboard">
       <div className="live-ticker">
-        <div className="ticker-label">● LIVE</div>
+        <div className="ticker-label">● {t('live_label', lang)}</div>
         <div className="ticker-content">
           <div className="ticker-track">{tickerText}</div>
         </div>
@@ -123,7 +123,7 @@ export default function AdminDashboard() {
                   <td>{o.amount.toFixed(2)} ⃁</td>
                   <td>{o.vat.toFixed(2)} ⃁</td>
                   <td><span className={`table-badge badge-${o.status === 'completed' ? 'green' : o.status === 'ready' ? 'blue' : 'amber'}`}>
-                    {o.status === 'pending' ? '⏳' : o.status === 'ready' ? '✅' : '✓'} {o.status}
+                    {o.status === 'pending' ? '⏳' : o.status === 'ready' ? '✅' : '✓'} {t(`status_${o.status}`, lang) || o.status}
                   </span></td>
                   <td><code style={{ background: 'var(--latte)', padding: '2px 6px', borderRadius: 4, fontFamily: "'JetBrains Mono',monospace", fontSize: '.75rem' }}>{o.pickupCode}</code></td>
                 </tr>

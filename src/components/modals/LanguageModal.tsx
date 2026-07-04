@@ -1,17 +1,18 @@
 'use client';
 import { useAppStore } from '../../store/useAppStore';
+import { t } from '../../i18n';
 import type { Lang } from '../../types';
-
-const languages: { code: Lang; label: string; dir: string }[] = [
-  { code: 'ar', label: 'العربية', dir: 'rtl' },
-  { code: 'en', label: 'English', dir: 'ltr' },
-  { code: 'fr', label: 'Français', dir: 'ltr' },
-  { code: 'es', label: 'Español', dir: 'ltr' },
-  { code: 'zh', label: '中文', dir: 'ltr' },
-];
 
 export default function LanguageModal() {
   const { lang, setLang } = useAppStore();
+
+  const languages: { code: Lang; label: string; dir: string }[] = [
+    { code: 'ar', label: t('language_ar', lang), dir: 'rtl' },
+    { code: 'en', label: 'English', dir: 'ltr' },
+    { code: 'fr', label: 'Français', dir: 'ltr' },
+    { code: 'es', label: 'Español', dir: 'ltr' },
+    { code: 'zh', label: '中文', dir: 'ltr' },
+  ];
 
   const selectLang = (code: Lang) => {
     setLang(code);
@@ -25,7 +26,7 @@ export default function LanguageModal() {
     <div className="modal-overlay" id="langModal" onClick={(e) => e.target === e.currentTarget && close()}>
       <div className="modal">
         <button className="modal-close" onClick={close}>✕</button>
-        <div className="modal-title">اختيار اللغة</div>
+        <div className="modal-title">{t('language_select', lang)}</div>
         {languages.map((l) => (
           <button
             key={l.code}

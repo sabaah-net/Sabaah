@@ -13,6 +13,7 @@ import {
   createCafe, createMenuItem, createCampaign, updateOrderStatus, addAuditLog,
   createNotification, updateSystemSetting,
 } from '../lib/supabase';
+import { t } from '../i18n';
 
 interface AppState {
   lang: Lang;
@@ -63,6 +64,7 @@ interface AppState {
   processPayment: (method: string) => void;
   updatePrices: (cafeId: number, items: { id: string; price: number }[]) => void;
   loadFromSupabase: () => Promise<void>;
+  clearHistory: () => void;
 }
 
 const defaultCafes: Cafe[] = [
@@ -72,12 +74,9 @@ const defaultCafes: Cafe[] = [
   { id: 4, name: "المختصة", nameEn: "Al-Moktasah", sub: "حي العليا", rating: 4.7, isOpen: true, dist: "0.8 كم", emoji: "🎯", x: 180, y: 100, favorites: 567, waitTime: "3 دق", favorited: false, email: "info@almoktasah.com", serviceType: "مختصة", status: "active" },
 ];
 
-const defaultOrders: Order[] = [
-  { id: "SB-1042", cafe: "Brew92", coffee: "Black", coffeeAr: "سوداء", amount: 8.05, base: 7.00, vat: 1.05, status: "completed", date: "2026-06-11 08:30 AM", icon: "☕", pickupCode: "A7X9" },
-  { id: "SB-1041", cafe: "Roastery", coffee: "Iced", coffeeAr: "مثلجة", amount: 8.05, base: 7.00, vat: 1.05, status: "ready", date: "2026-06-12 07:00 AM", icon: "🧊", pickupCode: "B2M4" },
-];
+const defaultOrders: Order[] = [];
 
-export const useAppStore = create<AppState>((set) => {
+export const useAppStore = create<AppState>((set, get) => {
   let saved: Partial<AppState> = {};
   try {
     const raw = localStorage.getItem('sabaa_state');
@@ -101,11 +100,7 @@ export const useAppStore = create<AppState>((set) => {
 
     cafes: defaultCafes,
     orders: saved.orders || defaultOrders,
-    transactions: saved.transactions || [
-      { title: "شحن محفظة", titleEn: "Wallet Top-up", amount: 100, type: "credit", date: "2026-06-10" },
-      { title: "طلب قهوة - Brew92", titleEn: "Coffee Order - Brew92", amount: -8.05, type: "debit", date: "2026-06-11" },
-      { title: "مكافأة ولاء", titleEn: "Loyalty Reward", amount: 15, type: "credit", date: "2026-06-12" },
-    ],
+    transactions: saved.transactions || [],
     partnerOrders: [
       { id: "SB-1043", customer: "أحمد محمد", coffee: "Black", coffeeAr: "سوداء", time: "08:45 AM", status: "pending", pickupCode: "K9P2" },
       { id: "SB-1044", customer: "سارة علي", coffee: "Iced", coffeeAr: "مثلجة", time: "09:00 AM", status: "ready", pickupCode: "L3W8" },
@@ -204,25 +199,32 @@ export const useAppStore = create<AppState>((set) => {
 
     signIn: async (email, pass, name?) => {
       try {
+        const lang = get().lang;
         let profile: any = null;
 
         // Try Supabase Auth first
         const { data: authData, error: authError } = await supabaseSignIn(email, pass);
         if (authError || !authData?.user) {
-          // Fallback: check password from profiles table directly
+          // Fallback: check password from profiles table directly (legacy accounts)
           const { data: profileByEmail } = await supabase.from('profiles')
             .select('*').eq('email', email).maybeSingle();
-          if (!profileByEmail || profileByEmail.password !== pass) {
-            throw new Error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+          if (!profileByEmail) throw new Error(t('error_email_not_found', lang));
+
+          // Compare — if password column doesn't exist, this will fail
+          if (profileByEmail.password === undefined) {
+            throw new Error(t('error_password_not_stored', lang));
+          }
+          if (profileByEmail.password !== pass) {
+            throw new Error(t('error_incorrect_password', lang));
           }
           profile = profileByEmail;
         } else {
           const { data: p } = await getProfile(authData.user.id);
-          if (!p) throw new Error('No profile found');
+          if (!p) throw new Error(t('error_profile_not_found', lang));
           profile = p;
         }
 
-        if (!profile) throw new Error('المستخدم غير موجود');
+        if (!profile) throw new Error(t('error_user_not_found', lang));
 
         const user: CurrentUser = {
           name: `${profile.first_name} ${profile.last_name}`,
@@ -253,33 +255,45 @@ export const useAppStore = create<AppState>((set) => {
 
     signUp: async (email, pass, name, phone) => {
       try {
-        const profileId = crypto.randomUUID();
         const nameParts = name.trim().split(' ');
         const firstName = nameParts[0] || name;
-        const lastName = nameParts.slice(1).join(' ') || 'User';
+        const lastName = nameParts.slice(1).join(' ');
 
-        const { error: insertError } = await supabase.from('profiles').insert({
-          id: profileId,
-          password: pass,
-          phone: phone || null,
+        // 1) Create auth user via Supabase Auth (password hashed server-side)
+        const { data: authData, error: authError } = await supabaseSignUp(email, pass, {
+          first_name: firstName,
+          last_name: lastName,
+        });
+
+        if (authError) throw new Error(authError.message);
+
+        const authUserId = authData?.user?.id;
+        if (!authUserId) throw new Error('لم يتم إنشاء المستخدم');
+
+        // 2) Create a profile row linked to the auth user
+        const { error: profileError } = await createProfile({
+          auth_id: authUserId,
+          phone: phone || '',
           email,
           first_name: firstName,
           last_name: lastName,
           role: 'Customer',
-          city: 'riyadh',
-          wallet_balance: 0,
-          loyalty_points: 0,
-          loyalty_tier: 'bronze',
-          streak: 0,
         });
 
-        if (insertError) throw insertError;
+        if (profileError) throw new Error(profileError.message);
+
+        // 3) Store password in profiles table for legacy fallback
+        const { error: pwError } = await supabase
+          .from('profiles')
+          .update({ password: pass })
+          .eq('auth_id', authUserId);
+        if (pwError) console.warn('⚠️ Could not store password in profiles table:', pwError.message);
 
         const user: CurrentUser = {
-          name: `${firstName} ${lastName}`,
+          name: lastName ? `${firstName} ${lastName}` : firstName,
           phone: phone || '+966500000000',
           email,
-          profileId,
+          profileId: authUserId,
           points: 0,
           orders: 0,
           tier: 'bronze',
@@ -310,6 +324,7 @@ export const useAppStore = create<AppState>((set) => {
       const total = s.cart.reduce((sum, i) => sum + i.price * i.qty, 0);
       const pickupCode = Math.random().toString(36).substring(2, 6).toUpperCase();
       const orderId = `SB-${1000 + s.orders.length + 1}`;
+      const pickupTime = s.selectedPickupSlot || new Date(Date.now() + 15 * 60000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
 
       const newOrder: Order = {
         id: orderId,
@@ -323,6 +338,7 @@ export const useAppStore = create<AppState>((set) => {
         date: new Date().toLocaleString('ar-SA'),
         icon: '☕',
         pickupCode,
+        pickupTime,
         items: [...s.cart],
       };
 
@@ -333,7 +349,7 @@ export const useAppStore = create<AppState>((set) => {
           const cafe = s.selectedCafe ? await supabase.from('cafes')
             .select('id').eq('name_ar', s.selectedCafe.name).maybeSingle() : null;
 
-          await createFullOrder({
+          const { data: orderData } = await createFullOrder({
             customer_id: pid,
             cafe_id: cafe?.data?.id || '00000000-0000-0000-0000-000000000000',
             subtotal: total / 1.15,
@@ -349,10 +365,41 @@ export const useAppStore = create<AppState>((set) => {
               total_price: c.price * c.qty,
             })),
           });
+
+          if (orderData?.data?.id) {
+            await supabase.from('orders').update({ pickup_time: pickupTime }).eq('id', orderData.data.id);
+          }
         }
       } catch (e) {
         console.warn('Failed to save order to Supabase, saving locally:', e);
       }
+
+      // Create notification for new order
+      const notifItem: Notification = {
+        id: Date.now(),
+        title: s.lang === 'ar' ? `☕ طلب جديد ${orderId}` : `☕ New Order ${orderId}`,
+        body: s.lang === 'ar'
+          ? `تم تأكيد طلبك من ${s.selectedCafe?.name || ''} — كود الاستلام: ${pickupCode}`
+          : `Order confirmed at ${s.selectedCafe?.nameEn || ''} — Pickup code: ${pickupCode}`,
+        time: s.lang === 'ar' ? 'الآن' : 'Just now',
+        read: false,
+        icon: '☕',
+        priority: 'high',
+      };
+
+      // Save notification to Supabase if logged in
+      try {
+        const pid = s.currentUser?.profileId;
+        if (pid) {
+          await createNotification({
+            user_id: pid,
+            title: notifItem.title,
+            body: notifItem.body,
+            icon: '☕',
+            priority: 'high',
+          }).catch(() => {});
+        }
+      } catch {}
 
       const newWallet = method === 'wallet' ? s.wallet - total : s.wallet;
       const newOrders = [newOrder, ...s.orders];
@@ -364,12 +411,35 @@ export const useAppStore = create<AppState>((set) => {
         date: new Date().toISOString().split('T')[0],
       };
       const newTransactions = [...s.transactions, txn];
-      saveState({ ...s, wallet: newWallet, orders: newOrders, transactions: newTransactions, cart: [] });
-      set({ wallet: newWallet, orders: newOrders, transactions: newTransactions, cart: [], lastOrder: newOrder });
+      const newNotifs = [notifItem, ...s.notifications];
+      saveState({ ...s, wallet: newWallet, orders: newOrders, transactions: newTransactions, cart: [], notifications: newNotifs });
+      set({ wallet: newWallet, orders: newOrders, transactions: newTransactions, cart: [], lastOrder: newOrder, notifications: newNotifs });
     },
 
     updatePrices: (_cafeId, _items) => {
       // prices updated in DB (simulated)
+    },
+
+    clearHistory: () => {
+      set((s) => {
+        const cleared = { ...s, orders: [], transactions: [] };
+        saveState(cleared);
+        localStorage.setItem('sabaa_state', JSON.stringify({
+          isLoggedIn: cleared.isLoggedIn,
+          currentUser: cleared.currentUser,
+          wallet: cleared.wallet,
+          orders: [],
+          transactions: [],
+          lang: cleared.lang,
+          theme: cleared.theme,
+          cart: cleared.cart,
+          staff: cleared.staff,
+          partners: cleared.partners,
+          menuItems: cleared.menuItems,
+          notifications: cleared.notifications,
+        }));
+        return { orders: [], transactions: [] };
+      });
     },
 
     loadFromSupabase: async () => {
@@ -475,6 +545,7 @@ function saveState(state: Partial<AppState>) {
       cart: state.cart,
       staff: state.staff,
       menuItems: state.menuItems,
+      notifications: state.notifications,
     };
     localStorage.setItem('sabaa_state', JSON.stringify(minimal));
   } catch {}

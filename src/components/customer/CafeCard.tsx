@@ -1,10 +1,11 @@
 'use client';
-import type { Cafe } from '../../types';
+import type { Cafe, Lang } from '../../types';
+import { t } from '../../i18n';
 
 interface CafeCardProps {
   cafe: Cafe;
   selected: boolean;
-  lang: string;
+  lang: Lang;
   onSelect: (cafe: Cafe) => void;
   onToggleFav: (id: number) => void;
 }
@@ -32,7 +33,7 @@ export default function CafeCard({ cafe, selected, lang, onSelect, onToggleFav }
       <div className="cafe-right">
         <div className="cafe-rating">⭐ {cafe.rating}</div>
         <div className={`cafe-status-badge ${cafe.isOpen ? 'open' : 'closed'}`}>
-          {cafe.isOpen ? (lang === 'ar' ? 'مفتوح' : 'Open') : (lang === 'ar' ? 'مغلق' : 'Closed')}
+          {cafe.isOpen ? t('open_label', lang) : t('closed_label', lang)}
         </div>
         <div style={{ fontSize: '.7rem', color: 'var(--text-light)', marginTop: 2 }}>{cafe.dist}</div>
       </div>

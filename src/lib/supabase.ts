@@ -319,3 +319,15 @@ async function rpcGeneratePickupCode(): Promise<string> {
   const { data } = await supabase.rpc('generate_pickup_code');
   return data || 'ABCD';
 }
+
+// ---- DATA RESET ----
+export async function resetUserData(userId: string) {
+  await supabase.from('transactions').delete().eq('user_id', userId);
+  await supabase.from('orders').delete().eq('customer_id', userId);
+}
+
+export async function clearAllOrders() {
+  await supabase.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  await supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  await supabase.from('transactions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+}

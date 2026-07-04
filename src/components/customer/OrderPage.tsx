@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { getGreeting } from '../../i18n';
+import { getGreeting, t } from '../../i18n';
 import { generatePickupCode, useToast } from '../../lib/utils';
 import CafeCard from './CafeCard';
 import CoffeePanel from './CoffeePanel';
@@ -15,24 +15,23 @@ export default function OrderPage({ onOpenPay }: { onOpenPay: () => void }) {
 
   const handleSelectCafe = (cafe: typeof store.cafes[0]) => {
     store.setSelectedCafe(cafe);
-    show(`تم اختيار ${cafe.name}`, 'success');
+    show(t('cafe_selected', store.lang).replace('{name}', cafe.name), 'success');
   };
 
   const handleToggleFav = (id: number) => {
     const cafe = store.cafes.find((c) => c.id === id);
     if (cafe) {
       cafe.favorited = !cafe.favorited;
-      show(cafe.favorited ? 'أضيف للمفضلة ❤️' : 'أُزيل من المفضلة', 'info');
+      show(t(cafe.favorited ? 'cafe_favorited_add' : 'cafe_favorited_remove', store.lang), 'info');
     }
   };
 
   const handleAddToCart = (type: string) => {
     if (!store.selectedCafe) {
-      show('يرجى اختيار المقهى أولاً', 'error');
+      show(t('cafe_select_first', store.lang), 'error');
       return;
     }
     const prices: Record<string, number> = { black: 7, white: 7, iced: 7, spanish: 9, turkish: 8, mocha: 10 };
-    const names: Record<string, string> = { black: 'سوداء', white: 'بيضاء', iced: 'مثلجة', spanish: 'إسباني', turkish: 'تركية', mocha: 'موكا' };
     const icons: Record<string, string> = { black: '☕', white: '🥛', iced: '🧊', spanish: '🍯', turkish: '🫖', mocha: '🍫' };
 
     const existing = store.cart.find((item) => item.type === type);
@@ -41,9 +40,9 @@ export default function OrderPage({ onOpenPay }: { onOpenPay: () => void }) {
         item.type === type ? { ...item, qty: item.qty + 1 } : item
       ));
     } else {
-      store.setCart([...store.cart, { type, qty: 1, price: prices[type] || 7, name: names[type] || type, icon: icons[type] || '☕' }]);
+      store.setCart([...store.cart, { type, qty: 1, price: prices[type] || 7, name: t(type, store.lang), icon: icons[type] || '☕' }]);
     }
-    show(`${names[type]} أُضيفت للسلة! 🛒`, 'success');
+    show(t('added_to_cart', store.lang), 'success');
   };
 
   const handleUpdateQty = (type: string, delta: number) => {
@@ -59,13 +58,13 @@ export default function OrderPage({ onOpenPay }: { onOpenPay: () => void }) {
 
   const handleClearCart = () => {
     store.setCart([]);
-    show('تم إفراغ السلة 🗑️', 'info');
+    show(t('cart_cleared', store.lang), 'info');
   };
 
   const handlePlaceOrder = () => {
-    if (!store.selectedCafe) { show('يرجى اختيار المقهى أولاً', 'error'); return; }
-    if (store.cart.length === 0) { show('يرجى إضافة عناصر للسلة', 'error'); return; }
-    if (!store.isLoggedIn) { show('يرجى تسجيل الدخول أولاً', 'info'); return; }
+    if (!store.selectedCafe) { show(t('cafe_select_first', store.lang), 'error'); return; }
+    if (store.cart.length === 0) { show(t('need_items', store.lang), 'error'); return; }
+    if (!store.isLoggedIn) { show(t('login_required', store.lang), 'info'); return; }
     onOpenPay();
   };
 
@@ -77,17 +76,17 @@ export default function OrderPage({ onOpenPay }: { onOpenPay: () => void }) {
         <div className="hero-greeting">{getGreeting(store.lang)}</div>
         <div className="hero-name">
           {store.isLoggedIn && store.currentUser
-            ? `${store.lang === 'ar' ? 'أهلاً ' : 'Welcome '}${store.currentUser.name}`
-            : 'أهلاً بك في سبعة'}
+            ? `${t('greeting_prefix', store.lang)}${store.currentUser.name}`
+            : t('greeting_default', store.lang)}
         </div>
         {store.currentUser && (
-          <div className="hero-streak">🔥 {store.currentUser.streak} {store.lang === 'ar' ? 'أيام متتالية' : 'day streak'}</div>
+          <div className="hero-streak">🔥 {store.currentUser.streak} {t('streak_label', store.lang)}</div>
         )}
       </div>
 
       {store.orders.length > 0 && (
         <>
-          <p className="section-title">⚡ اطلب مجدداً</p>
+          <p className="section-title">{t('order_again', store.lang)}</p>
           <div className="smart-reorder">
             {store.orders.slice(0, 3).map((o) => (
               <div
@@ -97,7 +96,7 @@ export default function OrderPage({ onOpenPay }: { onOpenPay: () => void }) {
                   const cafe = store.cafes.find((c) => c.name === o.cafe);
                   if (cafe) {
                     store.setSelectedCafe(cafe);
-                    show('تم إضافة طلبك السريع! 🚀', 'success');
+                    show(t('quick_order_added', store.lang), 'success');
                   }
                 }}
               >
@@ -130,12 +129,12 @@ export default function OrderPage({ onOpenPay }: { onOpenPay: () => void }) {
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
         <button className="action-btn secondary" style={{ fontSize: '.8rem', padding: 8 }} onClick={() => setMapExpanded(!mapExpanded)}>
-          {mapExpanded ? '📋 إخفاء الخريطة' : '🗺️ عرض الخريطة'}
+          {mapExpanded ? t('map_hide', store.lang) : t('map_show', store.lang)}
         </button>
-        <button className="action-btn secondary" style={{ fontSize: '.8rem', padding: 8 }}>👥 طلب جماعي</button>
+        <button className="action-btn secondary" style={{ fontSize: '.8rem', padding: 8 }}>{t('group_order', store.lang)}</button>
       </div>
 
-      <p className="section-title">📍 اختر مقهى قريب</p>
+      <p className="section-title">{t('choose_cafe', store.lang)}</p>
       <div className="cafe-list">
         {store.cafes.map((cafe) => (
           <CafeCard
@@ -163,8 +162,8 @@ export default function OrderPage({ onOpenPay }: { onOpenPay: () => void }) {
       />
 
       <div style={{ textAlign: 'center', marginTop: 10 }}>
-        <button className="voice-btn" onClick={() => show('🎙️ الطلب الصوتي قيد التطوير', 'info')}>🎙️</button>
-        <div style={{ fontSize: '.7rem', color: 'var(--text-light)' }}>اطلب بصوتك</div>
+        <button className="voice-btn" onClick={() => show(t('voice_order', store.lang), 'info')}>🎙️</button>
+        <div style={{ fontSize: '.7rem', color: 'var(--text-light)' }}>{t('voice_label', store.lang)}</div>
       </div>
     </div>
   );

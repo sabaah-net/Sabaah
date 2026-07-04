@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, lazy, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
 import { ToastProvider } from '../components/shared/Toast';
@@ -17,8 +18,8 @@ import LanguageModal from '../components/modals/LanguageModal';
 import NotifInbox from '../components/modals/NotifInbox';
 import ChatBot from '../components/shared/ChatBot';
 
-const PartnerPortal = lazy(() => import('../components/partner/PartnerPortal'));
-const AdminShell = lazy(() => import('../components/admin/AdminShell'));
+const PartnerPortal = dynamic(() => import('../components/partner/PartnerPortal'), { ssr: false });
+const AdminShell = dynamic(() => import('../components/admin/AdminShell'), { ssr: false });
 
 type CustomerPage = 'pageOrder' | 'pageRewards' | 'pageWallet' | 'pageHistory' | 'pageProfile';
 
@@ -47,7 +48,7 @@ export default function HomePage() {
   if (store.role === 'superadmin') {
     return (
       <ToastProvider>
-        <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>جاري التحميل...</div>}>
+        <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>{t('loading_text', store.lang)}</div>}>
           <AdminShell />
         </Suspense>
       </ToastProvider>
@@ -63,7 +64,7 @@ export default function HomePage() {
             onOpenNotif={() => document.getElementById('notifInbox')?.classList.toggle('open')}
             onOpenLang={() => document.getElementById('langModal')?.classList.add('open')}
           />
-          <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>جاري التحميل...</div>}>
+          <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>{t('loading_text', store.lang)}</div>}>
             <PartnerPortal />
           </Suspense>
         </div>
@@ -94,7 +95,7 @@ export default function HomePage() {
   return (
     <ToastProvider>
       <div className="shell">
-        <div className="offline-banner" id="offlineBanner">⚠️ أنت غير متصل بالإنترنت</div>
+        <div className="offline-banner" id="offlineBanner">{t('offline_banner', store.lang)}</div>
         <Header
           onOpenAuth={() => document.getElementById('authModal')?.classList.add('open')}
           onOpenNotif={() => document.getElementById('notifInbox')?.classList.toggle('open')}

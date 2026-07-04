@@ -1,28 +1,22 @@
 'use client';
 import { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
+import { t } from '../../i18n';
+import type { Lang } from '../../types';
 
-const faqs: Record<string, { q: string; a: string }[]> = {
-  ar: [
-    { q: 'كيف أطلب قهوة؟', a: 'اختر المقهى، ثم اختر القهوة، أضف للسلة، ثم ادفع.' },
-    { q: 'ما هي طرق الدفع؟', a: 'المحفظة الإلكترونية، البطاقة الائتمانية، أو الدفع النقدي عند الاستلام.' },
-    { q: 'كيف أحصل على المكافآت؟', a: 'كل طلب يمنحك نقاط ولاء. استبدلها بمشروبات مجانية!' },
-    { q: 'كيف أتواصل مع الدعم؟', a: 'يمكنك مراسلتنا عبر البريد الإلكتروني support@sabaa.coffee' },
-  ],
-  en: [
-    { q: 'How do I order coffee?', a: 'Choose a cafe, pick your coffee, add to cart, and pay.' },
-    { q: 'What payment methods?', a: 'E-wallet, credit card, or cash on pickup.' },
-    { q: 'How do I earn rewards?', a: 'Every order earns loyalty points. Redeem for free drinks!' },
-    { q: 'How to contact support?', a: 'Email us at support@sabaa.coffee' },
-  ],
-};
+const getFaqs = (lang: Lang) => [
+  { q: t('faq_how_order_q', lang), a: t('faq_how_order_a', lang) },
+  { q: t('faq_payment_q', lang), a: t('faq_payment_a', lang) },
+  { q: t('faq_rewards_q', lang), a: t('faq_rewards_a', lang) },
+  { q: t('faq_support_q', lang), a: t('faq_support_a', lang) },
+];
 
 export default function ChatBot() {
   const { lang } = useAppStore();
   const [open, setOpen] = useState(false);
   const [qIndex, setQIndex] = useState<number | null>(null);
 
-  const msgs = faqs[lang] || faqs.ar;
+  const msgs = getFaqs(lang);
 
   return (
     <>
@@ -32,7 +26,7 @@ export default function ChatBot() {
       {open && (
         <div className="chatbot-panel">
           <div className="chatbot-header">
-            <strong>{lang === 'ar' ? 'المساعد الذكي' : 'Sabaa Assistant'}</strong>
+            <strong>{t('chat_title', lang)}</strong>
           </div>
           <div className="chatbot-body">
             {qIndex !== null ? (
@@ -42,13 +36,13 @@ export default function ChatBot() {
                   {msgs[qIndex].a}
                 </div>
                 <button className="action-btn secondary" style={{ margin: '8px auto 0' }} onClick={() => setQIndex(null)}>
-                  {lang === 'ar' ? '🔙 رجوع' : '🔙 Back'}
+                  {t('chat_back', lang)}
                 </button>
               </div>
             ) : (
               <div style={{ padding: 12 }}>
                 <div style={{ color: 'var(--text-light)', marginBottom: 10 }}>
-                  {lang === 'ar' ? 'اختر سؤالاً:' : 'Choose a question:'}
+                  {t('chat_ask', lang)}
                 </div>
                 {msgs.map((m, i) => (
                   <button key={i} className="chatbot-q-btn" onClick={() => setQIndex(i)}>

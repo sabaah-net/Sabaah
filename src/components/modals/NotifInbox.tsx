@@ -1,5 +1,6 @@
 'use client';
 import { useAppStore } from '../../store/useAppStore';
+import { t } from '../../i18n';
 
 export default function NotifInbox() {
   const { lang, notifications } = useAppStore();
@@ -9,13 +10,13 @@ export default function NotifInbox() {
   return (
     <div className="notif-inbox" id="notifInbox">
       <div className="notif-inbox-header">
-        <span>🔔 {lang === 'ar' ? 'الإشعارات' : 'Notifications'}</span>
+        <span>🔔 {t('notifications_title', lang)}</span>
         <button className="notif-close" onClick={close}>✕</button>
       </div>
       <div className="notif-inbox-body">
         {notifications.length === 0 && (
           <div style={{ textAlign: 'center', padding: 32, color: 'var(--text-light)' }}>
-            {lang === 'ar' ? 'لا توجد إشعارات جديدة' : 'No new notifications'}
+            {t('no_notifications', lang)}
           </div>
         )}
         {notifications.map((n, i) => (

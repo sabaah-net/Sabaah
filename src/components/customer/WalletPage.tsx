@@ -1,5 +1,6 @@
 'use client';
 import { useAppStore } from '../../store/useAppStore';
+import { t } from '../../i18n';
 
 export default function WalletPage() {
   const store = useAppStore();
@@ -8,19 +9,19 @@ export default function WalletPage() {
     <div id="pageWallet">
       <div className="wallet-hero">
         <div style={{ fontSize: '.68rem', color: 'rgba(255,255,255,.6)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 5 }}>
-          رصيد المحفظة
+          {t('wallet_balance_label', store.lang)}
         </div>
         <div className="wallet-balance">{store.wallet.toFixed(2)}</div>
-        <div style={{ fontSize: '.85rem', color: 'rgba(255,255,255,.6)', marginTop: 2 }}>ريال سعودي ⃁</div>
+        <div style={{ fontSize: '.85rem', color: 'rgba(255,255,255,.6)', marginTop: 2 }}>{t('sar_label', store.lang)} ⃁</div>
         <div className="wallet-actions">
           <button className="wallet-action-btn" onClick={() => {
             store.setWallet(store.wallet + 50);
-          }}>💳 شحن الرصيد</button>
-          <button className="wallet-action-btn">📅 الاشتراكات</button>
+          }}>{t('topup_btn', store.lang)}</button>
+          <button className="wallet-action-btn">{t('subscriptions', store.lang)}</button>
         </div>
       </div>
 
-      <p className="section-title">📋 المعاملات الأخيرة</p>
+      <p className="section-title">{t('recent_transactions', store.lang)}</p>
       <div style={{ background: '#fff', borderRadius: 'var(--r-md)', padding: 14, boxShadow: 'var(--sh-sm)' }}>
         {store.transactions.map((tx, i) => (
           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid var(--latte)' }}>

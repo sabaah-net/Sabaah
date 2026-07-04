@@ -113,7 +113,7 @@ $$ language sql stable;
 create table public.orders (
   id uuid primary key default uuid_generate_v4(),
   order_number text not null unique,
-  customer_id uuid not null references public.profiles(id),
+  customer_id uuid not null references public.profiles(id) on delete cascade,
   cafe_id uuid not null references public.cafes(id),
   status text not null default 'pending' check (status in ('pending', 'preparing', 'ready', 'completed', 'cancelled')),
   pickup_code text not null,

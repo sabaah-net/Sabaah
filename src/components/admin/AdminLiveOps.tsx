@@ -12,9 +12,9 @@ export default function AdminLiveOps() {
       await updateOrderStatus(orderId, nextStatus);
       await addAuditLog({
         user_name: t('audit_supervisor', lang),
-        action_ar: `تحديث حالة الطلب #${orderId} إلى ${nextStatus}`,
+        action_ar: `${t('update_order_status', lang)} #${orderId} ${t('to_status', lang)} ${nextStatus}`,
         action_type: 'order',
-        details: `${currentStatus} → ${nextStatus}`,
+        details: `${t(`status_${currentStatus}`, lang) || currentStatus} → ${t(`status_${nextStatus}`, lang) || nextStatus}`,
       });
       await loadFromSupabase();
     } catch (e) {
@@ -25,9 +25,9 @@ export default function AdminLiveOps() {
   return (
     <div className="admin-page" id="apLiveOps">
       <div className="live-ticker">
-        <div className="ticker-label">● LIVE</div>
+        <div className="ticker-label">● {t('live_label', lang)}</div>
         <div className="ticker-content">
-          <div className="ticker-track">SB-1046: طلب جديد من أحمد محمد - Brew92 - 8.05 ⃁ • SB-1043: تم الاستلام - Eleven</div>
+          <div className="ticker-track">{t('ticker_text', lang).replace('{lastOrder}', 'SB-1046').replace('{totalOrders}', '48').replace('{activeUsers}', '12')}</div>
         </div>
       </div>
 
@@ -59,7 +59,7 @@ export default function AdminLiveOps() {
                 <td>{o.cafe}</td>
                 <td>{o.amount.toFixed(2)} ⃁</td>
                 <td style={{ fontSize: '.78rem', color: 'var(--text-light)' }}>{o.date}</td>
-                <td><span className={`table-badge badge-${o.status === 'completed' ? 'green' : o.status === 'ready' ? 'blue' : 'amber'}`}>{o.status}</span></td>
+                  <td><span className={`table-badge badge-${o.status === 'completed' ? 'green' : o.status === 'ready' ? 'blue' : 'amber'}`}>{t(`status_${o.status}`, lang) || o.status}</span></td>
                 <td>
                   <button className="action-btn secondary" style={{ padding: '4px 12px', fontSize: '.72rem', width: 'auto' }} onClick={() => handleAction(o.id, o.status)}>
                     {o.status === 'pending' ? t('btn_prepare', lang) : o.status === 'ready' ? t('btn_deliver', lang) : '—'}

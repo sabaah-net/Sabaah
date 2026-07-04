@@ -1,11 +1,13 @@
 'use client';
+import { useAppStore } from '../../store/useAppStore';
+import { t } from '../../i18n';
 const items = [
-  { type: 'black', icon: '☕', label: 'سوداء', price: '7 ⃁' },
-  { type: 'white', icon: '🥛', label: 'بيضاء', price: '7 ⃁' },
-  { type: 'iced', icon: '🧊', label: 'مثلجة', price: '7 ⃁' },
-  { type: 'spanish', icon: '🍯', label: 'إسباني', price: '9 ⃁' },
-  { type: 'turkish', icon: '🫖', label: 'تركية', price: '8 ⃁' },
-  { type: 'mocha', icon: '🍫', label: 'موكا', price: '10 ⃁' },
+  { type: 'black', icon: '☕', price: '7 ⃁' },
+  { type: 'white', icon: '🥛', price: '7 ⃁' },
+  { type: 'iced', icon: '🧊', price: '7 ⃁' },
+  { type: 'spanish', icon: '🍯', price: '9 ⃁' },
+  { type: 'turkish', icon: '🫖', price: '8 ⃁' },
+  { type: 'mocha', icon: '🍫', price: '10 ⃁' },
 ];
 
 interface CoffeePanelProps {
@@ -15,11 +17,12 @@ interface CoffeePanelProps {
 }
 
 export default function CoffeePanel({ visible, onAddToCart, selectedTypes }: CoffeePanelProps) {
+  const store = useAppStore();
   if (!visible) return null;
 
   return (
     <div className="coffee-panel">
-      <p className="section-title">☕ ما نوع قهوتك؟</p>
+      <p className="section-title">{t('coffee_type', store.lang)}</p>
       <div className="coffee-grid">
         {items.map((item) => (
           <button
@@ -28,7 +31,7 @@ export default function CoffeePanel({ visible, onAddToCart, selectedTypes }: Cof
             onClick={() => onAddToCart(item.type)}
           >
             <span className="icon">{item.icon}</span>
-            <span className="label">{item.label}</span>
+            <span className="label">{t(item.type, store.lang)}</span>
             <span className="price">{item.price}</span>
           </button>
         ))}

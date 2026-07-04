@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { getSystemSettings, updateSystemSetting, addAuditLog } from '../../lib/supabase';
+import { getSystemSettings, updateSystemSetting, addAuditLog, clearAllOrders } from '../../lib/supabase';
 import { useToast } from '../shared/Toast';
 import { t } from '../../i18n';
 
@@ -33,9 +33,9 @@ export default function AdminSettings() {
       }
       await addAuditLog({
         user_name: t('audit_supervisor', lang),
-        action_ar: `تحديث ضريبة القيمة المضافة إلى ${vatRate}%`,
+        action_ar: t('admin_audit_update_vat', lang).replace('{rate}', String(vatRate)),
         action_type: 'update',
-        details: `تغيير VAT من إلى ${vatRate}%`,
+        details: t('admin_audit_vat_details', lang).replace('{rate}', String(vatRate)),
       });
       show(t('settings_saved', lang), 'success');
     } catch {
@@ -86,7 +86,16 @@ export default function AdminSettings() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div><strong>{t('danger_label', lang)}</strong><div style={{ fontSize: '.78rem', color: 'var(--red)' }}>{t('danger_desc', lang)}</div></div>
             <button className="action-btn secondary" style={{ width: 'auto', padding: '8px 16px', fontSize: '.8rem', borderColor: 'var(--red)', color: 'var(--red)' }}
-              onClick={() => show(t('data_deleted', lang), 'info')}>
+              onClick={async () => {
+                try {
+                  await clearAllOrders();
+                  localStorage.removeItem('sabaa_state');
+                  show('✅ ' + t('data_deleted', lang), 'success');
+                  setTimeout(() => window.location.reload(), 1500);
+                } catch {
+                  show(t('settings_save_failed', lang), 'error');
+                }
+              }}>
               {t('delete_btn', lang)}
             </button>
           </div>

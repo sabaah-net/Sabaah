@@ -25,6 +25,7 @@ export interface Cafe {
   serviceType?: string;
   status?: string;
   menu?: MenuItem[];
+  avg_wait_min?: number;
 }
 
 export interface CoffeeItem {
@@ -181,4 +182,55 @@ export interface CurrentUser {
   tier: LoyaltyTier;
   streak: number;
   gender?: string | null;
+}
+
+export interface SalesReportSummary {
+  totalOrders: number;
+  totalRevenue: number;
+  totalVat: number;
+  totalFees: number;
+  netRevenue: number;
+  avgOrderValue: number;
+  periodStart: string;
+  periodEnd: string;
+}
+
+export interface SalesByCafe {
+  cafeId: string;
+  cafeName: string;
+  orders: number;
+  revenue: number;
+}
+
+export interface BestSellingItem {
+  name: string;
+  sales: number;
+  revenue: number;
+  cafeName: string;
+}
+
+export interface CustomerReportSummary {
+  total: number;
+  active: number;
+  newThisPeriod: number;
+  byTier: { tier: string; count: number }[];
+}
+
+export interface TopCustomer {
+  name: string;
+  email: string;
+  orders: number;
+  totalSpent: number;
+  tier: string;
+}
+
+export interface HourlyOrder {
+  hour: number;
+  count: number;
+}
+
+export interface CategoryDistribution {
+  category: string;
+  percentage: number;
+  color: string;
 }

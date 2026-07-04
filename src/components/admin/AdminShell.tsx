@@ -12,12 +12,13 @@ import AdminAnalytics from './AdminAnalytics';
 import AdminNotifications from './AdminNotifications';
 import AdminAudit from './AdminAudit';
 import AdminSettings from './AdminSettings';
+import AdminReports from './AdminReports';
 
 type AdminPage = 'apDashboard' | 'apLiveOps' | 'apPartners' | 'apMenus' | 'apUsers' | 'apFinancials' | 'apAnalytics' | 'apReports' | 'apNotifications' | 'apAudit' | 'apSettings';
 
 export default function AdminShell() {
   const [page, setPage] = useState<AdminPage>('apDashboard');
-  const { setRole, lang } = useAppStore();
+  const { setRole, lang, loadFromSupabase } = useAppStore();
 
   const navItems: { id: AdminPage; icon: string; labelKey: string; sectionKey?: string }[] = [
     { id: 'apDashboard', icon: '📊', labelKey: 'admin_dashboard', sectionKey: 'main_section' },
@@ -47,11 +48,11 @@ export default function AdminShell() {
     <div className="admin-shell show">
       <nav className="admin-sidebar">
         <div className="admin-logo">
-          <div className="admin-logo-mark">سبعة ٧</div>
+          <div className="admin-logo-mark">{t('admin_logo', lang)}</div>
           <div style={{ fontSize: '.62rem', color: 'rgba(255,255,255,.4)', letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 2 }}>
             {t('power_admin', lang)}
           </div>
-          <div className="admin-role-badge">Super Admin</div>
+          <div className="admin-role-badge">{t('role_super_admin', lang)}</div>
         </div>
         <div className="admin-nav">
           {navItems.map((item) => {
@@ -80,8 +81,8 @@ export default function AdminShell() {
               <span style={{ width: 8, height: 8, background: 'var(--green)', borderRadius: '50%', display: 'inline-block' }} />
               {t('system_online', lang)}
             </div>
-            <button className="action-btn secondary" style={{ width: 'auto', padding: '7px 16px', fontSize: '.8rem', margin: 0 }}>{t('refresh', lang)}</button>
-            <button className="action-btn secondary" style={{ width: 'auto', padding: '7px 16px', fontSize: '.8rem', margin: 0 }}>{t('export', lang)}</button>
+            <button className="action-btn secondary" style={{ width: 'auto', padding: '7px 16px', fontSize: '.8rem', margin: 0 }} onClick={() => loadFromSupabase()}>{t('refresh', lang)}</button>
+            <button className="action-btn secondary" style={{ width: 'auto', padding: '7px 16px', fontSize: '.8rem', margin: 0 }} onClick={() => setPage('apReports')}>{t('export', lang)}</button>
           </div>
         </div>
 
@@ -96,12 +97,7 @@ export default function AdminShell() {
           {page === 'apNotifications' && <AdminNotifications />}
           {page === 'apAudit' && <AdminAudit />}
           {page === 'apSettings' && <AdminSettings />}
-          {page === 'apReports' && (
-            <div className="admin-page" id="apReports">
-              <div style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: 16 }}>📄 {t('admin_reports', lang)}</div>
-              <p style={{ color: 'var(--text-light)' }}>{t('coming_soon', lang)}</p>
-            </div>
-          )}
+          {page === 'apReports' && <AdminReports />}
         </div>
       </div>
     </div>

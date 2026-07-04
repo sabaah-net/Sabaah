@@ -1,67 +1,122 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { supabase, createCafe, addAuditLog } from '../../lib/supabase';
+import { supabase, createCafe, updateCafe, addAuditLog } from '../../lib/supabase';
 import { t } from '../../i18n';
 
+interface CafeRow {
+  id: string;
+  name_ar: string;
+  name_en: string;
+  location: string;
+  email: string | null;
+  emoji: string;
+  status: string;
+  is_open: boolean;
+  rating: number;
+  city: string;
+  avg_wait_min: number;
+  created_at: string;
+}
+
 export default function AdminPartners() {
-  const { cafes, lang } = useAppStore();
-  const [showModal, setShowModal] = useState(false);
+  const { lang, loadFromSupabase } = useAppStore();
+  const [cafes, setCafes] = useState<CafeRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [modalMode, setModalMode] = useState<'add' | 'edit' | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [form, setForm] = useState({ name: '', nameEn: '', location: '', email: '', emoji: '☕', serviceType: 'قهوة', status: 'active' });
+  const [form, setForm] = useState({ name_ar: '', name_en: '', location: '', city: 'riyadh', email: '', emoji: '☕', status: 'active', is_open: true, avg_wait_min: 5 });
+  const [editId, setEditId] = useState<string | null>(null);
 
-  const handleAdd = async () => {
-    if (!form.name) { setError(t('err_name_required', lang)); return; }
-    setLoading(true);
-    setError('');
-    setSuccess('');
+  const fetchCafes = async () => {
+    const { data, error: err } = await supabase.from('cafes').select('*').order('created_at', { ascending: false });
+    if (!err && data) setCafes(data as CafeRow[]);
+  };
+
+  useEffect(() => { fetchCafes(); }, []);
+
+  const openAdd = () => {
+    setEditId(null);
+    setForm({ name_ar: '', name_en: '', location: '', city: 'riyadh', email: '', emoji: '☕', status: 'active', is_open: true, avg_wait_min: 5 });
+    setModalMode('add');
+    setError(''); setSuccess('');
+  };
+
+  const openEdit = (c: CafeRow) => {
+    setEditId(c.id);
+    setForm({ name_ar: c.name_ar, name_en: c.name_en, location: c.location, city: c.city, email: c.email || '', emoji: c.emoji, status: c.status, is_open: c.is_open, avg_wait_min: c.avg_wait_min });
+    setModalMode('edit');
+    setError(''); setSuccess('');
+  };
+
+  const handleSave = async () => {
+    if (!form.name_ar) { setError(t('err_name_required', lang)); return; }
+    setLoading(true); setError(''); setSuccess('');
     try {
-      const user = useAppStore.getState().currentUser;
-      const { data, error: err } = await createCafe({
-        owner_id: user?.profileId || null,
-        name_ar: form.name,
-        name_en: form.nameEn || form.name,
-        description: null,
-        location: form.location || 'الرياض',
-        city: 'riyadh',
-        email: form.email || null,
-        emoji: form.emoji,
-        status: form.status,
-        is_open: true,
-        rating: 0,
-        total_favorites: 0,
-        avg_wait_min: 5,
-        inventory_enabled: true,
-      });
-      if (err) throw err;
-      if (!data) throw new Error('لم يتم إنشاء المقهى');
+      if (modalMode === 'add') {
+        const user = useAppStore.getState().currentUser;
+        const { error: err } = await createCafe({
+          owner_id: user?.profileId || null,
+          name_ar: form.name_ar,
+          name_en: form.name_en || form.name_ar,
+          location: form.location || t('admin_default_city', lang),
+          city: form.city,
+          email: form.email || null,
+          emoji: form.emoji,
+          status: form.status,
+          is_open: form.is_open,
+          rating: 0,
+          total_favorites: 0,
+          avg_wait_min: form.avg_wait_min,
+          inventory_enabled: true,
+        });
+        if (err) throw err;
+        setSuccess(t('cafe_added_success', lang).replace('{name}', form.name_ar));
+      } else if (modalMode === 'edit' && editId) {
+        const { error: err } = await updateCafe(editId, {
+          name_ar: form.name_ar,
+          name_en: form.name_en || form.name_ar,
+          location: form.location,
+          city: form.city,
+          email: form.email || null,
+          emoji: form.emoji,
+          status: form.status,
+          is_open: form.is_open,
+          avg_wait_min: form.avg_wait_min,
+        });
+        if (err) throw err;
+        setSuccess(`✅ ${form.name_ar} updated`);
+      }
 
       await addAuditLog({
         user_name: t('audit_supervisor', lang),
-        action_ar: `إضافة مقهى جديد: ${form.name}`,
+        action_ar: `${modalMode === 'add' ? 'Add' : 'Edit'} cafe: ${form.name_ar}`,
         action_type: 'create',
-        details: `تمت إضافة ${form.name}`,
+        details: `${modalMode === 'add' ? 'Added' : 'Edited'} cafe ${form.name_ar}`,
       }).catch(() => {});
 
-      setSuccess(t('cafe_added_success', lang).replace('{name}', form.name));
-      setShowModal(false);
-      setForm({ name: '', nameEn: '', location: '', email: '', emoji: '☕', serviceType: 'قهوة', status: 'active' });
-
-      window.location.reload();
+      setModalMode(null);
+      fetchCafes();
+      loadFromSupabase();
     } catch (e: any) {
       setError(e.message || t('err_add_cafe_failed', lang));
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
+  };
+
+  const handleToggleStatus = async (c: CafeRow) => {
+    const newStatus = c.status === 'active' ? 'suspended' : 'active';
+    const { error: err } = await updateCafe(c.id, { status: newStatus });
+    if (err) return;
+    fetchCafes();
+    loadFromSupabase();
   };
 
   return (
     <div className="admin-page" id="apPartners">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{t('partner_title', lang)}</div>
-        <button className="action-btn" style={{ width: 'auto', padding: '8px 18px', fontSize: '.8rem' }} onClick={() => setShowModal(true)}>{t('add_cafe_btn', lang)}</button>
+        <button className="action-btn" style={{ width: 'auto', padding: '8px 18px', fontSize: '.8rem' }} onClick={openAdd}>{t('add_cafe_btn', lang)}</button>
       </div>
 
       {success && <div style={{ background: 'var(--green)', color: '#fff', padding: '10px 16px', borderRadius: 10, marginBottom: 12, fontSize: '.85rem' }}>{success}</div>}
@@ -69,45 +124,68 @@ export default function AdminPartners() {
       <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
-            <tr><th>#</th><th>{t('name', lang)}</th><th>{t('email', lang)}</th><th>{t('th_service', lang)}</th><th>{t('status', lang)}</th><th>{t('th_join_date', lang)}</th></tr>
+            <tr>
+              <th>#</th><th>{t('name', lang)}</th><th>English</th><th>{t('email', lang)}</th><th>{t('th_city', lang)}</th><th>{t('status', lang)}</th><th>{t('th_actions', lang)}</th>
+            </tr>
           </thead>
           <tbody>
-            {(!cafes || cafes.length === 0) && (
-              <tr><td colSpan={6} style={{ textAlign: 'center', padding: 24, color: 'var(--text-light)' }}>{t('no_cafes', lang)}</td></tr>
+            {cafes.length === 0 && (
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 24, color: 'var(--text-light)' }}>{t('no_cafes', lang)}</td></tr>
             )}
-            {cafes.map((c) => (
+            {cafes.map((c, i) => (
               <tr key={c.id}>
-                <td>{c.id}</td>
-                <td><strong>{c.emoji} {c.name}</strong></td>
+                <td>{i + 1}</td>
+                <td><strong>{c.emoji} {c.name_ar}</strong></td>
+                <td style={{ color: 'var(--text-light)' }}>{c.name_en || '-'}</td>
                 <td>{c.email || '-'}</td>
-                <td>{c.serviceType || '-'}</td>
-                <td><span className={`table-badge badge-${c.status === 'active' ? 'green' : 'amber'}`}>{c.status}</span></td>
-                <td style={{ fontSize: '.78rem', color: 'var(--text-light)' }}>2024-01-{String(c.id).padStart(2, '0')}</td>
+                <td>{c.city}</td>
+                <td>
+                  <span className={`table-badge badge-${c.status === 'active' ? 'green' : 'amber'}`}
+                    style={{ cursor: 'pointer' }} onClick={() => handleToggleStatus(c)}>
+                    {c.status}
+                  </span>
+                </td>
+                <td>
+                  <button className="action-btn secondary" style={{ width: 'auto', padding: '4px 10px', fontSize: '.72rem', margin: 0 }}
+                    onClick={() => openEdit(c)}>
+                    ✏️ {t('edit', lang) || 'Edit'}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {showModal && (
-        <div className="modal-overlay open" onClick={() => setShowModal(false)}>
+      {modalMode && (
+        <div className="modal-overlay open" onClick={() => setModalMode(null)}>
           <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="modal-handle" />
-            <div className="modal-title">{t('add_cafe_modal_title', lang)}</div>
+            <div className="modal-title">{modalMode === 'add' ? t('add_cafe_modal_title', lang) : `✏️ ${t('edit', lang) || 'Edit'} ${form.name_ar}`}</div>
             {error && <div style={{ background: 'var(--red)', color: '#fff', padding: '8px 12px', borderRadius: 8, marginBottom: 12, fontSize: '.8rem' }}>{error}</div>}
-            <input className="coffee-input" placeholder={t('f_name_ar', lang)} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            <input className="coffee-input" placeholder={t('f_name_en', lang)} value={form.nameEn} onChange={(e) => setForm({ ...form, nameEn: e.target.value })} />
+            <input className="coffee-input" placeholder={t('f_name_ar', lang)} value={form.name_ar} onChange={(e) => setForm({ ...form, name_ar: e.target.value })} />
+            <input className="coffee-input" placeholder={t('f_name_en', lang)} value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })} />
             <input className="coffee-input" placeholder={t('f_location', lang)} value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+            <input className="coffee-input" placeholder={t('f_city', lang) || 'City'} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
             <input className="coffee-input" placeholder={t('f_email', lang)} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             <input className="coffee-input" placeholder={t('f_emoji', lang)} value={form.emoji} onChange={(e) => setForm({ ...form, emoji: e.target.value })} />
-            <select className="coffee-input" value={form.serviceType} onChange={(e) => setForm({ ...form, serviceType: e.target.value })}>
-              <option value="قهوة">{t('service_coffee', lang)}</option>
-              <option value="متخصصة">{t('service_specialty', lang)}</option>
-              <option value="سعودية">{t('service_saudi', lang)}</option>
-              <option value="مختصة">{t('service_artisan', lang)}</option>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', margin: '8px 0' }}>
+              <label style={{ fontSize: '.82rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input type="checkbox" checked={form.is_open} onChange={(e) => setForm({ ...form, is_open: e.target.checked })} />
+                {t('partner_open', lang) || 'Open'}
+              </label>
+              <label style={{ fontSize: '.82rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                {t('wait_min', lang) || 'Wait (min)'}
+                <input type="number" className="coffee-input" style={{ width: 60 }} value={form.avg_wait_min} onChange={(e) => setForm({ ...form, avg_wait_min: parseInt(e.target.value) || 5 })} />
+              </label>
+            </div>
+            <select className="coffee-input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+              <option value="pending">Pending</option>
             </select>
-            <button className="action-btn" style={{ width: '100%', marginTop: 8, opacity: loading ? 0.6 : 1 }} disabled={loading} onClick={handleAdd}>
-              {loading ? t('cafe_saving', lang) : t('cafe_add', lang)}
+            <button className="action-btn" style={{ width: '100%', marginTop: 8, opacity: loading ? 0.6 : 1 }} disabled={loading} onClick={handleSave}>
+              {loading ? t('cafe_saving', lang) : modalMode === 'add' ? t('cafe_add', lang) : `💾 ${t('save_btn', lang)}`}
             </button>
           </div>
         </div>

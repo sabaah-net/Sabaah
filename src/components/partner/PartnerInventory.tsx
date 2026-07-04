@@ -1,12 +1,14 @@
 'use client';
 import { useAppStore } from '../../store/useAppStore';
+import { t } from '../../i18n';
 
 export default function PartnerInventory() {
   const store = useAppStore();
+  const lang = store.lang;
 
   return (
     <div>
-      <p className="section-title">📦 إدارة المخزون</p>
+      <p className="section-title">{t('partner_inv_title', lang)}</p>
       <div className="inv-grid">
         {store.inventory.map((item, i) => {
           const levelClass = item.level < 20 ? 'low' : item.level < 50 ? 'medium' : '';
@@ -22,7 +24,7 @@ export default function PartnerInventory() {
           );
         })}
       </div>
-      <button className="action-btn secondary" style={{ fontSize: '.8rem' }}>📦 طلب توريد جديد</button>
+      <button className="action-btn secondary" style={{ fontSize: '.8rem' }}>{t('partner_supply_order', lang)}</button>
     </div>
   );
 }

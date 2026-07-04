@@ -15,21 +15,21 @@ export default function AdminNotifications() {
   const handleSend = async () => {
     if (!title || !message) { show(t('err_notif_required', lang), 'error'); return; }
     try {
+      const audienceLabel = audience === 'all' ? t('admin_audience_all', lang) : audience === 'customers' ? t('admin_audience_customers', lang) : t('admin_audience_partners', lang);
       await createCampaign({
         name_ar: title,
         description_ar: message,
-        segment: audience === 'all' ? 'الجميع' : audience === 'customers' ? 'العملاء' : 'الشركاء',
+        segment: audienceLabel,
         status: 'sent',
         reach_count: 0,
       });
       await addAuditLog({
         user_name: t('audit_supervisor', lang),
-        action_ar: `إرسال إشعار: ${title}`,
+        action_ar: t('admin_audit_send_notif', lang).replace('{title}', title),
         action_type: 'notification',
-        details: `الجمهور: ${audience}`,
+        details: t('admin_audit_notif_audience', lang).replace('{audience}', audienceLabel),
       });
       await loadFromSupabase();
-      const audienceLabel = audience === 'all' ? t('audience_all', lang) : audience === 'customers' ? t('audience_customers', lang) : t('audience_partners', lang);
       show(t('success_notif_sent', lang).replace('{audience}', audienceLabel), 'success');
       setTitle('');
       setMessage('');

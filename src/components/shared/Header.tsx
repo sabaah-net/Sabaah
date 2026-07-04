@@ -15,7 +15,7 @@ export default function Header({ onOpenAuth, onOpenNotif, onOpenLang }: HeaderPr
 
   const handleRoleSwitch = (newRole: 'customer' | 'partner' | 'superadmin') => {
     if (newRole === 'superadmin') {
-      show('تم فتح لوحة التحكم', 'info');
+      show(t('admin_dashboard', lang), 'info');
     }
     setRole(newRole);
   };
@@ -26,7 +26,7 @@ export default function Header({ onOpenAuth, onOpenNotif, onOpenLang }: HeaderPr
         <div>
           <div className="logo-arabic">سبعة <span className="logo-num">٧</span></div>
           <div className="logo-sub" id="logoSub">
-            {lang === 'ar' ? 'سبعة للقهوة' : 'Sabaa Coffee'}
+            {t('greeting_default', lang)}
           </div>
         </div>
         <div className="header-right">
