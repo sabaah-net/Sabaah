@@ -98,6 +98,23 @@ export default function AuthModal() {
 
         await supabase.from('profiles').update({ password: pass }).eq('auth_id', authUserId);
 
+        try {
+          await supabase.functions.invoke('partner-register', {
+            body: {
+              subject: `New Partner Registration: ${firstName} ${lastNamePart}`,
+              html: `
+                <h2>New Partner Registration</h2>
+                <p><strong>Name:</strong> ${firstName} ${lastNamePart}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Phone:</strong> ${phone || '—'}</p>
+                <p><strong>Location:</strong> ${mapsUrl || '—'}</p>
+                ${crFileUrl ? `<p><strong>CR File:</strong> <a href="${crFileUrl}">View Document</a></p>` : ''}
+                <p><strong>Status:</strong> Pending — awaiting admin approval</p>
+              `,
+            },
+          });
+        } catch {}
+
         show(t('success_signup', lang), 'success');
         closeModal();
       }
