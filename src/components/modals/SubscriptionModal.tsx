@@ -30,7 +30,8 @@ export default function SubscriptionModal() {
     if (store.wallet < price) { show('Insufficient balance', 'error'); return; }
     setLoading(true);
     try {
-      await subscribeUser(store.currentUser.profileId, planId);
+      const { error } = await subscribeUser(store.currentUser.profileId, planId, price);
+      if (error) throw error;
       store.setWallet(store.wallet - price);
       const { data: sub } = await getUserSubscription(store.currentUser.profileId);
       if (sub && (sub as any).status === 'active') setCurrentSub(sub as any);

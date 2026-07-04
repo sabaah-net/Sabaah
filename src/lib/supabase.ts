@@ -229,30 +229,53 @@ export async function getUserSubscription(userId: string) {
   return supabase.from('user_subscriptions').select('*, subscription_plans(*)').eq('user_id', userId).maybeSingle();
 }
 
-export async function subscribeUser(userId: string, planId: string) {
+export async function subscribeUser(userId: string, planId: string, price: number) {
+  const { data: plan } = await supabase.from('subscription_plans').select('price_weekly, name_ar, name_en').eq('id', planId).single();
+  if (!plan) return { data: null, error: new Error('Plan not found') };
+
+  const { data: profile } = await supabase.from('profiles').select('wallet_balance').eq('id', userId).single();
+  if (!profile || Number(profile.wallet_balance) < price) {
+    return { data: null, error: new Error('Insufficient balance') };
+  }
+
+  const newBalance = Number(profile.wallet_balance) - price;
+
   const { data: existing } = await supabase.from('user_subscriptions')
     .select('id').eq('user_id', userId).maybeSingle();
   if (existing) {
     const { error } = await supabase.from('user_subscriptions').update({ plan_id: planId, start_date: new Date().toISOString(), status: 'active' }).eq('id', existing.id);
-    if (!error) {
-      await supabase.from('profiles').update({ current_subscription_id: existing.id }).eq('id', userId);
-    }
-    return { data: existing, error };
+    if (error) return { data: null, error };
+    await supabase.from('profiles').update({ wallet_balance: newBalance, current_subscription_id: existing.id }).eq('id', userId);
+  } else {
+    const { data, error } = await supabase.from('user_subscriptions').insert({
+      user_id: userId, plan_id: planId, start_date: new Date().toISOString(), status: 'active',
+    }).select().single();
+    if (error || !data) return { data: null, error };
+    await supabase.from('profiles').update({ wallet_balance: newBalance, current_subscription_id: data.id }).eq('id', userId);
   }
-  const { data, error } = await supabase.from('user_subscriptions').insert({
-    user_id: userId, plan_id: planId, start_date: new Date().toISOString(), status: 'active',
-  }).select().single();
-  if (data && !error) {
-    await supabase.from('profiles').update({ current_subscription_id: data.id }).eq('id', userId);
-  }
-  return { data, error };
+
+  supabase.from('transactions').insert({
+    user_id: userId,
+    type: 'debit',
+    amount: price,
+    balance_before: Number(profile.wallet_balance),
+    balance_after: newBalance,
+    description_ar: `اشتراك: ${plan.name_ar}`,
+    description_en: `Subscription: ${plan.name_en || plan.name_ar}`,
+  }).then(() => {});
+
+  return { data: { new_balance: newBalance }, error: null };
 }
 
 export async function cancelSubscription(userId: string) {
   const { data: sub } = await supabase.from('user_subscriptions')
     .select('id').eq('user_id', userId).eq('status', 'active').maybeSingle();
   if (!sub) return { error: new Error('No active subscription') };
-  return supabase.from('user_subscriptions').update({ status: 'cancelled', end_date: new Date().toISOString() }).eq('id', sub.id);
+  const { error } = await supabase.from('user_subscriptions').update({ status: 'cancelled', end_date: new Date().toISOString() }).eq('id', sub.id);
+  if (!error) {
+    supabase.from('profiles').update({ current_subscription_id: null }).eq('id', userId).then(() => {});
+  }
+  return { data: sub, error };
 }
 
 // ---- CAMPAIGNS ----
