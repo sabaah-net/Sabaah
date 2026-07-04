@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
+import { supabase } from '../../lib/supabase';
 import { t } from '../../i18n';
 import PartnerOrders from './PartnerOrders';
 import PartnerInventory from './PartnerInventory';
@@ -14,6 +15,27 @@ export default function PartnerPortal() {
   const lang = store.lang;
   const [activeTab, setActiveTab] = useState<Tab>('orders');
   const [isOpen, setIsOpen] = useState(true);
+  const [cafeId, setCafeId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const pid = store.currentUser?.profileId;
+    if (!pid) return;
+    (async () => {
+      const { data } = await supabase.from('cafes').select('id, is_open').eq('owner_id', pid).maybeSingle();
+      if (data) {
+        setCafeId(data.id);
+        setIsOpen(data.is_open);
+      }
+    })();
+  }, []);
+
+  const handleToggle = async () => {
+    const next = !isOpen;
+    setIsOpen(next);
+    if (cafeId) {
+      await supabase.from('cafes').update({ is_open: next }).eq('id', cafeId);
+    }
+  };
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '16px 14px 14px' }}>
@@ -51,7 +73,7 @@ export default function PartnerPortal() {
           </div>
         </div>
         <label style={{ position: 'relative', width: 50, height: 26, flexShrink: 0 }}>
-          <input type="checkbox" checked={isOpen} onChange={() => setIsOpen(!isOpen)} style={{ opacity: 0, width: 0, height: 0 }} />
+          <input type="checkbox" checked={isOpen} onChange={handleToggle} style={{ opacity: 0, width: 0, height: 0 }} />
           <span style={{
             position: 'absolute', inset: 0, borderRadius: 40, cursor: 'pointer',
             transition: '.25s', background: isOpen ? 'var(--green)' : 'var(--red)',

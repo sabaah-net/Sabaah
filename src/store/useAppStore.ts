@@ -64,6 +64,7 @@ interface AppState {
   processPayment: (method: string) => void;
   updatePrices: (cafeId: number, items: { id: string; price: number }[]) => void;
   loadFromSupabase: () => Promise<void>;
+  refreshCafes: () => Promise<void>;
   clearHistory: () => void;
 }
 
@@ -85,7 +86,7 @@ export const useAppStore = create<AppState>((set, get) => {
 
   return {
     lang: (saved.lang as Lang) || 'ar',
-    role: (saved.role as AppRole) || 'customer',
+    role: saved.isLoggedIn ? ((saved.role as AppRole) || 'customer') : 'customer',
     theme: (saved.theme as Theme) || 'light',
     isLoggedIn: saved.isLoggedIn || false,
     currentUser: saved.currentUser || null,
@@ -324,8 +325,8 @@ export const useAppStore = create<AppState>((set, get) => {
         await supabaseSignOut();
       } catch {}
       set((s) => {
-        saveState({ ...s, isLoggedIn: false, currentUser: null, cart: [], wallet: 0 });
-        return { isLoggedIn: false, currentUser: null, cart: [], wallet: 0 };
+        saveState({ ...s, isLoggedIn: false, currentUser: null, cart: [], wallet: 0, role: 'customer' });
+        return { isLoggedIn: false, currentUser: null, cart: [], wallet: 0, role: 'customer' };
       });
     },
 
@@ -551,6 +552,20 @@ export const useAppStore = create<AppState>((set, get) => {
             .eq('id', state.currentUser.profileId).maybeSingle();
           if (profile) set({ wallet: profile.wallet_balance || 0 });
         } catch {}
+      }
+    },
+    refreshCafes: async () => {
+      const { data } = await supabase.from('cafes').select('*').eq('status', 'active');
+      if (data && data.length > 0) {
+        const mapped: Cafe[] = data.map((c: any, i: number) => ({
+          id: i + 1,
+          name: c.name_ar, nameEn: c.name_en, sub: c.location,
+          rating: c.rating || 0, isOpen: c.is_open, dist: '—', emoji: c.emoji || '☕',
+          x: 120 + i * 60, y: 80 + i * 40, favorites: c.total_favorites || 0,
+          waitTime: `${c.avg_wait_min || 5} دق`, favorited: false,
+          email: c.email || '', serviceType: 'قهوة', status: c.status,
+        }));
+        set({ cafes: mapped });
       }
     },
   };

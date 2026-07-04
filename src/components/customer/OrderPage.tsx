@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { getGreeting, t } from '../../i18n';
 import { generatePickupCode, useToast } from '../../lib/utils';
@@ -12,6 +12,12 @@ export default function OrderPage({ onOpenPay }: { onOpenPay: () => void }) {
   const store = useAppStore();
   const { show } = useToast();
   const [mapExpanded, setMapExpanded] = useState(false);
+
+  useEffect(() => {
+    store.refreshCafes();
+    const interval = setInterval(() => store.refreshCafes(), 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSelectCafe = (cafe: typeof store.cafes[0]) => {
     store.setSelectedCafe(cafe);

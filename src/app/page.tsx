@@ -45,7 +45,7 @@ export default function HomePage() {
 
   if (!mounted) return null;
 
-  if (store.role === 'superadmin') {
+  if (store.isLoggedIn && store.role === 'superadmin') {
     return (
       <ToastProvider>
         <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>{t('loading_text', store.lang)}</div>}>
@@ -55,7 +55,7 @@ export default function HomePage() {
     );
   }
 
-  if (store.role === 'partner') {
+  if (store.isLoggedIn && store.role === 'partner') {
     return (
       <ToastProvider>
         <div className="shell">
