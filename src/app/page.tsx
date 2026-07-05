@@ -15,6 +15,7 @@ import AuthModal from '../components/modals/AuthModal';
 import PayModal from '../components/modals/PayModal';
 import OrderSuccessModal from '../components/modals/OrderSuccessModal';
 import LanguageModal from '../components/modals/LanguageModal';
+import VoiceModal from '../components/modals/VoiceModal';
 import NotifInbox from '../components/modals/NotifInbox';
 import ChatBot from '../components/shared/ChatBot';
 
@@ -85,7 +86,10 @@ export default function HomePage() {
   ];
 
   const pageComponents: Record<CustomerPage, React.ReactNode> = {
-    pageOrder: <OrderPage onOpenPay={() => document.getElementById('payModal')?.classList.add('open')} />,
+    pageOrder: <OrderPage
+      onOpenPay={() => document.getElementById('payModal')?.classList.add('open')}
+      onOpenVoice={() => document.getElementById('voiceModal')?.classList.add('open')}
+    />,
     pageRewards: <RewardsPage />,
     pageWallet: <WalletPage />,
     pageHistory: <HistoryPage />,
@@ -127,6 +131,7 @@ export default function HomePage() {
       <PayModal />
       <OrderSuccessModal />
       <LanguageModal />
+      <VoiceModal />
       <NotifInbox />
       <ChatBot />
     </ToastProvider>

@@ -8,7 +8,7 @@ import CoffeePanel from './CoffeePanel';
 import CartPanel from './CartPanel';
 import type { CoffeeItem } from '../../types';
 
-export default function OrderPage({ onOpenPay }: { onOpenPay: () => void }) {
+export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () => void; onOpenVoice: () => void }) {
   const store = useAppStore();
   const { show } = useToast();
   const [mapExpanded, setMapExpanded] = useState(false);
@@ -168,7 +168,7 @@ export default function OrderPage({ onOpenPay }: { onOpenPay: () => void }) {
       />
 
       <div style={{ textAlign: 'center', marginTop: 10 }}>
-        <button className="voice-btn" onClick={() => show(t('voice_order', store.lang), 'info')}>🎙️</button>
+        <button className="voice-btn" onClick={onOpenVoice}>🎙️</button>
         <div style={{ fontSize: '.7rem', color: 'var(--text-light)' }}>{t('voice_label', store.lang)}</div>
       </div>
     </div>
