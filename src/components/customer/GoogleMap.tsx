@@ -5,7 +5,6 @@ import type { Cafe } from '../../types';
 declare global {
   interface Window {
     google?: any;
-    initSabaahMap?: () => void;
   }
 }
 
@@ -17,25 +16,37 @@ interface Props {
 }
 
 const MARKER_IMG = 'https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png';
+const DEFAULT_CENTER = { lat: 24.7136, lng: 46.6753 };
 
 export default function GoogleMap({ cafes, selectedCafeId, onSelectCafe, height = '100%' }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (window.google?.maps) {
       setLoaded(true);
       return;
     }
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey || apiKey === 'INSERT_YOUR_API_KEY') {
+      setError('Map unavailable — API key not configured');
+      return;
+    }
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'INSERT_YOUR_API_KEY'}&loading=async&libraries=marker&v=beta`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async&libraries=marker&v=beta`;
     script.async = true;
     script.defer = true;
-    script.onload = () => setLoaded(true);
-    script.onerror = () => setError(true);
+    script.onload = () => {
+      if (window.google?.maps?.marker?.AdvancedMarkerElement) {
+        setLoaded(true);
+      } else {
+        setError('Marker library not loaded');
+      }
+    };
+    script.onerror = () => setError('Failed to load Google Maps');
     document.head.appendChild(script);
   }, []);
 
@@ -43,7 +54,7 @@ export default function GoogleMap({ cafes, selectedCafeId, onSelectCafe, height 
     if (!loaded || !containerRef.current || mapRef.current) return;
     const { Map } = window.google.maps;
     mapRef.current = new Map(containerRef.current, {
-      center: { lat: 24.7136, lng: 46.6753 },
+      center: DEFAULT_CENTER,
       zoom: 12,
       mapId: 'SABAAH_MAP',
       disableDefaultUI: true,
@@ -55,7 +66,7 @@ export default function GoogleMap({ cafes, selectedCafeId, onSelectCafe, height 
   useEffect(() => {
     if (!mapRef.current || !window.google?.maps) return;
 
-    markersRef.current.forEach((m) => m.setMap(null));
+    markersRef.current.forEach((m) => m.setMap?.(null));
     markersRef.current = [];
 
     const bounds = new window.google.maps.LatLngBounds();
@@ -65,12 +76,26 @@ export default function GoogleMap({ cafes, selectedCafeId, onSelectCafe, height 
       if (!cafe.lat || !cafe.lng) return;
       const position = { lat: cafe.lat, lng: cafe.lng };
 
-      const marker = new window.google.maps.marker.AdvancedMarkerElement({
-        map: mapRef.current,
-        position,
-        title: cafe.name,
-        content: createMarkerContent(cafe),
-      });
+      let marker: any;
+      if (window.google.maps.marker?.AdvancedMarkerElement) {
+        marker = new window.google.maps.marker.AdvancedMarkerElement({
+          map: mapRef.current,
+          position,
+          title: cafe.name,
+          content: createMarkerContent(cafe),
+        });
+      } else {
+        marker = new window.google.maps.Marker({
+          map: mapRef.current,
+          position,
+          title: cafe.name,
+          icon: {
+            url: MARKER_IMG,
+            scaledSize: new window.google.maps.Size(28, 34),
+            anchor: new window.google.maps.Point(14, 34),
+          },
+        });
+      }
 
       marker.addListener('click', () => onSelectCafe?.(cafe));
       markersRef.current.push(marker);
@@ -94,16 +119,18 @@ export default function GoogleMap({ cafes, selectedCafeId, onSelectCafe, height 
       const cafe = cafes.find((c) => c.name === m.title);
       if (!cafe) return;
       const isSelected = cafe.id === selectedCafeId;
-      m.content.style.transform = isSelected ? 'scale(1.3)' : 'scale(1)';
-      m.content.style.filter = isSelected ? 'drop-shadow(0 2px 6px rgba(0,0,0,.4))' : 'none';
-      m.content.style.zIndex = isSelected ? '10' : '1';
+      if (m.content) {
+        m.content.style.transform = isSelected ? 'scale(1.3)' : 'scale(1)';
+        m.content.style.filter = isSelected ? 'drop-shadow(0 2px 6px rgba(0,0,0,.4))' : 'none';
+        m.content.style.zIndex = isSelected ? '10' : '1';
+      }
     });
   }, [selectedCafeId, cafes]);
 
   if (error) {
     return (
-      <div style={{ height, background: 'var(--latte)', borderRadius: 'var(--r-md)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-light)', fontSize: '.8rem' }}>
-        ⚠ Map unavailable — API key not configured
+      <div style={{ height, background: 'var(--latte)', borderRadius: 'var(--r-md)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-light)', fontSize: '.8rem', padding: 16, textAlign: 'center' }}>
+        ⚠ {error}
       </div>
     );
   }
@@ -132,7 +159,7 @@ function createMarkerContent(cafe: Cafe): HTMLElement {
   badge.style.cssText = `
     position:absolute;top:-4px;left:-4px;
     width:18px;height:18px;border-radius:50%;
-    background:${cafe.isOpen ? 'var(--amber, #d4a24c)' : 'var(--red, #c0392b)'};
+    background:${cafe.isOpen ? '#d4a24c' : '#c0392b'};
     color:#fff;font-size:9px;font-weight:900;
     display:flex;align-items:center;justify-content:center;
     border:2px solid #fff;
