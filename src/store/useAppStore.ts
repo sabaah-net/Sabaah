@@ -472,7 +472,10 @@ export const useAppStore = create<AppState>((set, get) => {
           id: i + 1,
           name: c.name_ar, nameEn: c.name_en, sub: c.location,
           rating: c.rating || 0, isOpen: c.is_open, dist: '—', emoji: c.emoji || '☕',
-          x: 120 + i * 60, y: 80 + i * 40, favorites: c.total_favorites || 0,
+          x: 120 + i * 60, y: 80 + i * 40,
+          lat: c.lat || 24.7136 + (i * 0.01),
+          lng: c.lng || 46.6753 + (i * 0.01),
+          favorites: c.total_favorites || 0,
           waitTime: `${c.avg_wait_min || 5} دق`, favorited: false,
           email: c.email || '', serviceType: 'قهوة', status: c.status,
         }));
@@ -547,7 +550,10 @@ export const useAppStore = create<AppState>((set, get) => {
           id: i + 1,
           name: c.name_ar, nameEn: c.name_en, sub: c.location,
           rating: c.rating || 0, isOpen: c.is_open, dist: '—', emoji: c.emoji || '☕',
-          x: 120 + i * 60, y: 80 + i * 40, favorites: c.total_favorites || 0,
+          x: 120 + i * 60, y: 80 + i * 40,
+          lat: c.lat || 24.7136 + (i * 0.01),
+          lng: c.lng || 46.6753 + (i * 0.01),
+          favorites: c.total_favorites || 0,
           waitTime: `${c.avg_wait_min || 5} دق`, favorited: false,
           email: c.email || '', serviceType: 'قهوة', status: c.status,
         }));

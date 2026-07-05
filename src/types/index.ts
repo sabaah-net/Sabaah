@@ -68,6 +68,8 @@ export interface Cafe {
   emoji: string;
   x: number;
   y: number;
+  lat: number;
+  lng: number;
   favorites: number;
   waitTime: string;
   favorited: boolean;

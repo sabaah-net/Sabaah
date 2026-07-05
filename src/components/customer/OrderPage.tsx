@@ -1,5 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { useAppStore } from '../../store/useAppStore';
 import { getGreeting, t } from '../../i18n';
 import { generatePickupCode, useToast } from '../../lib/utils';
@@ -7,6 +8,8 @@ import CafeCard from './CafeCard';
 import CoffeePanel from './CoffeePanel';
 import CartPanel from './CartPanel';
 import type { CoffeeItem } from '../../types';
+
+const GoogleMap = dynamic(() => import('./GoogleMap'), { ssr: false });
 
 export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () => void; onOpenVoice: () => void }) {
   const store = useAppStore();
@@ -115,22 +118,16 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
         </>
       )}
 
-      <div className={`map-wrap ${mapExpanded ? 'expanded' : 'collapsed'}`}>
-        <svg className="map-svg-el" viewBox="0 0 480 280">
-          <rect width="480" height="280" fill="#E8DDD0" />
-          <rect x="0" y="120" width="480" height="16" fill="#D0C0A8" rx="2" />
-          <rect x="72" y="0" width="14" height="280" fill="#D0C0A8" rx="2" />
-          <rect x="332" y="0" width="14" height="280" fill="#D0C0A8" rx="2" />
-          {store.cafes.map((c) => (
-            <g key={c.id} style={{ cursor: 'pointer' }} transform={`translate(${c.x}, ${c.y})`} onClick={() => handleSelectCafe(c)}>
-              <circle r="18" fill={c.isOpen ? 'var(--amber)' : 'var(--red)'} opacity="0.15" />
-              <circle r="10" fill={c.isOpen ? 'var(--amber)' : 'var(--red)'} stroke="#fff" strokeWidth="2" />
-              <text y="4" textAnchor="middle" fill="#fff" fontSize="8" fontWeight="900">{c.id}</text>
-            </g>
-          ))}
-          <circle id="userDot" cx="240" cy="128" r="5" fill="#1A6FA8" />
-          <circle cx="240" cy="128" r="13" fill="#1A6FA8" opacity=".15" />
-        </svg>
+      <div className={`map-wrap ${mapExpanded ? 'expanded' : 'collapsed'}`}
+        style={{ height: mapExpanded ? '400px' : '180px', transition: 'height .3s ease', borderRadius: 'var(--r-md)', overflow: 'hidden', marginBottom: 12 }}>
+        <Suspense fallback={<div style={{ height: '100%', background: 'var(--latte)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-light)', fontSize: '.8rem' }}>Loading map...</div>}>
+          <GoogleMap
+            cafes={store.cafes}
+            selectedCafeId={store.selectedCafe?.id}
+            onSelectCafe={handleSelectCafe}
+            height={mapExpanded ? '400px' : '180px'}
+          />
+        </Suspense>
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
