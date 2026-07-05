@@ -7,8 +7,12 @@ import PartnerOrders from './PartnerOrders';
 import PartnerInventory from './PartnerInventory';
 import PartnerStaff from './PartnerStaff';
 import PartnerPromos from './PartnerPromos';
+import PartnerItems from './PartnerItems';
+import { watchNotifications } from '../../lib/firebase';
+import { ref, onValue, off } from 'firebase/database';
+import { db } from '../../lib/firebase';
 
-type Tab = 'orders' | 'inventory' | 'staff' | 'promos';
+type Tab = 'orders' | 'inventory' | 'staff' | 'promos' | 'items';
 
 export default function PartnerPortal() {
   const store = useAppStore();
@@ -19,6 +23,7 @@ export default function PartnerPortal() {
   const [cafeId, setCafeId] = useState<string | null>(null);
   const [pointsPerItem, setPointsPerItem] = useState(10);
   const [savingPoints, setSavingPoints] = useState(false);
+  const [notifCount, setNotifCount] = useState(0);
 
   useEffect(() => {
     const pid = store.currentUser?.profileId;
@@ -31,6 +36,18 @@ export default function PartnerPortal() {
         setPointsPerItem(data.points_per_item || 10);
       }
     })();
+
+    let cleanup: (() => void) | undefined;
+    if (pid) {
+      const r = ref(db, 'notifications');
+      const fn = onValue(r, (snap) => {
+        const val = snap.val();
+        const notifs = val ? Object.values(val) as any[] : [];
+        setNotifCount(notifs.filter((n: any) => !n.read).length);
+      });
+      cleanup = () => off(r, 'value', fn);
+    }
+    return () => { if (cleanup) cleanup(); };
   }, []);
 
   const handleToggle = async () => {
@@ -103,16 +120,22 @@ export default function PartnerPortal() {
       </div>
 
       <div className="admin-tabs">
-        <button className={`admin-tab ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => setActiveTab('orders')}>{t('partner_order_title', lang)}</button>
+        <button className={`admin-tab ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => setActiveTab('orders')}>
+          {t('partner_order_title', lang)} {notifCount > 0 && <span className="table-badge badge-red" style={{ marginLeft: 4 }}>{notifCount}</span>}
+        </button>
         <button className={`admin-tab ${activeTab === 'inventory' ? 'active' : ''}`} onClick={() => setActiveTab('inventory')}>{t('partner_inv_tab', lang)}</button>
         <button className={`admin-tab ${activeTab === 'staff' ? 'active' : ''}`} onClick={() => setActiveTab('staff')}>{t('partner_staff_tab', lang)}</button>
         <button className={`admin-tab ${activeTab === 'promos' ? 'active' : ''}`} onClick={() => setActiveTab('promos')}>{t('partner_promo_tab', lang)}</button>
+        <button className={`admin-tab ${activeTab === 'items' ? 'active' : ''}`} onClick={() => setActiveTab('items')}>
+          {lang === 'ar' ? '📋 عناصر القائمة' : '📋 Menu Items'}
+        </button>
       </div>
 
       {activeTab === 'orders' && <PartnerOrders />}
       {activeTab === 'inventory' && <PartnerInventory />}
       {activeTab === 'staff' && <PartnerStaff cafeId={cafeId} />}
       {activeTab === 'promos' && <PartnerPromos cafeId={cafeId} />}
+      {activeTab === 'items' && <PartnerItems />}
     </div>
   );
 }

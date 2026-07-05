@@ -1,9 +1,12 @@
 'use client';
 import { useAppStore } from '../../store/useAppStore';
+import { ref, update } from 'firebase/database';
+import { db } from '../../lib/firebase';
 import { t } from '../../i18n';
 
 export default function ProfilePage() {
   const store = useAppStore();
+  const unreadCount = store.notifications.filter(n => !n.read).length;
 
   return (
     <div id="pageProfile">
@@ -60,6 +63,47 @@ export default function ProfilePage() {
           </button>
         </div>
       </div>
+
+      {/* Notification Inbox */}
+      {store.isLoggedIn && (
+        <div style={{ marginTop: 14 }}>
+          <p className="section-title">
+            {t('notifications_title', store.lang)} {unreadCount > 0 && <span style={{ fontSize: '.75rem', color: 'var(--amber)', fontWeight: 700 }}>({unreadCount})</span>}
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {store.notifications.length === 0 && (
+              <div style={{ textAlign: 'center', padding: 24 }}>{store.lang === 'ar' ? 'لا توجد إشعارات' : 'No notifications'}</div>
+            )}
+            {store.notifications.sort((a, b) => {
+              const timeA = (a as any).createdAt || a.time || '';
+              const timeB = (b as any).createdAt || b.time || '';
+              return timeB.localeCompare(timeA);
+            }).map((n, i) => (
+              <div key={i} style={{
+                background: n.read ? '#fff' : 'var(--foam)',
+                borderRadius: 'var(--r-sm)', padding: '10px 12px',
+                boxShadow: 'var(--sh-sm)', display: 'flex', gap: 10, alignItems: 'flex-start',
+                borderLeft: n.read ? '3px solid transparent' : '3px solid var(--amber)',
+              }}>
+                <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{n.icon || '🔔'}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '.85rem', fontWeight: n.read ? 400 : 700 }}>{n.title}</div>
+                  <div style={{ fontSize: '.72rem', marginTop: 2 }}>{n.body}</div>
+                  <div style={{ fontSize: '.6rem', marginTop: 4, fontWeight: 600 }}>{n.time}</div>
+                </div>
+                {!n.read && store.currentUser?.profileId && (
+                  <button
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.7rem', color: 'var(--amber)', fontWeight: 700, flexShrink: 0 }}
+                    onClick={() => update(ref(db, `notifications/${String(n.id)}`), { read: true })}
+                  >
+                    {store.lang === 'ar' ? 'مقروء' : 'Read'}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {store.isLoggedIn && (
         <button className="action-btn red-btn" onClick={() => store.signOut()}>

@@ -2,8 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { createCampaign, addAuditLog, getAllProfiles } from '../../lib/supabase';
-import { ref, onValue, off } from 'firebase/database';
-import { db, pushNotification } from '../../lib/firebase';
+import { ref, onValue, off, set } from 'firebase/database';
+import { db } from '../../lib/firebase';
 import { useToast } from '../shared/Toast';
 import { t } from '../../i18n';
 
@@ -40,10 +40,8 @@ export default function AdminNotifications() {
     const fn = onValue(r, (snap) => {
       const val: Record<string, any> = snap.val() || {};
       const list: NotifRow[] = [];
-      for (const uid of Object.keys(val)) {
-        for (const nid of Object.keys(val[uid])) {
-          list.push({ id: nid, userId: uid, ...val[uid][nid] });
-        }
+      for (const nid of Object.keys(val)) {
+        list.push({ id: nid, userId: 'global', ...val[nid] });
       }
       list.sort((a, b) => (b.createdAt || b.time || '').localeCompare(a.createdAt || a.time || ''));
       setAllNotifs(list);
@@ -55,46 +53,28 @@ export default function AdminNotifications() {
     if (!title || !message) { show(t('err_notif_required', lang), 'error'); return; }
     try {
       const audienceLabel = audience === 'all' ? t('admin_audience_all', lang) : audience === 'customers' ? t('admin_audience_customers', lang) : t('admin_audience_partners', lang);
-      await createCampaign({
-        name_ar: title,
-        description_ar: message,
-        segment: audienceLabel,
-        status: 'sent',
-        reach_count: 0,
-      });
 
-      const { data: allProfiles } = await getAllProfiles();
-      const targetProfiles = (allProfiles || []).filter((p: any) => {
-        if (audience === 'all') return true;
-        if (audience === 'customers') return p.role === 'Customer';
-        if (audience === 'partners') return p.role === 'Partner';
-        return true;
+      const notifId = Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+      await set(ref(db, `notifications/${notifId}`), {
+        id: notifId,
+        title,
+        body: message,
+        icon: '🔔',
+        time: lang === 'ar' ? 'الآن' : 'Just now',
+        read: false,
+        priority: 'high',
+        audience: audienceLabel,
+        createdAt: new Date().toISOString(),
       });
-
-      let sentCount = 0;
-      for (const profile of targetProfiles) {
-        const pid = profile.id;
-        if (pid) {
-          pushNotification(pid, {
-            title,
-            body: message,
-            icon: '🔔',
-            time: lang === 'ar' ? 'الآن' : 'Just now',
-            read: false,
-            priority: 'high',
-          } as any);
-          sentCount++;
-        }
-      }
 
       await addAuditLog({
         user_name: t('audit_supervisor', lang),
         action_ar: t('admin_audit_send_notif', lang).replace('{title}', title),
         action_type: 'notification',
-        details: `${t('admin_audit_notif_audience', lang).replace('{audience}', audienceLabel)} — ${sentCount} users`,
+        details: t('admin_audit_notif_audience', lang).replace('{audience}', audienceLabel),
       });
       await loadFromSupabase();
-      show(`${t('success_notif_sent', lang).replace('{audience}', audienceLabel)} (${sentCount} users)`, 'success');
+      show(t('success_notif_sent', lang).replace('{audience}', audienceLabel), 'success');
       setTitle('');
       setMessage('');
     } catch (e) {

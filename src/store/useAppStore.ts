@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type {
   AppRole, Lang, Theme, Cafe, CoffeeItem, Order, Transaction, PartnerOrder, User,
   InventoryItem, StaffMember, Promo, Badge, Reward, Notification, AuditLogEntry,
-  Campaign, Partner, MenuItem, CurrentUser
+  Campaign, Partner, MenuItem, CurrentUser, Addon
 } from '../types';
 import {
   supabase, getCafes, getMenuItems, getOrders, getTransactions, getNotifications, getAuditLogs,
@@ -13,6 +13,12 @@ import {
   createCafe, createMenuItem, createCampaign, updateOrderStatus, addAuditLog,
   createNotification, updateSystemSetting,
 } from '../lib/supabase';
+import {
+  pushOrder, pushNotification as fbPushNotif, pushTransaction as fbPushTxn,
+  watchOrders, watchNotifications, watchTransactions,
+} from '../lib/firebase';
+import { ref, onValue, off } from 'firebase/database';
+import { db } from '../lib/firebase';
 import { t } from '../i18n';
 
 interface AppState {
@@ -45,6 +51,7 @@ interface AppState {
   notifications: Notification[];
   auditLog: AuditLogEntry[];
   campaigns: Campaign[];
+  addons: Addon[];
 
   setLang: (lang: Lang) => void;
   setRole: (role: AppRole) => void;
@@ -57,25 +64,49 @@ interface AppState {
   setSelectedPayment: (m: string) => void;
   setSelectedGender: (g: string | null) => void;
   setMenuFilter: (f: string) => void;
+  setAddons: (addons: Addon[]) => void;
 
   signIn: (email: string, pass: string, name?: string) => Promise<void>;
   signUp: (email: string, pass: string, name: string, phone: string) => Promise<void>;
   signOut: () => Promise<void>;
-  processPayment: (method: string) => void;
+  processPayment: (method: string, selectedAddons?: Addon[]) => void;
   updatePrices: (cafeId: number, items: { id: string; price: number }[]) => void;
   loadFromSupabase: () => Promise<void>;
   refreshCafes: () => Promise<void>;
   clearHistory: () => void;
+  sendNotification: (userId: string, title: string, body: string, icon?: string, priority?: string) => void;
 }
 
-const defaultCafes: Cafe[] = [
-  { id: 1, name: "Brew92", nameEn: "Brew92", sub: "شارع التحلية، الرياض", rating: 4.8, isOpen: true, dist: "1.2 كم", emoji: "☕", x: 120, y: 80, favorites: 1240, waitTime: "4 دق", favorited: false, email: "info@brew92.com", serviceType: "متخصصة", status: "active" },
-  { id: 2, name: "قهوة السعودية", nameEn: "Saudi Coffee", sub: "طريق الملك فهد", rating: 4.5, isOpen: true, dist: "2.5 كم", emoji: "🇸🇦", x: 300, y: 150, favorites: 890, waitTime: "6 دق", favorited: false, email: "info@saudicoffee.com", serviceType: "سعودية", status: "active" },
-  { id: 3, name: "إيليفن", nameEn: "Eleven", sub: "شارع الأمير محمد", rating: 4.9, isOpen: false, dist: "3.1 كم", emoji: "🔟", x: 200, y: 220, favorites: 2100, waitTime: "8 دق", favorited: false, email: "hello@eleven.sa", serviceType: "متخصصة", status: "inactive" },
-  { id: 4, name: "المختصة", nameEn: "Al-Moktasah", sub: "حي العليا", rating: 4.7, isOpen: true, dist: "0.8 كم", emoji: "🎯", x: 180, y: 100, favorites: 567, waitTime: "3 دق", favorited: false, email: "info@almoktasah.com", serviceType: "مختصة", status: "active" },
-];
+const defaultCafes: Cafe[] = [];
+const fbCleanups: (() => void)[] = [];
 
-const defaultOrders: Order[] = [];
+function startFirebaseWatchers(userId: string) {
+  fbCleanups.forEach((fn) => fn());
+  fbCleanups.length = 0;
+
+  fbCleanups.push(
+    watchOrders(userId, (orders) => {
+      useAppStore.setState({ orders });
+    })
+  );
+  fbCleanups.push(
+    watchTransactions(userId, (txns) => {
+      useAppStore.setState({ transactions: txns as any[] });
+    })
+  );
+
+  const notifRef = ref(db, 'notifications');
+  const notifFn = onValue(notifRef, (snap) => {
+    const val = snap.val();
+    useAppStore.setState({ notifications: val ? Object.values(val) as any[] : [] });
+  });
+  fbCleanups.push(() => off(notifRef, 'value', notifFn));
+}
+
+function stopFirebaseWatchers() {
+  fbCleanups.forEach((fn) => fn());
+  fbCleanups.length = 0;
+}
 
 export const useAppStore = create<AppState>((set, get) => {
   let saved: Partial<AppState> = {};
@@ -100,76 +131,24 @@ export const useAppStore = create<AppState>((set, get) => {
     lastOrder: null,
 
     cafes: defaultCafes,
-    orders: saved.orders || defaultOrders,
-    transactions: saved.transactions || [],
-    partnerOrders: [
-      { id: "SB-1043", customer: "أحمد محمد", coffee: "Black", coffeeAr: "سوداء", time: "08:45 AM", status: "pending", pickupCode: "K9P2" },
-      { id: "SB-1044", customer: "سارة علي", coffee: "Iced", coffeeAr: "مثلجة", time: "09:00 AM", status: "ready", pickupCode: "L3W8" },
-      { id: "SB-1045", customer: "فهد سعد", coffee: "Spanish", coffeeAr: "إسباني", time: "09:15 AM", status: "preparing", pickupCode: "M7N1" },
-    ],
-    partners: saved.partners || [
-      { name: "Brew92", location: "الرياض", status: "active", earnings: "4,500 ⃁", rating: 4.8, inventory: 92, inventoryEnabled: true },
-      { name: "قهوة السعودية", location: "جدة", status: "active", earnings: "3,200 ⃁", rating: 4.5, inventory: 78, inventoryEnabled: false },
-      { name: "مقهى جديد", location: "الدمام", status: "pending", earnings: "0 ⃁", rating: "-", inventory: 100, inventoryEnabled: true },
-    ],
-    menuItems: saved.menuItems || [
-      { name: "قهوة سوداء", nameEn: "Black Coffee", cat: "قهوة ساخنة", base: 7.00, total: 8.05, status: "active", sales: 1240 },
-      { name: "قهوة بيضاء", nameEn: "White Coffee", cat: "قهوة ساخنة", base: 7.00, total: 8.05, status: "active", sales: 980 },
-      { name: "قهوة مثلجة", nameEn: "Iced Coffee", cat: "قهوة باردة", base: 7.00, total: 8.05, status: "active", sales: 1560 },
-      { name: "قهوة إسباني", nameEn: "Spanish Latte", cat: "قهوة ساخنة", base: 9.00, total: 10.35, status: "active", sales: 890 },
-    ],
-    users: [
-      { name: "محمد علي", phone: "+966501234567", email: "mohammed@sabaa.com", role: "Super Admin", status: "active", wallet: 150.00, lastLogin: "2026-06-13 00:15", city: "riyadh" },
-      { name: "سارة أحمد", phone: "+966559876543", email: "sara@test.com", role: "Customer", status: "active", wallet: 45.00, lastLogin: "2026-06-12 18:30", city: "jeddah" },
-      { name: "خالد العمري", phone: "+966541112233", email: "khaled@brew92.com", role: "Admin", status: "active", wallet: 0.00, lastLogin: "2026-06-12 09:00", city: "riyadh" },
-    ],
-    inventory: [
-      { name: "حبوب عربية", level: 85, unit: "كجم" }, { name: "حليب طازج", level: 12, unit: "لتر" },
-      { name: "كوب ورقي", level: 45, unit: "قطعة" }, { name: "سكر", level: 90, unit: "كجم" },
-      { name: "مكعبات ثلج", level: 8, unit: "كجم" }, { name: "شوكولاتة", level: 23, unit: "كجم" },
-    ],
-    staff: saved.staff || [
-      { name: "أحمد", role: "باريستا", shift: "صباحي", status: "active" },
-      { name: "نورة", role: "كاشير", shift: "صباحي", status: "active" },
-      { name: "خالد", role: "باريستا", shift: "مسائي", status: "off" },
-    ],
-    promos: [
-      { name: "ساعة الصباح", discount: 20, start: "07:00", end: "10:00", active: true },
-      { name: "عروض الجمعة", discount: 15, start: "14:00", end: "18:00", active: false },
-    ],
-    badges: [
-      { id: "first", icon: "🎯", name: "القهوة الأولى", desc: "أكمل طلبك الأول", earned: true },
-      { id: "streak7", icon: "🔥", name: "أسبوع كامل", desc: "7 أيام متتالية", earned: true },
-      { id: "explorer", icon: "🗺️", name: "المكتشف", desc: "جرب 5 مقاهي مختلفة", earned: true },
-      { id: "vip", icon: "👑", name: "VIP", desc: "وصل إلى 5000 نقطة", earned: false },
-      { id: "group", icon: "👥", name: "منسق المجموعة", desc: "أنشئ طلب جماعي", earned: false },
-      { id: "night", icon: "🌙", name: "سهران", desc: "اطلب بعد منتصف الليل", earned: false },
-      { id: "voice", icon: "🎙️", name: "صوتي", desc: "استخدم الطلب الصوتي", earned: false },
-      { id: "sub", icon: "📅", name: "مشترك دائم", desc: "فعل اشتراك أسبوعي", earned: false },
-    ],
-    rewards: [
-      { id: "r1", icon: "☕", title: "قهوة مجانية", desc: "أي نوع قهوة في أي مقهى", cost: 100, redeemed: false },
-      { id: "r2", icon: "🥐", title: "كرواسان مجاني", desc: "مع أي طلب قهوة", cost: 50, redeemed: false },
-      { id: "r3", icon: "💰", title: "خصم 50%", desc: "على الطلب التالي", cost: 200, redeemed: false },
-      { id: "r4", icon: "📅", title: "أسبوع مجاني", desc: "اشتراك الباس لأسبوع", cost: 500, redeemed: false },
-    ],
-    notifications: [
-      { id: 1, title: "طلبك جاهز!", body: "قهوتك من Brew92 جاهزة للاستلام. الكود: B2M4", time: "منذ 5 دقائق", read: false, icon: "☕", priority: "high" },
-      { id: 2, title: "🎉 مكافأة جديدة", body: "لقد حصلت على شارة 'المكتشف'!", time: "منذ ساعة", read: false, icon: "🏆", priority: "normal" },
-      { id: 3, title: "عرض خاص", body: "خصم 20% على القهوة المثلجة اليوم فقط", time: "منذ 3 ساعات", read: false, icon: "🎉", priority: "normal" },
-    ],
-    auditLog: [
-      { time: "2026-06-13 00:10", user: "محمد علي", action: "تسجيل دخول", type: "login", details: "IP: 192.168.1.1" },
-      { time: "2026-06-12 23:45", user: "System", action: "إنشاء طلب جديد", type: "order", details: "SB-1046" },
-      { time: "2026-06-12 22:30", user: "سارة أحمد", action: "شحن محفظة", type: "finance", details: "+50 ⃁" },
-      { time: "2026-06-12 20:15", user: "خالد العمري", action: "تحديث حالة الطلب", type: "order", details: "SB-1043 → جاهز" },
-      { time: "2026-06-12 18:00", user: "محمد علي", action: "إضافة مستخدم جديد", type: "user", details: "فهد سعد → Customer" },
-      { time: "2026-06-12 14:20", user: "System", action: "تنبيه مخزون منخفض", type: "inventory", details: "حليب طازج: 12 لتر" },
-    ],
-    campaigns: [
-      { name: "عرض نهاية الأسبوع", segment: "العملاء النشطون في الرياض (إناث)", reach: 1240, status: "sent", time: "منذ ساعتين" },
-      { name: "تذكير شحن المحفظة", segment: "رصيد منخفض (< 20 ⃁)", reach: 450, status: "scheduled", time: "غداً 9:00 ص" },
-      { name: "تحديث شروط الشركاء", segment: "جميع الشركاء النشطين", reach: 42, status: "sent", time: "أمس" },
+    orders: [],
+    transactions: [],
+    partnerOrders: [],
+    partners: [],
+    menuItems: [],
+    users: [],
+    inventory: [],
+    staff: [],
+    promos: [],
+    badges: [],
+    rewards: [],
+    notifications: [],
+    auditLog: [],
+    campaigns: [],
+    addons: [
+      { id: 'water', name: 'ماء', nameEn: 'Water', price: 1, icon: '💧' },
+      { id: 'chocolate', name: 'شوكولاتة', nameEn: 'Chocolate', price: 5, icon: '🍫' },
+      { id: 'croissant', name: 'كرواسون', nameEn: 'Croissant', price: 4, icon: '🥐' },
     ],
 
     setLang: (lang) => set((s) => { saveState({ ...s, lang }); return { lang }; }),
@@ -203,6 +182,7 @@ export const useAppStore = create<AppState>((set, get) => {
     setSelectedPayment: (m) => set({ selectedPayment: m }),
     setSelectedGender: (g) => set({ selectedGender: g }),
     setMenuFilter: (f) => set({ menuFilter: f }),
+    setAddons: (addons) => set({ addons }),
 
     signIn: async (email, pass, name?) => {
       try {
@@ -259,6 +239,9 @@ export const useAppStore = create<AppState>((set, get) => {
           saveState({ ...s, isLoggedIn: true, currentUser: user, role: roleMap[profile.role] || 'customer', wallet: profile.wallet_balance || 0 });
           return { isLoggedIn: true, currentUser: user, role: roleMap[profile.role] || 'customer', wallet: profile.wallet_balance || 0 };
         });
+
+        startFirebaseWatchers(user.profileId);
+        get().loadFromSupabase();
       } catch (e: any) {
         throw new Error(e.message || 'فشل تسجيل الدخول');
       }
@@ -321,32 +304,37 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     signOut: async () => {
+      stopFirebaseWatchers();
       try {
         await supabaseSignOut();
       } catch {}
       set((s) => {
-        saveState({ ...s, isLoggedIn: false, currentUser: null, cart: [], wallet: 0, role: 'customer' });
-        return { isLoggedIn: false, currentUser: null, cart: [], wallet: 0, role: 'customer' };
+        saveState({ ...s, isLoggedIn: false, currentUser: null, cart: [], wallet: 0, role: 'customer', orders: [], transactions: [], notifications: [] });
+        return { isLoggedIn: false, currentUser: null, cart: [], wallet: 0, role: 'customer', orders: [], transactions: [], notifications: [] };
       });
     },
 
-    processPayment: async (method) => {
+    processPayment: async (method, selectedAddons) => {
       const s = useAppStore.getState();
       const total = s.cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+      const addonTotal = (selectedAddons || []).reduce((sum, a) => sum + a.price, 0);
+      const grandTotal = total + addonTotal;
       const pickupCode = Math.random().toString(36).substring(2, 6).toUpperCase();
       const orderId = `SB-${1000 + s.orders.length + 1}`;
       const pickupTime = s.selectedPickupSlot || new Date(Date.now() + 15 * 60000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
       const newOrder: Order = {
         id: orderId,
         cafe: s.selectedCafe?.name || '',
         coffee: s.cart.map((c) => c.type).join(', '),
         coffeeAr: s.cart.map((c) => c.type).join(', '),
-        amount: total,
-        base: total / 1.15,
-        vat: total - total / 1.15,
+        amount: grandTotal,
+        base: grandTotal / 1.15,
+        vat: grandTotal - grandTotal / 1.15,
         status: 'pending',
-        date: new Date().toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true }),
+        date: dateStr,
         icon: '☕',
         pickupCode,
         pickupTime,
@@ -363,18 +351,24 @@ export const useAppStore = create<AppState>((set, get) => {
           const { data: orderData } = await createFullOrder({
             customer_id: pid,
             cafe_id: cafe?.data?.id || '00000000-0000-0000-0000-000000000000',
-            subtotal: total / 1.15,
-            vat_amount: total - total / 1.15,
+            subtotal: grandTotal / 1.15,
+            vat_amount: grandTotal - grandTotal / 1.15,
             platform_fee: 0,
-            total_amount: total,
-            payment_method: method === 'wallet' ? 'wallet' : 'card',
-            items: s.cart.map((c) => ({
+            total_amount: grandTotal,
+            payment_method: method === 'wallet' ? 'wallet' : 'stcpay',
+            items: [...s.cart.map((c) => ({
               item_name_ar: c.name || c.type,
               icon: c.icon,
               quantity: c.qty,
               unit_price: c.price,
               total_price: c.price * c.qty,
-            })),
+            })), ...(selectedAddons || []).map((a) => ({
+              item_name_ar: a.name,
+              icon: a.icon,
+              quantity: 1,
+              unit_price: a.price,
+              total_price: a.price,
+            }))],
           });
 
           if (orderData?.data?.id) {
@@ -382,52 +376,47 @@ export const useAppStore = create<AppState>((set, get) => {
           }
         }
       } catch (e) {
-        console.warn('Failed to save order to Supabase, saving locally:', e);
+        console.warn('Failed to save order to Supabase:', e);
       }
 
-      // Create notification for new order
-      const notifItem: Notification = {
-        id: Date.now(),
-        title: s.lang === 'ar' ? `☕ طلب جديد ${orderId}` : `☕ New Order ${orderId}`,
-        body: s.lang === 'ar'
-          ? `تم تأكيد طلبك من ${s.selectedCafe?.name || ''} — كود الاستلام: ${pickupCode}`
-          : `Order confirmed at ${s.selectedCafe?.nameEn || ''} — Pickup code: ${pickupCode}`,
-        time: s.lang === 'ar' ? 'الآن' : 'Just now',
-        read: false,
-        icon: '☕',
-        priority: 'high',
-      };
-
-      // Save notification to Supabase if logged in
-      try {
-        const pid = s.currentUser?.profileId;
-        if (pid) {
-          await createNotification({
-            user_id: pid,
-            title: notifItem.title,
-            body: notifItem.body,
-            icon: '☕',
-            priority: 'high',
-          }).catch(() => {});
-        }
-      } catch {}
+      // Save to Firebase
+      const pid = s.currentUser?.profileId;
+      if (pid) {
+        fbPushTxn(pid, {
+          title: `طلب ${s.selectedCafe?.name || ''}`,
+          titleEn: `Order ${s.selectedCafe?.nameEn || ''}`,
+          amount: -grandTotal,
+          type: 'debit',
+          date: dateStr,
+        });
+        fbPushNotif(pid, {
+          title: s.lang === 'ar' ? `☕ طلب جديد ${orderId}` : `☕ New Order ${orderId}`,
+          body: s.lang === 'ar'
+            ? `تم تأكيد طلبك من ${s.selectedCafe?.name || ''} — كود الاستلام: ${pickupCode}`
+            : `Order confirmed at ${s.selectedCafe?.nameEn || ''} — Pickup code: ${pickupCode}`,
+          time: s.lang === 'ar' ? 'الآن' : 'Just now',
+          read: false,
+          icon: '☕',
+          priority: 'high',
+        });
+        pushOrder(pid, newOrder);
+      }
 
       const totalDrinks = s.cart.reduce((sum, i) => sum + i.qty, 0);
       const earnedPoints = totalDrinks * 10;
       const newPoints = (s.currentUser?.points || 0) + earnedPoints;
       const updatedUser = s.currentUser ? { ...s.currentUser, points: newPoints } : null;
 
-      const newWallet = method === 'wallet' ? s.wallet - total : s.wallet;
+      const newWallet = method === 'wallet' ? s.wallet - grandTotal : s.wallet;
       const newOrders = [newOrder, ...s.orders];
       const txn: Transaction = {
         title: `طلب ${s.selectedCafe?.name || ''}`,
         titleEn: `Order ${s.selectedCafe?.nameEn || ''}`,
-        amount: -total,
+        amount: -grandTotal,
         type: 'debit',
-        date: new Date().toISOString().split('T')[0],
+        date: dateStr,
       };
       const newTransactions = [...s.transactions, txn];
-      const newNotifs = [notifItem, ...s.notifications];
 
       if (updatedUser?.profileId) {
         try {
@@ -438,8 +427,7 @@ export const useAppStore = create<AppState>((set, get) => {
         } catch {}
       }
 
-      saveState({ ...s, currentUser: updatedUser, wallet: newWallet, orders: newOrders, transactions: newTransactions, cart: [], notifications: newNotifs });
-      set({ currentUser: updatedUser, wallet: newWallet, orders: newOrders, transactions: newTransactions, cart: [], lastOrder: newOrder, notifications: newNotifs });
+      set({ currentUser: updatedUser, wallet: newWallet, orders: newOrders, transactions: newTransactions, cart: [], lastOrder: newOrder });
     },
 
     updatePrices: (_cafeId, _items) => {
@@ -450,21 +438,19 @@ export const useAppStore = create<AppState>((set, get) => {
       set((s) => {
         const cleared = { ...s, orders: [], transactions: [] };
         saveState(cleared);
-        localStorage.setItem('sabaa_state', JSON.stringify({
-          isLoggedIn: cleared.isLoggedIn,
-          currentUser: cleared.currentUser,
-          wallet: cleared.wallet,
-          orders: [],
-          transactions: [],
-          lang: cleared.lang,
-          theme: cleared.theme,
-          cart: cleared.cart,
-          staff: cleared.staff,
-          partners: cleared.partners,
-          menuItems: cleared.menuItems,
-          notifications: cleared.notifications,
-        }));
         return { orders: [], transactions: [] };
+      });
+    },
+
+    sendNotification: (userId, title, body, icon = '🔔', priority = 'normal') => {
+      const notifId = Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+      const r = ref(db, `notifications/${notifId}`);
+      import('firebase/database').then(({ set }) => {
+        set(r, {
+          id: notifId, title, body, icon,
+          time: 'الآن', read: false, priority,
+          createdAt: new Date().toISOString(),
+        });
       });
     },
 
@@ -577,15 +563,9 @@ function saveState(state: Partial<AppState>) {
       isLoggedIn: state.isLoggedIn,
       currentUser: state.currentUser,
       wallet: state.wallet,
-      orders: state.orders,
-      transactions: state.transactions,
       lang: state.lang,
       theme: state.theme,
-      partners: state.partners,
       cart: state.cart,
-      staff: state.staff,
-      menuItems: state.menuItems,
-      notifications: state.notifications,
     };
     localStorage.setItem('sabaa_state', JSON.stringify(minimal));
   } catch {}
