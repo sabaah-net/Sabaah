@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
 import { useToast } from '../shared/Toast';
@@ -36,7 +36,9 @@ export default function VoiceModal() {
   const recognitionRef = useRef<any>(null);
   const transcriptRef = useRef('');
   const manualStopRef = useRef(false);
+  const hasErrorRef = useRef(false);
   const [isSupported, setIsSupported] = useState(false);
+  const [isSecure, setIsSecure] = useState(true);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [status, setStatus] = useState<VoiceStatus>('idle');
@@ -46,6 +48,11 @@ export default function VoiceModal() {
   useEffect(() => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     setIsSupported(!!SR);
+    try { setIsSecure(window.isSecureContext); } catch { setIsSecure(false); }
+    if (SR) {
+      // Probe if recognition can be constructed (throws in some restricted contexts)
+      try { new SR(); } catch { setIsSupported(false); }
+    }
   }, []);
 
   const resetState = () => {
@@ -55,6 +62,7 @@ export default function VoiceModal() {
     setMatch({});
     setStatus('idle');
     manualStopRef.current = false;
+    hasErrorRef.current = false;
   };
 
   const close = () => {
@@ -68,7 +76,7 @@ export default function VoiceModal() {
     setTimeout(resetState, 300);
   };
 
-  const processTranscript = useCallback((text: string) => {
+  const processTranscript = (text: string) => {
     setStatus('processing');
     const normalized = text.trim().toLowerCase();
     let matchedCafe: string | null = null;
@@ -120,16 +128,15 @@ export default function VoiceModal() {
 
     setStatus(matchedCafe || matchedCoffee ? 'success' : 'error');
     if (!matchedCafe && !matchedCoffee) {
-      setErrorMsg('لم نتمكن من التعرف على المقهى أو نوع القهوة');
+      setErrorMsg(store.lang === 'ar' ? 'لم نتمكن من التعرف على المقهى أو نوع القهوة' : 'Could not recognize cafe or coffee type');
     }
-  }, [store, show]);
+  };
 
-  const startListening = useCallback(() => {
+  const startListening = () => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) return;
+    if (!SR) { setErrorMsg(store.lang === 'ar' ? 'المتصفح لا يدعم التعرف على الصوت' : 'Browser not supported'); setStatus('error'); return; }
 
     resetState();
-    manualStopRef.current = false;
 
     const recognition = new SR();
     recognition.lang = 'ar-SA';
@@ -147,23 +154,25 @@ export default function VoiceModal() {
     };
 
     recognition.onerror = (event: any) => {
-      if (event.error === 'no-speech') {
-        setErrorMsg('لم يتم التعرف على صوت');
-      } else if (event.error === 'aborted') {
-        return;
-      } else {
-        setErrorMsg('حدث خطأ في التعرف على الصوت');
-      }
+      if (event.error === 'aborted') return;
+      hasErrorRef.current = true;
+      const msgs: Record<string, string> = {
+        'no-speech': store.lang === 'ar' ? 'لم يتم التعرف على صوت' : 'No speech detected',
+        'not-allowed': store.lang === 'ar' ? 'الرجاء السماح باستخدام الميكروفون' : 'Please allow microphone access',
+        'audio-capture': store.lang === 'ar' ? 'لا يمكن الوصول إلى الميكروفون' : 'Cannot access microphone',
+        'network': store.lang === 'ar' ? 'خطأ في الاتصال بالشبكة' : 'Network error',
+        'service-not-allowed': store.lang === 'ar' ? 'خدمة التعرف على الصوت غير متاحة' : 'Speech service not available',
+      };
+      setErrorMsg(msgs[event.error] || (store.lang === 'ar' ? 'حدث خطأ في التعرف على الصوت' : 'Speech recognition error'));
       setStatus('error');
       setIsListening(false);
+      console.warn('SpeechRecognition error:', event.error);
     };
 
     recognition.onend = () => {
       setIsListening(false);
-      if (manualStopRef.current) {
-        manualStopRef.current = false;
-        return;
-      }
+      if (manualStopRef.current) { manualStopRef.current = false; return; }
+      if (hasErrorRef.current) { hasErrorRef.current = false; return; }
       const text = transcriptRef.current;
       if (text && text.trim()) {
         processTranscript(text);
@@ -173,10 +182,20 @@ export default function VoiceModal() {
     };
 
     recognitionRef.current = recognition;
-    recognition.start();
-    setIsListening(true);
-    setStatus('listening');
-  }, [processTranscript]);
+    try {
+      recognition.start();
+      setIsListening(true);
+      setStatus('listening');
+    } catch (e: any) {
+      hasErrorRef.current = true;
+      const msg = e.name === 'NotAllowedError' || e.name === 'SecurityError'
+        ? (store.lang === 'ar' ? 'الرجاء السماح باستخدام الميكروفون في إعدادات المتصفح' : 'Please allow microphone in browser settings')
+        : (store.lang === 'ar' ? 'فشل تشغيل الميكروفون' : 'Failed to start microphone');
+      setErrorMsg(msg);
+      setStatus('error');
+      console.warn('SpeechRecognition start failed:', e);
+    }
+  };
 
   const stopListening = () => {
     manualStopRef.current = true;
@@ -193,6 +212,8 @@ export default function VoiceModal() {
     }
   };
 
+  const unsupported = !isSupported || !isSecure;
+
   const suggestions = store.cafes.slice(0, 3).map(c => {
     const types = ['سوداء', 'بيضاء', 'مثلجة', 'إسباني'];
     return `"${c.name} ${types[Math.floor(Math.random() * types.length)]}"`;
@@ -205,10 +226,14 @@ export default function VoiceModal() {
         <button className="modal-close" onClick={close} style={{ position: 'absolute', left: 18, top: 22, fontSize: '1.2rem' }}>✕</button>
         <div className="modal-title">🎙️ {t('voice_order', store.lang)}</div>
 
-        {!isSupported ? (
+        {unsupported ? (
           <div style={{ textAlign: 'center', padding: 20 }}>
             <div style={{ fontSize: '3rem', marginBottom: 10 }}>🚫</div>
-            <div style={{ fontWeight: 700, color: 'var(--red)' }}>{store.lang === 'ar' ? 'المتصفح لا يدعم التعرف على الصوت' : 'Browser does not support speech recognition'}</div>
+            <div style={{ fontWeight: 700, color: 'var(--red)' }}>
+              {!isSecure
+                ? (store.lang === 'ar' ? 'يتطلب الاتصال الآمن (HTTPS)' : 'Requires HTTPS connection')
+                : (store.lang === 'ar' ? 'المتصفح لا يدعم التعرف على الصوت. استخدم Chrome أو Edge' : 'Browser not supported. Use Chrome or Edge')}
+            </div>
           </div>
         ) : status === 'idle' || status === 'listening' ? (
           <>

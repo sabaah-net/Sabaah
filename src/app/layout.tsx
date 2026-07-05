@@ -5,6 +5,9 @@ import '../../css/style.css';
 export const metadata: Metadata = {
   title: 'سبعة ٧ — Sabaa Coffee',
   description: 'منصة القهوة السعودية — طلب قهوة من أفضل المقاهي',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
