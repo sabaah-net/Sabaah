@@ -120,7 +120,7 @@ export default function AdminSubscriptions() {
                 <div style={{ fontSize: '.75rem', color: 'var(--text-light)', marginTop: 2 }}>{(lang === 'ar' ? p.description_ar : p.description_en) || ''}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--bark)' }}>{p.price_weekly.toFixed(2)} ⃁<span style={{ fontSize: '.7rem', fontWeight: 400, color: 'var(--text-light)' }}>/{lang === 'ar' ? 'شهر' : 'mo'}</span></div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--bark)' }}>⃁ {p.price_weekly.toFixed(2)}<span style={{ fontSize: '.7rem', fontWeight: 400, color: 'var(--text-light)' }}>/{lang === 'ar' ? 'شهر' : 'mo'}</span></div>
                 {p.discount_percent > 0 && (
                   <div style={{ fontSize: '.75rem', color: 'var(--green)', fontWeight: 700 }}>-{p.discount_percent}% {lang === 'ar' ? 'خصم' : 'discount'}</div>
                 )}

@@ -46,7 +46,7 @@ export default function PartnerPortal() {
       }}>
         <div>
           <div style={{ fontSize: '.62rem', color: 'rgba(255,255,255,.5)' }}>{t('partner_today_earnings', lang)}</div>
-          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--caramel)' }}>345.00 ⃁</div>
+          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--caramel)' }}>⃁ 345.00</div>
         </div>
         <div>
           <div style={{ fontSize: '.62rem', color: 'rgba(255,255,255,.5)' }}>{t('partner_orders', lang)}</div>

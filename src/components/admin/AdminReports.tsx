@@ -172,10 +172,10 @@ export default function AdminReports() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
             {[
               { label: t('report_total_orders', lang), val: summary.totalOrders.toLocaleString('en-US'), color: 'var(--green)' },
-              { label: t('report_total_revenue', lang), val: `${summary.totalRevenue.toFixed(2)} ⃁`, color: 'var(--blue)' },
-              { label: t('report_net_revenue', lang), val: `${summary.netRevenue.toFixed(2)} ⃁`, color: 'var(--purple)' },
-              { label: t('report_avg_order', lang), val: `${summary.avgOrderValue.toFixed(2)} ⃁`, color: 'var(--amber)' },
-              { label: 'VAT', val: `${summary.totalVat.toFixed(2)} ⃁`, color: 'var(--red)' },
+              { label: t('report_total_revenue', lang), val: `⃁ ${summary.totalRevenue.toFixed(2)}`, color: 'var(--blue)' },
+              { label: t('report_net_revenue', lang), val: `⃁ ${summary.netRevenue.toFixed(2)}`, color: 'var(--purple)' },
+              { label: t('report_avg_order', lang), val: `⃁ ${summary.avgOrderValue.toFixed(2)}`, color: 'var(--amber)' },
+              { label: 'VAT', val: `⃁ ${summary.totalVat.toFixed(2)}`, color: 'var(--red)' },
             ].map((k, i) => (
               <div key={i} style={{ background: 'var(--foam)', borderRadius: 12, padding: 14 }}>
                 <div style={{ fontSize: '.72rem', color: 'var(--text-light)' }}>{k.label}</div>
@@ -197,7 +197,7 @@ export default function AdminReports() {
                       <td style={{ fontWeight: 800, color: i < 3 ? 'var(--amber)' : 'var(--text-light)' }}>#{i + 1}</td>
                       <td><strong>{item.name}</strong></td>
                       <td>{item.sales.toLocaleString('en-US')}</td>
-                      <td>{item.revenue.toFixed(2)} ⃁</td>
+                      <td>⃁ {item.revenue.toFixed(2)}</td>
                       <td style={{ fontSize: '.8rem', color: 'var(--text-light)' }}>{item.cafeName}</td>
                     </tr>
                   ))}
@@ -224,7 +224,7 @@ export default function AdminReports() {
                         <td style={{ fontWeight: 800, color: i < 3 ? 'var(--amber)' : 'var(--text-light)' }}>#{i + 1}</td>
                         <td><strong>{cafe.cafeName}</strong></td>
                         <td>{cafe.orders.toLocaleString('en-US')}</td>
-                        <td>{cafe.revenue.toFixed(2)} ⃁</td>
+                        <td>⃁ {cafe.revenue.toFixed(2)}</td>
                         <td><span className="table-badge badge-green">{pct}%</span></td>
                       </tr>
                     );
@@ -285,7 +285,7 @@ export default function AdminReports() {
                       <td><strong>{c.name}</strong></td>
                       <td style={{ fontSize: '.8rem', color: 'var(--text-light)' }}>{c.email}</td>
                       <td>{c.orders}</td>
-                      <td>{c.totalSpent.toFixed(2)} ⃁</td>
+                      <td>⃁ {c.totalSpent.toFixed(2)}</td>
                       <td><span className={`table-badge badge-${c.tier === 'platinum' ? 'purple' : c.tier === 'gold' ? 'amber' : 'green'}`}>{c.tier}</span></td>
                     </tr>
                   ))}

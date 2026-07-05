@@ -52,8 +52,8 @@ export default function AdminDashboard() {
   const activeUsers = store.users.filter(u => u.status === 'active').length;
 
   const kpis = [
-    { label: t('kpi_total_revenue', lang), val: `${totalRevenue.toFixed(2)} ⃁`, color: 'green', icon: '💰', delta: '▲ 12%' },
-    { label: t('kpi_revenue_today', lang), val: `${todayRevenue.toFixed(2)} ⃁`, color: 'amber', icon: '📈', delta: '▲ 8%' },
+    { label: t('kpi_total_revenue', lang), val: `⃁ ${totalRevenue.toFixed(2)}`, color: 'green', icon: '💰', delta: '▲ 12%' },
+    { label: t('kpi_revenue_today', lang), val: `⃁ ${todayRevenue.toFixed(2)}`, color: 'amber', icon: '📈', delta: '▲ 8%' },
     { label: t('kpi_orders_today', lang), val: String(todayOrders), color: 'blue', icon: '📦', delta: '▲ 15%' },
     { label: t('kpi_active_users', lang), val: String(activeUsers), color: 'purple', icon: '👥', delta: '▲ 5%' },
   ];
@@ -120,8 +120,8 @@ export default function AdminDashboard() {
                   <td><strong>{o.id}</strong></td>
                   <td>{t('th_customer', lang)}</td>
                   <td>{o.cafe}</td>
-                  <td>{o.amount.toFixed(2)} ⃁</td>
-                  <td>{o.vat.toFixed(2)} ⃁</td>
+                  <td>⃁ {o.amount.toFixed(2)}</td>
+                  <td>⃁ {o.vat.toFixed(2)}</td>
                   <td><span className={`table-badge badge-${o.status === 'completed' ? 'green' : o.status === 'ready' ? 'blue' : 'amber'}`}>
                     {o.status === 'pending' ? '⏳' : o.status === 'ready' ? '✅' : '✓'} {t(`status_${o.status}`, lang) || o.status}
                   </span></td>

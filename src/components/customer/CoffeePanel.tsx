@@ -2,12 +2,12 @@
 import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
 const items = [
-  { type: 'black', icon: '☕', price: '7 ⃁' },
-  { type: 'white', icon: '🥛', price: '7 ⃁' },
-  { type: 'iced', icon: '🧊', price: '7 ⃁' },
-  { type: 'spanish', icon: '🍯', price: '9 ⃁' },
-  { type: 'turkish', icon: '🫖', price: '8 ⃁' },
-  { type: 'mocha', icon: '🍫', price: '10 ⃁' },
+  { type: 'black', icon: '☕', price: '⃁ 7' },
+  { type: 'white', icon: '🥛', price: '⃁ 7' },
+  { type: 'iced', icon: '🧊', price: '⃁ 7' },
+  { type: 'spanish', icon: '🍯', price: '⃁ 9' },
+  { type: 'turkish', icon: '🫖', price: '⃁ 8' },
+  { type: 'mocha', icon: '🍫', price: '⃁ 10' },
 ];
 
 interface CoffeePanelProps {

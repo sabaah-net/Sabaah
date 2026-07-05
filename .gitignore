@@ -32,3 +32,6 @@ next-env.d.ts
 # Cache
 .cache/
 *.cache
+
+# Supabase CLI temp files
+supabase/.temp/

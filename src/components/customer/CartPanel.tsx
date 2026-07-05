@@ -32,7 +32,7 @@ export default function CartPanel({ cart, onUpdateQty, onClear, onPlaceOrder }: 
                 <div style={{ fontSize: '1.4rem' }}>{coffeeIcons[item.type] || '☕'}</div>
                 <div>
                   <div style={{ fontSize: '.85rem', fontWeight: 700 }}>{t(item.type, store.lang)}</div>
-                  <div style={{ fontSize: '.7rem', color: 'var(--text-light)' }}>{item.price.toFixed(2)} ⃁ × {item.qty}</div>
+                  <div style={{ fontSize: '.7rem', color: 'var(--text-light)' }}>⃁ {item.price.toFixed(2)} × {item.qty}</div>
                 </div>
               </div>
               <div className="qty-control">
@@ -40,14 +40,14 @@ export default function CartPanel({ cart, onUpdateQty, onClear, onPlaceOrder }: 
                 <span className="qty-value">{item.qty}</span>
                 <button className="qty-btn" onClick={() => onUpdateQty(item.type, 1)}>+</button>
               </div>
-              <div style={{ fontWeight: 900, color: 'var(--amber)', fontSize: '.9rem' }}>{itemTotal.toFixed(2)} ⃁</div>
+              <div style={{ fontWeight: 900, color: 'var(--amber)', fontSize: '.9rem' }}>⃁ {itemTotal.toFixed(2)}</div>
             </div>
           );
         })}
       </div>
       <div className="cart-total-row">
         <span>{t('cart_total', store.lang)}</span>
-        <span>{total.toFixed(2)} ⃁</span>
+        <span>⃁ {total.toFixed(2)}</span>
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
         <button className="action-btn secondary" style={{ flex: 1, fontSize: '.8rem' }} onClick={onClear}>{t('cart_clear', store.lang)}</button>

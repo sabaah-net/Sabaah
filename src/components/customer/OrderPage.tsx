@@ -108,7 +108,7 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
               >
                 <div className="reorder-title">{o.icon} {o.coffeeAr || o.coffee}</div>
                 <div className="reorder-meta">{o.cafe}</div>
-                <div className="reorder-price">{o.amount.toFixed(2)} ⃁</div>
+                <div className="reorder-price">⃁ {o.amount.toFixed(2)}</div>
               </div>
             ))}
           </div>

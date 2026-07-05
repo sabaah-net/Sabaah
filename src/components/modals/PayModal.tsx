@@ -82,13 +82,17 @@ export default function PayModal() {
     }
   };
 
-  const handlePay = () => {
+  const handlePay = async () => {
+    if (isNaN(total) || total <= 0) {
+      show(t('payment_error', store.lang) || 'Invalid total', 'error');
+      return;
+    }
     if (method === 'wallet' && store.wallet < total) {
       show(t('insufficient_balance', store.lang), 'error');
       return;
     }
     store.setSelectedPickupSlot(formatTime(slots[selectedSlotIndex]));
-    store.processPayment(method);
+    await store.processPayment(method);
     show(t('payment_successful', store.lang), 'success');
     closeModal();
   };

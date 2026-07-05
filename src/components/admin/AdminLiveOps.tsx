@@ -57,7 +57,7 @@ export default function AdminLiveOps() {
                 <td><strong>#{o.id}</strong></td>
                 <td>{o.coffeeAr || t('th_customer', lang)}</td>
                 <td>{o.cafe}</td>
-                <td>{o.amount.toFixed(2)} ⃁</td>
+                <td>⃁ {o.amount.toFixed(2)}</td>
                 <td style={{ fontSize: '.78rem', color: 'var(--text-light)' }}>{o.date}</td>
                   <td><span className={`table-badge badge-${o.status === 'completed' ? 'green' : o.status === 'ready' ? 'blue' : 'amber'}`}>{t(`status_${o.status}`, lang) || o.status}</span></td>
                 <td>

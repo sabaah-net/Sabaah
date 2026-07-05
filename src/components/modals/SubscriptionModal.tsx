@@ -79,7 +79,7 @@ export default function SubscriptionModal() {
             >
               <div className="sub-header">
                 <div className="sub-name">{store.lang === 'ar' ? plan.name : plan.nameEn}</div>
-                <div className="sub-price">{plan.price} ⃁/{store.lang === 'ar' ? 'أسبوع' : 'wk'}</div>
+                <div className="sub-price">⃁ {plan.price}/{store.lang === 'ar' ? 'أسبوع' : 'wk'}</div>
               </div>
               <div className="sub-desc">{store.lang === 'ar' ? plan.desc : plan.descEn}</div>
               <div className="sub-features">
