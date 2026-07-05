@@ -16,8 +16,10 @@ import AdminReports from './AdminReports';
 import AdminApprovals from './AdminApprovals';
 import AdminSubscriptions from './AdminSubscriptions';
 import AdminPermissions from './AdminPermissions';
+import AdminSuppliers from './AdminSuppliers';
+import AdminComplaints from './AdminComplaints';
 
-type AdminPage = 'apDashboard' | 'apLiveOps' | 'apPartners' | 'apMenus' | 'apUsers' | 'apFinancials' | 'apAnalytics' | 'apReports' | 'apNotifications' | 'apAudit' | 'apSettings' | 'apApprovals' | 'apSubscriptions' | 'apPermissions';
+type AdminPage = 'apDashboard' | 'apLiveOps' | 'apPartners' | 'apMenus' | 'apUsers' | 'apFinancials' | 'apAnalytics' | 'apReports' | 'apNotifications' | 'apAudit' | 'apSettings' | 'apApprovals' | 'apSubscriptions' | 'apPermissions' | 'apSuppliers' | 'apComplaints';
 
 export default function AdminShell() {
   const [page, setPage] = useState<AdminPage>('apDashboard');
@@ -36,6 +38,8 @@ export default function AdminShell() {
     { id: 'apAnalytics', icon: '📈', labelKey: 'admin_analytics' },
     { id: 'apReports', icon: '📄', labelKey: 'admin_reports' },
     { id: 'apNotifications', icon: '🔔', labelKey: 'admin_notifications', sectionKey: 'security_section' },
+    { id: 'apSuppliers', icon: '🚚', labelKey: 'admin_suppliers' },
+    { id: 'apComplaints', icon: '⚠️', labelKey: 'admin_complaints' },
     { id: 'apAudit', icon: '📋', labelKey: 'admin_audit' },
     { id: 'apSettings', icon: '⚙️', labelKey: 'admin_settings' },
   ];
@@ -48,6 +52,8 @@ export default function AdminShell() {
     apPermissions: '🔐 Permissions',
     apFinancials: t('admin_financials', lang), apAnalytics: t('admin_analytics', lang),
     apReports: t('admin_reports', lang), apNotifications: t('admin_notifications', lang),
+    apSuppliers: t('admin_suppliers', lang) || '🚚 Suppliers',
+    apComplaints: t('admin_complaints', lang) || '⚠️ Complaints',
     apAudit: t('admin_audit', lang), apSettings: t('admin_settings', lang),
   };
 
@@ -84,10 +90,18 @@ export default function AdminShell() {
         <div className="admin-topbar">
           <div className="admin-topbar-title">{pageTitles[page]}</div>
           <div style={{ display: 'flex', gap: 9, alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '.75rem', color: 'var(--text-light)', background: 'var(--foam)', padding: '4px 10px', borderRadius: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '.75rem', background: 'var(--foam)', padding: '4px 10px', borderRadius: 20 }}>
               <span style={{ width: 8, height: 8, background: 'var(--green)', borderRadius: '50%', display: 'inline-block' }} />
               {t('system_online', lang)}
             </div>
+            <select className="coffee-input" style={{ width: 'auto', margin: 0, padding: '4px 8px', fontSize: '.75rem' }}
+              value={lang} onChange={(e) => useAppStore.getState().setLang(e.target.value as any)}>
+              <option value="ar">🇸🇦 AR</option>
+              <option value="en">🇬🇧 EN</option>
+              <option value="zh">🇨🇳 ZH</option>
+              <option value="fr">🇫🇷 FR</option>
+              <option value="es">🇪🇸 ES</option>
+            </select>
             <button className="action-btn secondary" style={{ width: 'auto', padding: '7px 16px', fontSize: '.8rem', margin: 0 }} onClick={() => loadFromSupabase()}>{t('refresh', lang)}</button>
             <button className="action-btn secondary" style={{ width: 'auto', padding: '7px 16px', fontSize: '.8rem', margin: 0 }} onClick={() => setPage('apReports')}>{t('export', lang)}</button>
           </div>
@@ -105,6 +119,8 @@ export default function AdminShell() {
           {page === 'apFinancials' && <AdminFinancials />}
           {page === 'apAnalytics' && <AdminAnalytics />}
           {page === 'apNotifications' && <AdminNotifications />}
+          {page === 'apSuppliers' && <AdminSuppliers />}
+          {page === 'apComplaints' && <AdminComplaints />}
           {page === 'apAudit' && <AdminAudit />}
           {page === 'apSettings' && <AdminSettings />}
           {page === 'apReports' && <AdminReports />}

@@ -1,22 +1,6 @@
 {
   "rules": {
-    "orders": {
-      "$userId": {
-        ".read": true,
-        ".write": true
-      }
-    },
-    "transactions": {
-      "$userId": {
-        ".read": true,
-        ".write": true
-      }
-    },
-    "notifications": {
-      "$userId": {
-        ".read": true,
-        ".write": true
-      }
-    }
+    ".read": true,
+    ".write": true
   }
 }

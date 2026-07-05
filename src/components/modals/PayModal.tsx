@@ -4,6 +4,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
 import { useToast } from '../shared/Toast';
 import PriceTag from '../shared/PriceTag';
+import type { Addon } from '../../types';
 import { getUserSubscription } from '../../lib/supabase';
 
 function generateAllSlots(avgWaitMin: number = 5): Date[] {
@@ -21,21 +22,21 @@ function generateAllSlots(avgWaitMin: number = 5): Date[] {
   return slots;
 }
 
+const ARABIC_NUMERALS: Record<string, string> = {
+  '0': '٠','1': '١','2': '٢','3': '٣','4': '٤',
+  '5': '٥','6': '٦','7': '٧','8': '٨','9': '٩',
+};
 function toArabicNumeral(s: string): string {
-  const arabicDigits = '٠١٢٣٤٥٦٧٨٩';
-  return s.split('').map(ch => arabicDigits[parseInt(ch)] || ch).join('');
+  return s.replace(/[0-9]/g, (c) => ARABIC_NUMERALS[c] || c);
 }
 
-function formatTime(d: Date): string {
+function formatTime(d: Date, lang?: string): string {
   const h = d.getHours();
   const m = d.getMinutes().toString().padStart(2, '0');
   const ampm = h >= 12 ? 'PM' : 'AM';
-  const ampmAr = h >= 12 ? 'م' : 'ص';
-  const h12 = (h % 12 || 12).toString().padStart(2, '0');
   const h24 = h.toString().padStart(2, '0');
-  const en = `${h24}:${m} ${ampm}`;
-  const ar = `${ampmAr} ${toArabicNumeral(h24)}:${toArabicNumeral(m)}`;
-  return `${en} - ${ar}`;
+  const timeStr = `${h24}:${m} ${ampm}`;
+  return lang === 'ar' ? toArabicNumeral(timeStr) : timeStr;
 }
 
 const POINTS_PER_DRINK = 10;
@@ -43,7 +44,8 @@ const POINTS_PER_DRINK = 10;
 export default function PayModal() {
   const store = useAppStore();
   const { show } = useToast();
-  const [method, setMethod] = useState<'wallet' | 'card' | 'cash'>('wallet');
+  const [method, setMethod] = useState<'wallet' | 'stcpay'>('wallet');
+  const [selectedAddons, setSelectedAddons] = useState<Addon[]>([]);
   const cafeWaitMin = store.selectedCafe?.avg_wait_min || 5;
   const slots = useMemo(() => generateAllSlots(cafeWaitMin), [cafeWaitMin]);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState(0);
@@ -51,8 +53,10 @@ export default function PayModal() {
   const [subDiscount, setSubDiscount] = useState(0);
 
   const rawTotal = store.cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const discountAmount = rawTotal * (subDiscount / 100);
-  const total = rawTotal - discountAmount;
+  const addonTotal = selectedAddons.reduce((s, a) => s + a.price, 0);
+  const subtotalWithAddons = rawTotal + addonTotal;
+  const discountAmount = subtotalWithAddons * (subDiscount / 100);
+  const total = subtotalWithAddons - discountAmount;
 
   useEffect(() => {
     if (store.currentUser?.profileId) {
@@ -91,8 +95,8 @@ export default function PayModal() {
       show(t('insufficient_balance', store.lang), 'error');
       return;
     }
-    store.setSelectedPickupSlot(formatTime(slots[selectedSlotIndex]));
-    await store.processPayment(method);
+    store.setSelectedPickupSlot(formatTime(slots[selectedSlotIndex], store.lang));
+    await store.processPayment(method, selectedAddons);
     show(t('payment_successful', store.lang), 'success');
     closeModal();
   };
@@ -101,8 +105,13 @@ export default function PayModal() {
 
   const methodLabels: Record<string, { icon: string; key: string }> = {
     wallet: { icon: '💰', key: 'wallet_method' },
-    card: { icon: '💳', key: 'card_method' },
-    cash: { icon: '💵', key: 'cash_method' },
+    stcpay: { icon: '📱', key: 'stcpay_method' },
+  };
+
+  const toggleAddon = (addon: Addon) => {
+    setSelectedAddons((prev) =>
+      prev.find((a) => a.id === addon.id) ? prev.filter((a) => a.id !== addon.id) : [...prev, addon]
+    );
   };
 
   return (
@@ -128,31 +137,31 @@ export default function PayModal() {
           {store.cart.map((item, i) => (
             <div key={i} className="cart-item" style={{ padding: '7px 0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: '1.2rem' }}>{item.icon}</span>
+                <span style={{ fontSize: '1.5rem' }}>{item.icon}</span>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '.82rem' }}>{item.name}</div>
-                  <div style={{ fontSize: '.65rem', color: 'var(--text-light)' }}>{item.qty} × <PriceTag value={item.price} /></div>
+                  <div style={{ fontWeight: 700, fontSize: '.95rem' }}>{item.name}</div>
+                  <div style={{ fontSize: '.75rem', fontWeight: 600 }}>{item.qty} × <PriceTag value={item.price} /></div>
                 </div>
               </div>
-              <div style={{ fontWeight: 900, fontSize: '.88rem', color: 'var(--bark)' }}><PriceTag value={item.price * item.qty} /></div>
+              <div style={{ fontWeight: 900, fontSize: '1rem', color: 'var(--bark)' }}><PriceTag value={item.price * item.qty} /></div>
             </div>
           ))}
-          <div className="cart-total-row" style={{ fontSize: '.95rem', padding: '8px 0 0' }}>
-            <span>{t('cart_total', store.lang)}</span>
-            <span><PriceTag value={rawTotal} /></span>
-          </div>
           {subDiscount > 0 && (
             <div className="cart-total-row" style={{ fontSize: '.82rem', padding: '4px 0', color: 'var(--green)' }}>
               <span>💎 {t('sub_discount', store.lang) || 'Sub discount'} (-{subDiscount}%)</span>
               <span>-<PriceTag value={discountAmount} /></span>
             </div>
           )}
-          <div className="cart-total-row" style={{ fontSize: '1rem', fontWeight: 900, padding: '4px 0 0', borderTop: '1px solid var(--latte)' }}>
-            <span>{t('cart_total', store.lang)}</span>
+          <div className="cart-total-row" style={{ fontSize: '1rem', fontWeight: 900, padding: '8px 0 0', borderTop: '1px solid var(--latte)' }}>
+            <span>
+              {t('cart_total', store.lang)}{' '}
+              <span style={{ fontSize: '.78rem', fontWeight: 600, color: 'var(--amber)' }}>
+                [⭐ {store.lang === 'ar' ? 'ستحصل على' : "You'll earn"}{' '}
+                {store.cart.reduce((s, i) => s + i.qty, 0) * POINTS_PER_DRINK}{' '}
+                {t('loyalty_points_label', store.lang)}]
+              </span>
+            </span>
             <span><PriceTag value={total} /></span>
-          </div>
-          <div style={{ fontSize: '.75rem', color: 'var(--amber)', textAlign: 'left', padding: '4px 0 0', fontWeight: 700 }}>
-            ⭐ {store.lang === 'ar' ? 'ستحصل على' : "You'll earn"} {store.cart.reduce((s, i) => s + i.qty, 0) * POINTS_PER_DRINK} {t('loyalty_points_label', store.lang)}
           </div>
         </div>
 
@@ -182,9 +191,44 @@ export default function PayModal() {
           </div>
         </div>
 
+        {/* Add-ons horizontal box */}
+        {store.addons.length > 0 && (
+          <div style={{ background: '#fff', borderRadius: 'var(--r-sm)', padding: '10px 12px', marginBottom: 12, boxShadow: 'var(--sh-sm)' }}>
+            <div style={{ fontSize: '.85rem', fontWeight: 800, marginBottom: 8, textAlign: 'center' }}>
+              🧃 {store.lang === 'ar' ? 'إضافات' : 'Add-ons'}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+              {store.addons.map((addon) => {
+                const isSelected = selectedAddons.some((a) => a.id === addon.id);
+                return (
+                  <button
+                    key={addon.id}
+                    className={`pay-method ${isSelected ? 'active' : ''}`}
+                    style={{ padding: '10px 6px', fontSize: '.8rem', minWidth: 0, textAlign: 'center' }}
+                    onClick={() => toggleAddon(addon)}
+                  >
+                    <div style={{ fontSize: '1.3rem' }}>{addon.icon}</div>
+                    <div style={{ fontWeight: 700, fontSize: '.78rem', margin: '2px 0' }}>
+                      {store.lang === 'ar' ? addon.name : addon.nameEn}
+                    </div>
+                    <div style={{ fontSize: '.75rem', fontWeight: 600, color: 'var(--amber)' }}>
+                      +<PriceTag value={addon.price} />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {addonTotal > 0 && (
+              <div style={{ fontSize: '.8rem', fontWeight: 700, textAlign: 'right', marginTop: 6, padding: '4px 0 0', borderTop: '1px solid var(--latte)' }}>
+                {store.lang === 'ar' ? 'إجمالي الإضافات' : 'Add-ons total'}: +<PriceTag value={addonTotal} />
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Payment method */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
-          {(['wallet', 'card', 'cash'] as const).map((m) => (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+          {(['wallet', 'stcpay'] as const).map((m) => (
             <button
               key={m}
               className={`pay-method ${method === m ? 'active' : ''}`}

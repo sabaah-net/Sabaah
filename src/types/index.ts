@@ -1,11 +1,61 @@
-export type UserRole = 'Customer' | 'Partner' | 'Admin' | 'Operations Admin' | 'Finance Admin' | 'Super Admin';
+export type UserRole = 'Customer' | 'Partner' | 'Super Admin';
+export type PartnerRole = 'owner' | 'finance' | 'supervisor' | 'staff' | 'cashier';
+export type SabaaRole = 'super_admin' | 'finance' | 'admin' | 'operations' | 'customer_care' | 'sales' | 'marketing';
 export type AppRole = 'customer' | 'partner' | 'superadmin';
 export type Lang = 'ar' | 'en' | 'zh' | 'fr' | 'es';
 export type Theme = 'light' | 'dark';
 export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'completed' | 'cancelled';
-export type PaymentMethod = 'wallet' | 'card' | 'apple';
+export type PaymentMethod = 'wallet' | 'stcpay';
 export type TransactionType = 'credit' | 'debit';
 export type LoyaltyTier = 'bronze' | 'silver' | 'gold' | 'platinum';
+export type CafeStatus = 'active' | 'suspended' | 'pending' | 'closed';
+export type ComplaintStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
+
+export interface Addon {
+  id: string;
+  name: string;
+  nameEn: string;
+  price: number;
+  icon: string;
+}
+
+export interface Complaint {
+  id: string;
+  userId: string;
+  userName: string;
+  orderId?: string;
+  subject: string;
+  description: string;
+  status: ComplaintStatus;
+  createdAt: string;
+  updatedAt: string;
+  resolution?: string;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  contactPerson: string;
+  phone: string;
+  email: string;
+  material: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface PendingMenuItem {
+  id: string;
+  cafeId: string;
+  cafeName: string;
+  name: string;
+  nameEn: string;
+  desc: string;
+  basePrice: number;
+  icon: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedBy: string;
+  createdAt: string;
+}
 
 export interface Cafe {
   id: number;

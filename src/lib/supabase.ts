@@ -418,3 +418,28 @@ export async function clearAllOrders() {
   await supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
   await supabase.from('transactions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 }
+
+// ---- PENDING MENU ITEMS (partner → admin approval) ----
+export async function pushPendingMenuItem(item: {
+  cafe_id: string;
+  cafe_name: string;
+  name_ar: string;
+  name_en: string;
+  description: string;
+  base_price: number;
+  icon: string;
+  submitted_by: string;
+}) {
+  return supabase.from('pending_menu_items').insert({
+    ...item,
+    status: 'pending',
+  }).select().single();
+}
+
+export async function fetchPendingMenuItems() {
+  return supabase.from('pending_menu_items').select('*').order('created_at', { ascending: false });
+}
+
+export async function updatePendingMenuItemStatus(id: string, status: 'approved' | 'rejected') {
+  return supabase.from('pending_menu_items').update({ status }).eq('id', id);
+}
