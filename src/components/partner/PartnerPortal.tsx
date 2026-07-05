@@ -17,15 +17,18 @@ export default function PartnerPortal() {
   const [activeTab, setActiveTab] = useState<Tab>('orders');
   const [isOpen, setIsOpen] = useState(true);
   const [cafeId, setCafeId] = useState<string | null>(null);
+  const [pointsPerItem, setPointsPerItem] = useState(10);
+  const [savingPoints, setSavingPoints] = useState(false);
 
   useEffect(() => {
     const pid = store.currentUser?.profileId;
     if (!pid) return;
     (async () => {
-      const { data } = await supabase.from('cafes').select('id, is_open').eq('owner_id', pid).maybeSingle();
+      const { data } = await supabase.from('cafes').select('id, is_open, points_per_item').eq('owner_id', pid).maybeSingle();
       if (data) {
         setCafeId(data.id);
         setIsOpen(data.is_open);
+        setPointsPerItem(data.points_per_item || 10);
       }
     })();
   }, []);
@@ -36,6 +39,13 @@ export default function PartnerPortal() {
     if (cafeId) {
       await supabase.from('cafes').update({ is_open: next }).eq('id', cafeId);
     }
+  };
+
+  const handlePointsChange = async () => {
+    if (!cafeId) return;
+    setSavingPoints(true);
+    await supabase.from('cafes').update({ points_per_item: pointsPerItem }).eq('id', cafeId);
+    setSavingPoints(false);
   };
 
   return (
@@ -57,7 +67,16 @@ export default function PartnerPortal() {
           <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--caramel)' }}>87%</div>
         </div>
       </div>
-      <button className="action-btn secondary" style={{ width: 'auto', padding: '6px 14px', fontSize: '.75rem', marginBottom: 10 }} onClick={signOut}>{t('logout_label', lang)}</button>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
+        <button className="action-btn secondary" style={{ width: 'auto', padding: '6px 14px', fontSize: '.75rem' }} onClick={signOut}>{t('logout_label', lang)}</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '.75rem', background: 'var(--cream)', padding: '4px 10px', borderRadius: 8 }}>
+          <span>⭐ {t('points_per_item', lang) || 'Points/item'}:</span>
+          <input type="number" min="0" max="100" value={pointsPerItem}
+            onChange={(e) => setPointsPerItem(Number(e.target.value))}
+            style={{ width: 50, padding: '2px 4px', borderRadius: 4, border: '1px solid var(--latte)', textAlign: 'center' }} />
+          <button className="action-btn secondary" style={{ padding: '2px 8px', fontSize: '.65rem' }} disabled={savingPoints} onClick={handlePointsChange}>💾</button>
+        </div>
+      </div>
 
       <div style={{
         background: isOpen ? 'var(--green-bg)' : 'var(--red-bg)',
@@ -92,8 +111,8 @@ export default function PartnerPortal() {
 
       {activeTab === 'orders' && <PartnerOrders />}
       {activeTab === 'inventory' && <PartnerInventory />}
-      {activeTab === 'staff' && <PartnerStaff />}
-      {activeTab === 'promos' && <PartnerPromos />}
+      {activeTab === 'staff' && <PartnerStaff cafeId={cafeId} />}
+      {activeTab === 'promos' && <PartnerPromos cafeId={cafeId} />}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { supabase, updateProfile, updateProfileRole, addAuditLog, createProfile, signUp as supabaseSignUp } from '../../lib/supabase';
+import { updateUserWalletAndPoints, getAvailableOwners, assignCafeOwner } from '../../lib/pickme';
 import { t } from '../../i18n';
 
 interface UserRow {
@@ -13,25 +14,35 @@ interface UserRow {
   role: string;
   status: string;
   wallet_balance: number;
+  loyalty_points: number;
   city: string;
   last_login: string | null;
   created_at: string;
 }
 
+interface CafeOption {
+  id: string;
+  name_ar: string;
+  owner_id: string | null;
+}
+
 export default function AdminUsers() {
   const { lang } = useAppStore();
   const [users, setUsers] = useState<UserRow[]>([]);
+  const [cafes, setCafes] = useState<CafeOption[]>([]);
   const [search, setSearch] = useState('');
   const [modalMode, setModalMode] = useState<'edit' | 'create' | null>(null);
   const [editUser, setEditUser] = useState<UserRow | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', phone: '', password: '', role: 'Customer', status: 'active', wallet_balance: 0, city: '' });
+  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', phone: '', password: '', role: 'Customer', status: 'active', wallet_balance: 0, loyalty_points: 0, city: '', assignedCafeId: '' });
 
   const fetchUsers = async () => {
     const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
     if (data) setUsers(data as UserRow[]);
+    const { data: c } = await supabase.from('cafes').select('id, name_ar, owner_id');
+    if (c) setCafes(c as CafeOption[]);
   };
 
   useEffect(() => { fetchUsers(); }, []);
@@ -44,13 +55,14 @@ export default function AdminUsers() {
 
   const openEdit = (u: UserRow) => {
     setEditUser(u);
-    setForm({ first_name: u.first_name, last_name: u.last_name, email: u.email, phone: u.phone || '', password: '', role: u.role, status: u.status, wallet_balance: u.wallet_balance, city: u.city });
+    const assigned = cafes.find(c => c.owner_id === u.id);
+    setForm({ first_name: u.first_name, last_name: u.last_name, email: u.email, phone: u.phone || '', password: '', role: u.role, status: u.status, wallet_balance: u.wallet_balance, loyalty_points: u.loyalty_points, city: u.city, assignedCafeId: assigned?.id || '' });
     setModalMode('edit'); setError(''); setSuccess('');
   };
 
   const openCreate = () => {
     setEditUser(null);
-    setForm({ first_name: '', last_name: '', email: '', phone: '', password: '', role: 'Customer', status: 'active', wallet_balance: 0, city: 'riyadh' });
+    setForm({ first_name: '', last_name: '', email: '', phone: '', password: '', role: 'Customer', status: 'active', wallet_balance: 0, loyalty_points: 0, city: 'riyadh', assignedCafeId: '' });
     setModalMode('create'); setError(''); setSuccess('');
   };
 
@@ -77,8 +89,12 @@ export default function AdminUsers() {
         });
         if (profileError) throw profileError;
 
-        await supabase.from('profiles').update({ status: form.status, wallet_balance: form.wallet_balance, city: form.city }).eq('id', authUserId);
+        await supabase.from('profiles').update({ status: form.status, wallet_balance: form.wallet_balance, loyalty_points: form.loyalty_points, city: form.city }).eq('id', authUserId);
         await supabase.from('profiles').update({ password: form.password }).eq('auth_id', authUserId);
+
+        if (form.assignedCafeId) {
+          await assignCafeOwner(form.assignedCafeId, authUserId);
+        }
 
         addAuditLog({ user_name: t('audit_supervisor', lang), action_ar: `Create user: ${form.first_name} ${form.last_name}`, action_type: 'user', details: `Role: ${form.role}` }).catch(() => {});
         setSuccess(`✅ ${form.first_name} ${form.last_name} created`);
@@ -87,8 +103,17 @@ export default function AdminUsers() {
           const { error: err } = await updateProfileRole(editUser.id, form.role);
           if (err) throw err;
         }
-        const { error: err } = await updateProfile(editUser.id, { status: form.status, wallet_balance: form.wallet_balance, city: form.city });
+        await updateUserWalletAndPoints(editUser.id, form.wallet_balance, form.loyalty_points);
+        const { error: err } = await updateProfile(editUser.id, { status: form.status, city: form.city });
         if (err) throw err;
+
+        if (form.assignedCafeId) {
+          const currentOwner = cafes.find(c => c.id === form.assignedCafeId)?.owner_id;
+          if (currentOwner !== editUser.id) {
+            await assignCafeOwner(form.assignedCafeId, editUser.id);
+          }
+        }
+
         addAuditLog({ user_name: t('audit_supervisor', lang), action_ar: `Edit user: ${editUser.first_name} ${editUser.last_name}`, action_type: 'user', details: `Role: ${editUser.role} → ${form.role}` }).catch(() => {});
         setSuccess(`✅ ${editUser.first_name} ${editUser.last_name} updated`);
       }
@@ -118,12 +143,12 @@ export default function AdminUsers() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>#</th><th>{t('name', lang)}</th><th>{t('phone', lang)}</th><th>{t('email', lang)}</th><th>{t('role', lang)}</th><th>{t('status', lang)}</th><th>{t('wallet_col', lang)}</th><th>{t('last_login', lang)}</th><th>{t('th_actions', lang)}</th>
+              <th>#</th><th>{t('name', lang)}</th><th>{t('phone', lang)}</th><th>{t('email', lang)}</th><th>{t('role', lang)}</th><th>{t('status', lang)}</th><th>{t('wallet_col', lang)}</th><th>{t('Points', lang) || '⭐ Points'}</th><th>{t('last_login', lang)}</th><th>{t('th_actions', lang)}</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={9} style={{ textAlign: 'center', padding: 24, color: 'var(--text-light)' }}>{t('no_results', lang)}</td></tr>
+              <tr><td colSpan={10} style={{ textAlign: 'center', padding: 24, color: 'var(--text-light)' }}>{t('no_results', lang)}</td></tr>
             )}
             {filtered.map((u, i) => (
               <tr key={u.id}>
@@ -134,6 +159,7 @@ export default function AdminUsers() {
                 <td><span className={`table-badge badge-${u.role === 'Partner' ? 'blue' : u.role === 'Super Admin' || u.role === 'Admin' ? 'amber' : 'green'}`}>{u.role}</span></td>
                 <td><span className={`table-badge badge-${u.status === 'active' ? 'green' : 'red'}`}>{statusLabel[u.status] || u.status}</span></td>
                 <td>⃁ {(u.wallet_balance || 0).toFixed(2)}</td>
+                <td>⭐ {u.loyalty_points || 0}</td>
                 <td style={{ fontSize: '.78rem', color: 'var(--text-light)' }}>{u.last_login ? new Date(u.last_login).toLocaleDateString('en-US') : '-'}</td>
                 <td>
                   <button className="action-btn secondary" style={{ width: 'auto', padding: '4px 10px', fontSize: '.72rem', margin: 0 }}
@@ -181,6 +207,17 @@ export default function AdminUsers() {
 
             <label style={{ fontSize: '.78rem', color: 'var(--text-light)', marginBottom: 4, display: 'block', marginTop: 8 }}>{t('wallet_col', lang)}</label>
             <input className="coffee-input" type="number" step="0.01" value={form.wallet_balance} onChange={(e) => setForm({ ...form, wallet_balance: Number(e.target.value) })} />
+
+            <label style={{ fontSize: '.78rem', color: 'var(--text-light)', marginBottom: 4, display: 'block', marginTop: 8 }}>⭐ Loyalty Points</label>
+            <input className="coffee-input" type="number" step="1" value={form.loyalty_points} onChange={(e) => setForm({ ...form, loyalty_points: Number(e.target.value) })} />
+
+            <label style={{ fontSize: '.78rem', color: 'var(--text-light)', marginBottom: 4, display: 'block', marginTop: 8 }}>🏪 Assign Cafe (for Partner)</label>
+            <select className="coffee-input" value={form.assignedCafeId} onChange={(e) => setForm({ ...form, assignedCafeId: e.target.value })}>
+              <option value="">{lang === 'ar' ? '— لا يوجد' : '— None'}</option>
+              {cafes.map(c => (
+                <option key={c.id} value={c.id}>{c.name_ar} {c.owner_id ? '(taken)' : ''}</option>
+              ))}
+            </select>
 
             <label style={{ fontSize: '.78rem', color: 'var(--text-light)', marginBottom: 4, display: 'block', marginTop: 8 }}>{t('f_city', lang)}</label>
             <input className="coffee-input" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />

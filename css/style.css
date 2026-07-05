@@ -624,3 +624,4 @@ body{background:var(--latte);font-family:'Cairo',system-ui,sans-serif;color:var(
 .sub-desc{font-size:.75rem;color:var(--text-light);margin-bottom:10px}
 .sub-features{display:flex;flex-wrap:wrap;gap:6px}
 .sub-feature{font-size:.65rem;background:var(--latte);padding:3px 8px;border-radius:20px;font-weight:700}
+.truncate-text{max-width:10ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}

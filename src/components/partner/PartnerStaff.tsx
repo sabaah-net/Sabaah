@@ -1,8 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
 import type { Lang } from '../../types';
+import { getStaff, addStaffMember, deleteStaffMember } from '../../lib/pickme';
+import type { StaffRow } from '../../lib/pickme';
 
 const roleLabel = (r: string, l: Lang) =>
   r === 'باريستا' || r === 'Barista' ? t('partner_staff_role_barista', l) :
@@ -14,19 +16,37 @@ const shiftLabel = (s: string, l: Lang) =>
   s === 'مسائي' || s === 'Evening' ? t('partner_staff_shift_evening', l) :
   s === 'يوم كامل' || s === 'Full Day' ? t('partner_staff_shift_full', l) : s;
 
-export default function PartnerStaff() {
+export default function PartnerStaff({ cafeId }: { cafeId: string | null }) {
   const store = useAppStore();
   const lang = store.lang;
+  const [staff, setStaff] = useState<StaffRow[]>([]);
   const [name, setName] = useState('');
   const [role, setRole] = useState('باريستا');
   const [shift, setShift] = useState('صباحي');
+  const [loading, setLoading] = useState(false);
 
-  const handleAdd = () => {
-    if (!name.trim()) return;
-    const current = useAppStore.getState().staff;
-    useAppStore.setState({ staff: [...current, { name, role, shift, status: 'active' }] });
+  useEffect(() => {
+    if (!cafeId) return;
+    setLoading(true);
+    getStaff(cafeId).then(({ data }) => {
+      if (data) setStaff(data as StaffRow[]);
+      setLoading(false);
+    });
+  }, [cafeId]);
+
+  const handleAdd = async () => {
+    if (!cafeId || !name.trim()) return;
+    const { data } = await addStaffMember(cafeId, { name: name.trim(), role, shift });
+    if (data) setStaff(prev => [...prev, data as StaffRow]);
     setName('');
   };
+
+  const handleDelete = async (id: string) => {
+    await deleteStaffMember(id);
+    setStaff(prev => prev.filter(s => s.id !== id));
+  };
+
+  if (!cafeId) return <p style={{ color: 'var(--text-light)', padding: 20 }}>{lang === 'ar' ? 'لم يتم تعيين مقهى' : 'No cafe assigned'}</p>;
 
   return (
     <div>
@@ -51,9 +71,13 @@ export default function PartnerStaff() {
       </div>
 
       <p className="section-title">{t('partner_staff_today', lang)}</p>
+      {loading && <p style={{ color: 'var(--text-light)', textAlign: 'center', padding: 20 }}>{lang === 'ar' ? 'جاري التحميل...' : 'Loading...'}</p>}
+      {!loading && staff.length === 0 && (
+        <p style={{ color: 'var(--text-light)', textAlign: 'center', padding: 20 }}>{lang === 'ar' ? 'لا يوجد موظفون' : 'No staff members'}</p>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {store.staff.map((s, i) => (
-          <div key={i} className="emp-card">
+        {staff.map((s) => (
+          <div key={s.id} className="emp-card">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{
                 width: 36, height: 36, borderRadius: '50%', background: 'var(--latte)',
@@ -66,9 +90,7 @@ export default function PartnerStaff() {
                 <div style={{ fontSize: '.65rem', color: 'var(--text-light)' }}>{roleLabel(s.role, lang)} • {shiftLabel(s.shift, lang)}</div>
               </div>
             </div>
-            <button className="emp-delete-btn" onClick={() => {
-              useAppStore.setState({ staff: useAppStore.getState().staff.filter((_, idx) => idx !== i) });
-            }}>🗑️</button>
+            <button className="emp-delete-btn" onClick={() => handleDelete(s.id)}>🗑️</button>
           </div>
         ))}
       </div>

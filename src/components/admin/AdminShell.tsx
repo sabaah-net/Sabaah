@@ -15,8 +15,9 @@ import AdminSettings from './AdminSettings';
 import AdminReports from './AdminReports';
 import AdminApprovals from './AdminApprovals';
 import AdminSubscriptions from './AdminSubscriptions';
+import AdminPermissions from './AdminPermissions';
 
-type AdminPage = 'apDashboard' | 'apLiveOps' | 'apPartners' | 'apMenus' | 'apUsers' | 'apFinancials' | 'apAnalytics' | 'apReports' | 'apNotifications' | 'apAudit' | 'apSettings' | 'apApprovals' | 'apSubscriptions';
+type AdminPage = 'apDashboard' | 'apLiveOps' | 'apPartners' | 'apMenus' | 'apUsers' | 'apFinancials' | 'apAnalytics' | 'apReports' | 'apNotifications' | 'apAudit' | 'apSettings' | 'apApprovals' | 'apSubscriptions' | 'apPermissions';
 
 export default function AdminShell() {
   const [page, setPage] = useState<AdminPage>('apDashboard');
@@ -30,6 +31,7 @@ export default function AdminShell() {
     { id: 'apApprovals', icon: '✅', labelKey: 'admin_approvals' },
     { id: 'apSubscriptions', icon: '📅', labelKey: 'admin_subscriptions' },
     { id: 'apUsers', icon: '👥', labelKey: 'admin_users' },
+    { id: 'apPermissions', icon: '🔐', labelKey: 'Permissions' },
     { id: 'apFinancials', icon: '💰', labelKey: 'admin_financials', sectionKey: 'finance_section' },
     { id: 'apAnalytics', icon: '📈', labelKey: 'admin_analytics' },
     { id: 'apReports', icon: '📄', labelKey: 'admin_reports' },
@@ -42,10 +44,11 @@ export default function AdminShell() {
   const pageTitles: Record<AdminPage, string> = {
     apDashboard: t('admin_dashboard', lang), apLiveOps: t('admin_live_ops', lang),
     apPartners: t('admin_partners', lang), apMenus: t('admin_menus', lang),
-    apApprovals: '✅ Approvals', apSubscriptions: '📅 Subscriptions', apUsers: t('admin_users', lang), apFinancials: t('admin_financials', lang),
-    apAnalytics: t('admin_analytics', lang), apReports: t('admin_reports', lang),
-    apNotifications: t('admin_notifications', lang), apAudit: t('admin_audit', lang),
-    apSettings: t('admin_settings', lang),
+    apApprovals: '✅ Approvals', apSubscriptions: '📅 Subscriptions', apUsers: t('admin_users', lang),
+    apPermissions: '🔐 Permissions',
+    apFinancials: t('admin_financials', lang), apAnalytics: t('admin_analytics', lang),
+    apReports: t('admin_reports', lang), apNotifications: t('admin_notifications', lang),
+    apAudit: t('admin_audit', lang), apSettings: t('admin_settings', lang),
   };
 
   return (
@@ -66,7 +69,7 @@ export default function AdminShell() {
               <div key={item.id}>
                 {item.sectionKey && <div className="admin-nav-section">{t(item.sectionKey, lang)}</div>}
                 <div className={`admin-nav-item ${page === item.id ? 'active' : ''}`} onClick={() => setPage(item.id)}>
-                  <span>{item.icon}</span> {t(item.labelKey, lang)}
+                  <span>{item.icon}</span> {item.labelKey === 'Permissions' ? 'Permissions' : t(item.labelKey, lang)}
                 </div>
               </div>
             );
@@ -98,6 +101,7 @@ export default function AdminShell() {
           {page === 'apApprovals' && <AdminApprovals />}
           {page === 'apSubscriptions' && <AdminSubscriptions />}
           {page === 'apUsers' && <AdminUsers />}
+          {page === 'apPermissions' && <AdminPermissions />}
           {page === 'apFinancials' && <AdminFinancials />}
           {page === 'apAnalytics' && <AdminAnalytics />}
           {page === 'apNotifications' && <AdminNotifications />}
