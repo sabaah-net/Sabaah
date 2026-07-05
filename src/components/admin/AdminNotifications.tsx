@@ -73,9 +73,9 @@ export default function AdminNotifications() {
 
       let sentCount = 0;
       for (const profile of targetProfiles) {
-        const authId = profile.auth_id || profile.id;
-        if (authId) {
-          pushNotification(authId, {
+        const pid = profile.id;
+        if (pid) {
+          pushNotification(pid, {
             title,
             body: message,
             icon: '🔔',
