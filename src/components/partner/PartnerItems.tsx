@@ -2,6 +2,9 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { supabase, pushPendingMenuItem } from '../../lib/supabase';
+import { t } from '../../i18n';
+import { ref, update } from 'firebase/database';
+import { db } from '../../lib/firebase';
 
 interface MenuItemRow {
   id: string;
@@ -24,11 +27,18 @@ export default function PartnerItems() {
   const [newForm, setNewForm] = useState({ name: '', nameEn: '', desc: '', basePrice: 0, icon: '☕' });
   const [tab, setTab] = useState<'list' | 'add'>('list');
   const [savingPoints, setSavingPoints] = useState<string | null>(null);
+  const [isCashier, setIsCashier] = useState(false);
+  const [partnerRole, setPartnerRole] = useState('');
 
   useEffect(() => {
     const pid = currentUser?.profileId;
     if (!pid) return;
     (async () => {
+      const { data: profile } = await supabase.from('profiles').select('partner_role').eq('id', pid).maybeSingle();
+      if (profile?.partner_role) {
+        setPartnerRole(profile.partner_role);
+        setIsCashier(profile.partner_role === 'cashier');
+      }
       const { data: cafe } = await supabase.from('cafes').select('id').eq('owner_id', pid).maybeSingle();
       if (cafe) {
         setCafeId(cafe.id);
@@ -38,7 +48,17 @@ export default function PartnerItems() {
     })();
   }, []);
 
+  const toggleAvailability = async (item: MenuItemRow) => {
+    const newStatus = item.status === 'active' ? 'inactive' : 'active';
+    await supabase.from('menu_items').update({ status: newStatus }).eq('id', item.id);
+    setItems(items.map(i => i.id === item.id ? { ...i, status: newStatus } : i));
+    if (cafeId) {
+      update(ref(db, `menu_items/${cafeId}/${item.id}`), { status: newStatus });
+    }
+  };
+
   const openEdit = (item: MenuItemRow) => {
+    if (isCashier) return;
     setEditItem(item);
     setForm({
       name: item.name_ar,
@@ -108,9 +128,11 @@ export default function PartnerItems() {
         <button className={`btn-tab ${tab === 'list' ? 'active' : ''}`} onClick={() => setTab('list')}>
           {lang === 'ar' ? '📋 عناصر القائمة' : '📋 Menu Items'}
         </button>
-        <button className={`btn-tab ${tab === 'add' ? 'active' : ''}`} onClick={() => setTab('add')}>
-          {lang === 'ar' ? '➕ عنصر جديد' : '➕ New Item'}
-        </button>
+        {!isCashier && (
+          <button className={`btn-tab ${tab === 'add' ? 'active' : ''}`} onClick={() => setTab('add')}>
+            {lang === 'ar' ? '➕ عنصر جديد' : '➕ New Item'}
+          </button>
+        )}
       </div>
 
       {tab === 'list' && (
@@ -119,7 +141,11 @@ export default function PartnerItems() {
             <div style={{ textAlign: 'center', padding: 30 }}>{lang === 'ar' ? 'لا توجد عناصر' : 'No items yet'}</div>
           )}
           {items.map(item => (
-            <div key={item.id} style={{ background: '#fff', borderRadius: 'var(--r-sm)', padding: '10px 12px', boxShadow: 'var(--sh-sm)', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div key={item.id} style={{
+              background: '#fff', borderRadius: 'var(--r-sm)', padding: '10px 12px',
+              boxShadow: 'var(--sh-sm)', display: 'flex', alignItems: 'center', gap: 10,
+              opacity: item.status === 'active' ? 1 : 0.5,
+            }}>
               <span style={{ fontSize: '1.3rem' }}>{item.icon || '☕'}</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700, fontSize: '.88rem' }}>{item.name_ar}</div>
@@ -135,12 +161,16 @@ export default function PartnerItems() {
                   />
                 </div>
               </div>
-              <span className={`table-badge badge-${item.status === 'active' ? 'green' : 'amber'}`} style={{ fontSize: '.65rem' }}>
-                {item.status === 'active' ? (lang === 'ar' ? 'نشط' : 'Active') : (lang === 'ar' ? 'غير نشط' : 'Inactive')}
-              </span>
-              <button className="action-btn secondary" style={{ width: 'auto', padding: '4px 10px', fontSize: '.72rem', margin: 0 }} onClick={() => openEdit(item)}>
-                ✏️
+              <button className={`table-badge badge-${item.status === 'active' ? 'green' : 'amber'}`}
+                style={{ fontSize: '.65rem', cursor: 'pointer', border: 'none' }}
+                onClick={() => toggleAvailability(item)}>
+                {item.status === 'active' ? (lang === 'ar' ? '✅ نشط' : 'Active') : (lang === 'ar' ? '⛔ غير نشط' : 'Inactive')}
               </button>
+              {!isCashier && (
+                <button className="action-btn secondary" style={{ width: 'auto', padding: '4px 10px', fontSize: '.72rem', margin: 0 }} onClick={() => openEdit(item)}>
+                  ✏️
+                </button>
+              )}
             </div>
           ))}
         </div>

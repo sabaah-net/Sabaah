@@ -55,6 +55,26 @@ export function watchOrders(userId: string, cb: (orders: Order[]) => void): () =
   return () => off(r, 'value', fn);
 }
 
+export function updateOrderStatusInFirebase(userId: string, orderId: string, status: string) {
+  update(ref(db, `orders/${userId}/${orderId}`), { status });
+}
+
+export function watchAllOrders(cb: (orders: any[]) => void): () => void {
+  const r = ref(db, 'orders');
+  const fn = onValue(r, (snap) => {
+    const val: Record<string, any> = snap.val() || {};
+    const list: any[] = [];
+    for (const uid of Object.keys(val)) {
+      for (const oid of Object.keys(val[uid])) {
+        list.push({ userId: uid, id: oid, ...val[uid][oid] });
+      }
+    }
+    list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    cb(list);
+  });
+  return () => off(r, 'value', fn);
+}
+
 // ─── Transactions ──────────────────────────────────────────
 export function pushTransaction(userId: string, txn: Omit<Transaction, 'id' | 'createdAt'>): string {
   const id = uid();
@@ -71,12 +91,12 @@ export function watchTransactions(userId: string, cb: (txns: Transaction[]) => v
   return () => off(r, 'value', fn);
 }
 
-// ─── Notifications ─────────────────────────────────────────
+// ─── Notifications (global flat path) ──────────────────────
 export function pushNotification(userId: string, notif: Omit<Notification, 'id' | 'createdAt'>): string {
   const id = uid();
-  const data = { id, ...notif, createdAt: nowISO() };
+  const data = { id, userId, ...notif, createdAt: nowISO() };
   console.log('🔔 pushNotification:', userId, data);
-  const r = ref(db, `notifications/${userId}/${id}`);
+  const r = ref(db, `notifications/${id}`);
   set(r, data).then(() => {
     console.log('✅ Notification written to Firebase');
   }).catch((err) => {
@@ -86,16 +106,17 @@ export function pushNotification(userId: string, notif: Omit<Notification, 'id' 
 }
 
 export function watchNotifications(userId: string, cb: (notifs: Notification[]) => void): () => void {
-  const r = ref(db, `notifications/${userId}`);
+  const r = ref(db, 'notifications');
   const fn = onValue(r, (snap) => {
-    const val = snap.val();
-    cb(val ? Object.values(val) as Notification[] : []);
+    const val: Record<string, any> = snap.val() || {};
+    const filtered = Object.values(val).filter((n: any) => n.userId === userId || !n.userId) as Notification[];
+    cb(filtered);
   });
   return () => off(r, 'value', fn);
 }
 
 export function markNotifRead(userId: string, notifId: string) {
-  update(ref(db, `notifications/${userId}/${notifId}`), { read: true });
+  update(ref(db, `notifications/${notifId}`), { read: true });
 }
 
 // ─── Complaints ────────────────────────────────────────────
@@ -140,6 +161,72 @@ export function updateSupplier(id: string, data: Partial<Supplier>) {
 
 export function removeSupplier(id: string) {
   remove(ref(db, `suppliers/${id}`));
+}
+
+// ─── Promotions ────────────────────────────────────────────
+export function pushPromo(cafeId: string, promo: { name_ar: string; discount_percent: number; start_time: string; end_time: string; is_active: boolean }): string {
+  const id = uid();
+  set(ref(db, `promos/${cafeId}/${id}`), { id, ...promo, createdAt: nowISO() });
+  return id;
+}
+
+export function watchPromos(cafeId: string, cb: (promos: any[]) => void): () => void {
+  const r = ref(db, `promos/${cafeId}`);
+  const fn = onValue(r, (snap) => {
+    const val = snap.val();
+    cb(val ? Object.values(val) : []);
+  });
+  return () => off(r, 'value', fn);
+}
+
+export function togglePromoActive(cafeId: string, promoId: string, isActive: boolean) {
+  update(ref(db, `promos/${cafeId}/${promoId}`), { is_active: isActive });
+}
+
+export function deletePromo(cafeId: string, promoId: string) {
+  remove(ref(db, `promos/${cafeId}/${promoId}`));
+}
+
+// ─── Subscriptions ─────────────────────────────────────────
+export function pushSubscription(userId: string, sub: {
+  plan_id: string; plan_name: string; price_weekly: number;
+  start_date: string; end_date: string; status: string;
+  auto_renew: boolean;
+}): string {
+  const id = uid();
+  set(ref(db, `subscriptions/${userId}/${id}`), { id, ...sub, createdAt: nowISO() });
+  return id;
+}
+
+export function watchSubscriptions(userId: string, cb: (subs: any[]) => void): () => void {
+  const r = ref(db, `subscriptions/${userId}`);
+  const fn = onValue(r, (snap) => {
+    const val = snap.val();
+    cb(val ? Object.values(val) : []);
+  });
+  return () => off(r, 'value', fn);
+}
+
+export function cancelSubscriptionInFirebase(userId: string, subId: string) {
+  update(ref(db, `subscriptions/${userId}/${subId}`), { status: 'cancelled' });
+}
+
+// ─── Cafe Status (real-time open/close) ────────────────────
+export function saveCafeStatus(cafeUuid: string, isOpen: boolean) {
+  set(ref(db, `cafe_status/${cafeUuid}`), { is_open: isOpen, updatedAt: nowISO() });
+}
+
+export function watchAllCafeStatus(cb: (statuses: Record<string, boolean>) => void): () => void {
+  const r = ref(db, 'cafe_status');
+  const fn = onValue(r, (snap) => {
+    const val: Record<string, any> = snap.val() || {};
+    const out: Record<string, boolean> = {};
+    for (const uid of Object.keys(val)) {
+      out[uid] = val[uid].is_open ?? true;
+    }
+    cb(out);
+  });
+  return () => off(r, 'value', fn);
 }
 
 export { app, db, analytics };

@@ -161,14 +161,14 @@ export default function GoogleMap({ cafes, selectedCafeId, onSelectCafe, onNearb
 
     const script = document.createElement('script');
     script.id = SCRIPT_ID;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=marker,geometry,places&v=weekly`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places&v=weekly`;
     script.async = true;
     script.defer = true;
     script.onerror = () => setError('Failed to load Google Maps');
     document.head.appendChild(script);
 
     const poll = setInterval(() => {
-      if (window.google?.maps?.marker?.AdvancedMarkerElement) {
+      if (window.google?.maps?.Marker) {
         clearInterval(poll);
         setReady(true);
       }
@@ -213,9 +213,9 @@ export default function GoogleMap({ cafes, selectedCafeId, onSelectCafe, onNearb
   }, [cafes, ready]);
 
   useEffect(() => {
-    if (!mapRef.current || !window.google?.maps?.marker?.AdvancedMarkerElement) return;
+    if (!mapRef.current || !window.google?.maps) return;
 
-    markersRef.current.forEach((m) => { try { m.map = null; } catch {} });
+    markersRef.current.forEach((m) => { try { m.setMap(null); } catch {} });
     markersRef.current = [];
 
     const bounds = new window.google.maps.LatLngBounds();
@@ -226,34 +226,22 @@ export default function GoogleMap({ cafes, selectedCafeId, onSelectCafe, onNearb
       nearbyCafes.map((cafe) =>
         createIconUrl(cafe.logo_url, cafe.nameEn || cafe.name).then((url) => {
           if (cancelled || !cafe.lat || !cafe.lng) return;
-          const position = { lat: cafe.lat, lng: cafe.lng };
-
-          const wrapper = document.createElement('div');
-          wrapper.style.width = `${ICON_W}px`;
-          wrapper.style.height = `${ICON_H}px`;
-          wrapper.style.position = 'relative';
-
-          const img = document.createElement('img');
-          img.src = url;
-          img.style.width = `${ICON_W}px`;
-          img.style.height = `${ICON_H}px`;
-          img.style.display = 'block';
-          img.draggable = false;
-          wrapper.appendChild(img);
+          const position = new window.google.maps.LatLng(cafe.lat, cafe.lng);
 
           try {
-            const marker = new window.google.maps.marker.AdvancedMarkerElement({
+            const marker = new window.google.maps.Marker({
               map: mapRef.current,
               position,
-              content: wrapper,
-              gmpDraggable: false,
+              icon: { url, anchor: new window.google.maps.Point(CX, CY + 8) },
+              optimized: false,
+              zIndex: 1000,
             });
 
             marker.addListener('click', () => onSelectCafe?.(cafe));
             markersRef.current.push(marker);
             bounds.extend(position);
             hasValid = true;
-          } catch {}
+          } catch (e) { console.warn('Marker create error:', e); }
         })
       )
     ).then(() => {

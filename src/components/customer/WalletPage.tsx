@@ -1,8 +1,6 @@
 'use client';
 import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
-import SubscriptionModal from '../modals/SubscriptionModal';
-import TopUpModal from '../modals/TopUpModal';
 
 export default function WalletPage() {
   const store = useAppStore();
@@ -12,8 +10,6 @@ export default function WalletPage() {
 
   return (
     <div id="pageWallet">
-      <SubscriptionModal />
-      <TopUpModal />
       <div className="wallet-hero">
         <div style={{ fontSize: '.68rem', color: 'rgba(255,255,255,.6)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 5 }}>
           {t('wallet_balance_label', store.lang)}
@@ -28,6 +24,11 @@ export default function WalletPage() {
 
       <p className="section-title">{t('recent_transactions', store.lang)}</p>
       <div className="recent-tx-container" style={{ borderRadius: 'var(--r-md)', padding: 14, boxShadow: 'var(--sh-sm)' }}>
+        {store.transactions.length === 0 && (
+          <div style={{ textAlign: 'center', padding: 20, color: 'var(--text-light)', fontSize: '.82rem' }}>
+            {store.lang === 'ar' ? 'لا توجد معاملات حديثة' : 'No recent transactions'}
+          </div>
+        )}
         {store.transactions.map((tx, i) => (
           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid var(--latte)' }}>
             <div>

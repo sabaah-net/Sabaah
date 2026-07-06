@@ -59,6 +59,7 @@ export interface PendingMenuItem {
 
 export interface Cafe {
   id: number;
+  cafe_uuid?: string;
   name: string;
   nameEn: string;
   sub: string;

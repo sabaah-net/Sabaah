@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { useToast } from '../shared/Toast';
+import { pushTransaction } from '../../lib/firebase';
 
 const PRESETS = [50, 100, 200, 500];
 
@@ -16,7 +17,19 @@ export default function TopUpModal() {
     setLoading(true);
     await new Promise(r => setTimeout(r, 800));
     store.setWallet(store.wallet + amount);
-    show(`Wallet topped up with ${amount.toFixed(2)} SAR`, 'success');
+    const pid = store.currentUser?.profileId;
+    if (pid) {
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      pushTransaction(pid, {
+        title: store.lang === 'ar' ? 'شحن المحفظة' : 'Wallet Top Up',
+        titleEn: 'Wallet Top Up',
+        amount: amount,
+        type: 'credit',
+        date: dateStr,
+      });
+    }
+    show(store.lang === 'ar' ? `تم شحن المحفظة بمبلغ ${amount.toFixed(2)} ريال` : `Wallet topped up with ${amount.toFixed(2)} SAR`, 'success');
     setLoading(false);
     closeModal();
   };

@@ -55,7 +55,7 @@ export default function HistoryPage() {
               </div>
             </div>
             <div style={{ textAlign: 'left', flexShrink: 0 }}>
-              <div style={{ fontSize: '.88rem', fontWeight: 900, color: 'var(--amber)' }}>⃁ {o.amount.toFixed(2)}</div>
+              <div style={{ fontSize: '.88rem', fontWeight: 900, color: 'var(--amber)' }}>⃁ {(o.amount || 0).toFixed(2)}</div>
               <div style={{ fontSize: '.63rem', color: 'var(--text-light)' }}>
                 {t('code_label', store.lang)} <strong style={{ color: 'var(--bark)' }}>{o.pickupCode || '----'}</strong>
               </div>

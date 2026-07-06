@@ -69,7 +69,7 @@ export default function AdminSettings() {
           <hr style={{ border: 'none', borderTop: '1px solid var(--latte)' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div><strong>{t('notif_label', lang)}</strong><div style={{ fontSize: '.78rem', color: 'var(--text-light)' }}>{t('notif_desc', lang)}</div></div>
-            <label className="switch"><input type="checkbox" defaultChecked /><span className="slider" /></label>
+            <label className="ios-switch"><input type="checkbox" defaultChecked /><span className="slider" style={{ background: 'var(--green)' }} /></label>
           </div>
           <hr style={{ border: 'none', borderTop: '1px solid var(--latte)' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

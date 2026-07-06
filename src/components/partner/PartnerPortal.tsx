@@ -3,13 +3,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { supabase } from '../../lib/supabase';
 import { t } from '../../i18n';
+import { ref, onValue, off } from 'firebase/database';
+import { db, saveCafeStatus } from '../../lib/firebase';
 import PartnerOrders from './PartnerOrders';
 import PartnerInventory from './PartnerInventory';
 import PartnerStaff from './PartnerStaff';
 import PartnerPromos from './PartnerPromos';
 import PartnerItems from './PartnerItems';
-import { ref, onValue, off } from 'firebase/database';
-import { db } from '../../lib/firebase';
 
 type Tab = 'orders' | 'inventory' | 'staff' | 'promos' | 'items';
 
@@ -23,6 +23,7 @@ export default function PartnerPortal() {
   const [pointsPerItem, setPointsPerItem] = useState(10);
   const [savingPoints, setSavingPoints] = useState(false);
   const [notifCount, setNotifCount] = useState(0);
+  const [partnerRole, setPartnerRole] = useState<string>('staff');
   const [nearbyPopup, setNearbyPopup] = useState<{ title: string; body: string } | null>(null);
   const seenNotifs = useRef<Set<string>>(new Set());
   const popupTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -31,6 +32,9 @@ export default function PartnerPortal() {
     const pid = store.currentUser?.profileId;
     if (!pid) return;
     (async () => {
+      const { data: profile } = await supabase.from('profiles').select('partner_role').eq('id', pid).maybeSingle();
+      if (profile?.partner_role) setPartnerRole(profile.partner_role);
+
       const { data } = await supabase.from('cafes').select('id, is_open, points_per_item').eq('owner_id', pid).maybeSingle();
       if (data) {
         setCafeId(data.id);
@@ -58,16 +62,21 @@ export default function PartnerPortal() {
     return () => { if (cleanup) cleanup(); };
   }, []);
 
+  const isOwner = partnerRole === 'owner';
+  const isAdmin = partnerRole === 'owner' || partnerRole === 'admin';
+  const isCashier = partnerRole === 'cashier';
+  const isStaff = partnerRole === 'staff';
+
   const handleToggle = async () => {
+    if (!isOwner || !cafeId) return;
     const next = !isOpen;
     setIsOpen(next);
-    if (cafeId) {
-      await supabase.from('cafes').update({ is_open: next }).eq('id', cafeId);
-    }
+    await supabase.from('cafes').update({ is_open: next }).eq('id', cafeId);
+    saveCafeStatus(cafeId, next);
   };
 
   const handlePointsChange = async () => {
-    if (!cafeId) return;
+    if (!isOwner || !cafeId) return;
     setSavingPoints(true);
     await supabase.from('cafes').update({ points_per_item: pointsPerItem }).eq('id', cafeId);
     setSavingPoints(false);
@@ -86,46 +95,31 @@ export default function PartnerPortal() {
         <button className="action-btn secondary" style={{ width: 'auto', padding: '6px 14px', fontSize: '.72rem' }} onClick={signOut}>{t('logout_label', lang)}</button>
       </div>
 
-      <div style={{
-        background: 'var(--bark)', color: '#fff', borderRadius: 'var(--r-md)',
-        padding: '14px 16px', marginBottom: 12,
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8,
-      }}>
-        {[
-          { label: t('partner_today_earnings', lang), value: '⃁ 345.00' },
-          { label: t('partner_orders', lang), value: store.partnerOrders.length || '—' },
-          { label: t('partner_inventory', lang), value: store.inventory.length ? `${Math.round(store.inventory.reduce((a, b) => a + b.level, 0) / store.inventory.length)}%` : '—' },
-        ].map((s, i) => (
-          <div key={i} style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '.6rem', color: 'rgba(255,255,255,.5)', marginBottom: 2 }}>{s.label}</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--caramel)' }}>{s.value}</div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{
-        background: '#fff', borderRadius: 'var(--r-md)', padding: '12px 16px', marginBottom: 12,
-        display: 'flex', alignItems: 'center', gap: 12,
-        boxShadow: 'var(--sh-sm)', border: '1px solid var(--latte)',
-      }}>
+      {isOwner && (
         <div style={{
-          width: 36, height: 36, borderRadius: '50%', background: 'var(--bark)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', color: '#fff',
-        }}>⭐</div>
-        <span style={{ fontSize: '.82rem', fontWeight: 700, color: 'var(--text-mid)', whiteSpace: 'nowrap' }}>
-          {lang === 'ar' ? 'النقاط لكل عنصر' : 'Points per Item'}
-        </span>
-        <input type="number" min="0" max="100" value={pointsPerItem}
-          onChange={(e) => setPointsPerItem(Number(e.target.value))}
-          style={{
-            width: 48, padding: '6px 8px', borderRadius: 8, border: '1.5px solid var(--latte)',
-            textAlign: 'center', fontSize: '.9rem', fontWeight: 900, background: 'var(--cream)',
-          }} />
-        <button className="action-btn" style={{ width: 'auto', padding: '6px 14px', fontSize: '.72rem', whiteSpace: 'nowrap' }}
-          disabled={savingPoints} onClick={handlePointsChange}>
-          {savingPoints ? '...' : (lang === 'ar' ? 'حفظ' : 'Save')}
-        </button>
-      </div>
+          background: '#fff', borderRadius: 'var(--r-md)', padding: '12px 16px', marginBottom: 12,
+          display: 'flex', alignItems: 'center', gap: 12,
+          boxShadow: 'var(--sh-sm)', border: '1px solid var(--latte)',
+        }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: '50%', background: 'var(--bark)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', color: '#fff',
+          }}>⭐</div>
+          <span style={{ fontSize: '.82rem', fontWeight: 700, color: 'var(--text-mid)', whiteSpace: 'nowrap' }}>
+            {lang === 'ar' ? 'النقاط لكل عنصر' : 'Points per Item'}
+          </span>
+          <input type="number" min="0" max="100" value={pointsPerItem}
+            onChange={(e) => setPointsPerItem(Number(e.target.value))}
+            style={{
+              width: 48, padding: '6px 8px', borderRadius: 8, border: '1.5px solid var(--latte)',
+              textAlign: 'center', fontSize: '.9rem', fontWeight: 900, background: 'var(--cream)',
+            }} />
+          <button className="action-btn" style={{ width: 'auto', padding: '6px 14px', fontSize: '.72rem', whiteSpace: 'nowrap' }}
+            disabled={savingPoints} onClick={handlePointsChange}>
+            {savingPoints ? '...' : (lang === 'ar' ? 'حفظ' : 'Save')}
+          </button>
+        </div>
+      )}
 
       <div style={{
         background: isOpen ? 'var(--green-bg)' : 'var(--red-bg)',
@@ -133,7 +127,7 @@ export default function PartnerPortal() {
         borderRadius: 'var(--r-md)', padding: '12px 16px', marginBottom: 14,
         display: 'flex', alignItems: 'center', gap: 12,
       }}>
-        <span style={{ fontSize: '1.5rem' }}>{isOpen ? '🟢' : '🔴'}</span>
+        <span style={{ fontSize: '1.5rem', cursor: isOwner ? 'pointer' : 'default' }} onClick={handleToggle}>{isOpen ? '🟢' : '🔴'}</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '.9rem', fontWeight: 900, color: isOpen ? 'var(--green)' : 'var(--red)' }}>
             {isOpen ? t('partner_open', lang) : t('partner_closed', lang)}
@@ -142,13 +136,12 @@ export default function PartnerPortal() {
             {isOpen ? t('partner_accepting', lang) : t('partner_not_accepting', lang)}
           </div>
         </div>
-        <label style={{ position: 'relative', width: 46, height: 24, flexShrink: 0 }}>
-          <input type="checkbox" checked={isOpen} onChange={handleToggle} style={{ opacity: 0, width: 0, height: 0 }} />
-          <span style={{
-            position: 'absolute', inset: 0, borderRadius: 40, cursor: 'pointer',
-            transition: '.25s', background: isOpen ? 'var(--green)' : 'var(--red)',
-          }} />
-        </label>
+        {isOwner && (
+          <label className="ios-switch">
+            <input type="checkbox" checked={isOpen} onChange={handleToggle} />
+            <span className="slider" style={{ background: isOpen ? 'var(--green)' : 'var(--red)' }} />
+          </label>
+        )}
       </div>
 
       <div className="admin-tabs" style={{ marginBottom: 12 }}>
@@ -156,16 +149,20 @@ export default function PartnerPortal() {
           📋 {t('partner_order_title', lang)} {notifCount > 0 && <span className="table-badge badge-red" style={{ marginLeft: 4, verticalAlign: 'top' }}>{notifCount}</span>}
         </button>
         <button className={`admin-tab ${activeTab === 'inventory' ? 'active' : ''}`} onClick={() => setActiveTab('inventory')}>📦 {t('partner_inv_tab', lang)}</button>
-        <button className={`admin-tab ${activeTab === 'staff' ? 'active' : ''}`} onClick={() => setActiveTab('staff')}>👥 {t('partner_staff_tab', lang)}</button>
-        <button className={`admin-tab ${activeTab === 'promos' ? 'active' : ''}`} onClick={() => setActiveTab('promos')}>🏷️ {t('partner_promo_tab', lang)}</button>
+        {(isOwner || isAdmin) && (
+          <button className={`admin-tab ${activeTab === 'staff' ? 'active' : ''}`} onClick={() => setActiveTab('staff')}>👥 {t('partner_staff_tab', lang)}</button>
+        )}
+        {isOwner && (
+          <button className={`admin-tab ${activeTab === 'promos' ? 'active' : ''}`} onClick={() => setActiveTab('promos')}>🏷️ {t('partner_promo_tab', lang)}</button>
+        )}
         <button className={`admin-tab ${activeTab === 'items' ? 'active' : ''}`} onClick={() => setActiveTab('items')}>
           ☕ {lang === 'ar' ? 'عناصر القائمة' : 'Menu Items'}
         </button>
       </div>
 
-      {activeTab === 'orders' && <PartnerOrders />}
+      {activeTab === 'orders' && <PartnerOrders cafeId={cafeId} />}
       {activeTab === 'inventory' && <PartnerInventory />}
-      {activeTab === 'staff' && <PartnerStaff cafeId={cafeId} />}
+      {activeTab === 'staff' && <PartnerStaff cafeId={cafeId} partnerRole={partnerRole} />}
       {activeTab === 'promos' && <PartnerPromos cafeId={cafeId} />}
       {activeTab === 'items' && <PartnerItems />}
 

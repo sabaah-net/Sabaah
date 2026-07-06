@@ -15,7 +15,7 @@ import {
 } from '../lib/supabase';
 import {
   pushOrder, pushNotification as fbPushNotif, pushTransaction as fbPushTxn,
-  watchOrders, watchNotifications, watchTransactions,
+  watchOrders, watchNotifications, watchTransactions, watchAllCafeStatus,
 } from '../lib/firebase';
 import { ref, onValue, off } from 'firebase/database';
 import { db } from '../lib/firebase';
@@ -105,6 +105,22 @@ function startFirebaseWatchers(userId: string) {
     useAppStore.setState({ notifications: val ? Object.values(val) as any[] : [] });
   });
   fbCleanups.push(() => off(notifRef, 'value', notifFn));
+
+  fbCleanups.push(
+    watchAllCafeStatus((statuses) => {
+      const cafes = useAppStore.getState().cafes;
+      if (cafes.length === 0) return;
+      let changed = false;
+      const updated = cafes.map((c) => {
+        if (c.cafe_uuid && statuses[c.cafe_uuid] !== undefined && c.isOpen !== statuses[c.cafe_uuid]) {
+          changed = true;
+          return { ...c, isOpen: statuses[c.cafe_uuid] };
+        }
+        return c;
+      });
+      if (changed) useAppStore.setState({ cafes: updated });
+    })
+  );
 }
 
 function stopFirebaseWatchers() {
@@ -328,14 +344,25 @@ export const useAppStore = create<AppState>((set, get) => {
       const addonTotal = (selectedAddons || []).reduce((sum, a) => sum + a.price, 0);
       const grandTotal = total + addonTotal;
       const pickupCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-      const orderId = `SB-${1000 + s.orders.length + 1}`;
+      const orderId = `SB-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 4).toUpperCase()}`;
       const pickupTime = s.selectedPickupSlot || new Date(Date.now() + 15 * 60000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
       const now = new Date();
       const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-      const newOrder: Order = {
+      const pid = s.currentUser?.profileId;
+      let cafeUuid = '';
+      try {
+        if (pid && s.selectedCafe) {
+          const { data: cafeRow } = await supabase.from('cafes')
+            .select('id').eq('name_ar', s.selectedCafe.name).maybeSingle();
+          cafeUuid = cafeRow?.id || '';
+        }
+      } catch {}
+
+      const newOrder: Order & { cafeId?: string; customerName?: string } = {
         id: orderId,
         cafe: s.selectedCafe?.name || '',
+        cafeId: cafeUuid || s.selectedCafe?.id?.toString() || '',
         coffee: s.cart.map((c) => c.type).join(', '),
         coffeeAr: s.cart.map((c) => c.type).join(', '),
         amount: grandTotal,
@@ -347,18 +374,15 @@ export const useAppStore = create<AppState>((set, get) => {
         pickupCode,
         pickupTime,
         items: [...s.cart],
+        customerName: s.currentUser?.name || '',
       };
 
       // Try to save to Supabase
       try {
-        const pid = s.currentUser?.profileId;
         if (pid) {
-          const cafe = s.selectedCafe ? await supabase.from('cafes')
-            .select('id').eq('name_ar', s.selectedCafe.name).maybeSingle() : null;
-
           const { data: orderData } = await createFullOrder({
             customer_id: pid,
-            cafe_id: cafe?.data?.id || '00000000-0000-0000-0000-000000000000',
+            cafe_id: cafeUuid || '00000000-0000-0000-0000-000000000000',
             subtotal: grandTotal / 1.15,
             vat_amount: grandTotal - grandTotal / 1.15,
             platform_fee: 0,
@@ -388,7 +412,6 @@ export const useAppStore = create<AppState>((set, get) => {
       }
 
       // Save to Firebase
-      const pid = s.currentUser?.profileId;
       if (pid) {
         fbPushTxn(pid, {
           title: `طلب ${s.selectedCafe?.name || ''}`,
@@ -478,6 +501,7 @@ export const useAppStore = create<AppState>((set, get) => {
       if (cafesData.length > 0) {
         const mapped: Cafe[] = cafesData.map((c: any, i: number) => ({
           id: i + 1,
+          cafe_uuid: c.id,
           name: c.name_ar, nameEn: c.name_en, sub: c.location,
           rating: c.rating || 0, isOpen: c.is_open, dist: '—', emoji: c.emoji || '☕',
           x: 120 + i * 60, y: 80 + i * 40,
@@ -558,6 +582,7 @@ export const useAppStore = create<AppState>((set, get) => {
       if (data && data.length > 0) {
         const mapped: Cafe[] = data.map((c: any, i: number) => ({
           id: i + 1,
+          cafe_uuid: c.id,
           name: c.name_ar, nameEn: c.name_en, sub: c.location,
           rating: c.rating || 0, isOpen: c.is_open, dist: '—', emoji: c.emoji || '☕',
           x: 120 + i * 60, y: 80 + i * 40,

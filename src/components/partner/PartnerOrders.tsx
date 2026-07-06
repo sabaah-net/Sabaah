@@ -1,40 +1,36 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { t, getStatusLabel } from '../../i18n';
+import { watchAllOrders, updateOrderStatusInFirebase } from '../../lib/firebase';
 
-const PLACEHOLDER_ORDERS = [
-  { id: 'ORD-001', customer: 'Ahmed S.', coffeeAr: 'قهوة سوداء', time: '10:30', pickupCode: 'A7B2', status: 'pending' as const },
-  { id: 'ORD-002', customer: 'Noura K.', coffeeAr: 'لاتيه', time: '10:45', pickupCode: 'C3D9', status: 'preparing' as const },
-  { id: 'ORD-003', customer: 'Faisal M.', coffeeAr: 'اسبريسو', time: '11:00', pickupCode: 'E1F4', status: 'pending' as const },
-  { id: 'ORD-004', customer: 'Sara A.', coffeeAr: 'موكا', time: '11:15', pickupCode: 'G8H2', status: 'completed' as const },
-  { id: 'ORD-005', customer: 'Khalid R.', coffeeAr: 'سبانش لاتيه', time: '11:30', pickupCode: 'J5K7', status: 'preparing' as const },
-];
-
-export default function PartnerOrders() {
+export default function PartnerOrders({ cafeId }: { cafeId: string | null }) {
   const store = useAppStore();
   const lang = store.lang;
+  const [allOrders, setAllOrders] = useState<any[]>([]);
   const [verifyCodes, setVerifyCodes] = useState<Record<string, string>>({});
-  const [orders, setOrders] = useState(PLACEHOLDER_ORDERS);
 
-  const displayOrders = store.partnerOrders.length > 0
-    ? store.partnerOrders.map((o) => ({
-        id: o.id,
-        customer: o.customer || '—',
-        coffeeAr: o.coffeeAr || o.coffee || '—',
-        time: o.time || '—',
-        pickupCode: o.pickupCode || '',
-        status: o.status || 'pending',
-      }))
-    : orders;
+  useEffect(() => {
+    return watchAllOrders((orders) => setAllOrders(orders));
+  }, []);
 
-  const handleVerify = (id: string) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: 'completed' as const } : o))
-    );
+  const cafeOrders = allOrders.filter(o => {
+    if (!cafeId) return true;
+    return String(o.cafeId) === String(cafeId) || String(o.cafe_id) === String(cafeId);
+  });
+
+  const activeOrders = cafeOrders.filter((o) => o.status !== 'completed');
+
+  const handleVerify = (order: any) => {
+    const code = verifyCodes[order.id]?.toUpperCase() || '';
+    if (code && code !== order.pickupCode) {
+      alert(lang === 'ar' ? '❌ كود الاستلام غير صحيح' : '❌ Invalid pickup code');
+      return;
+    }
+    const uid = order.userId;
+    if (uid) updateOrderStatusInFirebase(uid, order.id, 'completed');
+    setVerifyCodes({ ...verifyCodes, [order.id]: '' });
   };
-
-  const activeOrders = displayOrders.filter((o) => o.status !== 'completed');
 
   return (
     <div>
@@ -46,16 +42,16 @@ export default function PartnerOrders() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
           {activeOrders.map((o) => (
-            <div key={o.id} style={{
+            <div key={`${o.userId}-${o.id}`} style={{
               background: '#fff', borderRadius: 'var(--r-md)', padding: 14,
-              boxShadow: 'var(--sh-sm)', borderRight: '4px solid var(--amber)',
+              boxShadow: 'var(--sh-sm)', borderRight: `4px solid ${o.status === 'pending' ? 'var(--amber)' : 'var(--blue)'}`,
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 9 }}>
                 <div style={{ fontSize: '.68rem', color: 'var(--text-light)' }}>#{o.id}</div>
                 <span style={{
                   fontSize: '.72rem', fontWeight: 700, padding: '4px 11px', borderRadius: 40,
-                  background: o.status === 'pending' ? '#FFF4E0' : o.status === 'preparing' ? 'var(--orange-bg)' : 'var(--green-bg)',
-                  color: o.status === 'pending' ? '#B07D1A' : o.status === 'preparing' ? 'var(--orange)' : 'var(--green)',
+                  background: o.status === 'pending' ? '#FFF4E0' : o.status === 'preparing' || o.status === 'ready' ? 'var(--orange-bg)' : 'var(--green-bg)',
+                  color: o.status === 'pending' ? '#B07D1A' : o.status === 'preparing' || o.status === 'ready' ? 'var(--orange)' : 'var(--green)',
                 }}>
                   {getStatusLabel(o.status as any, 'ar')}
                 </span>
@@ -65,9 +61,9 @@ export default function PartnerOrders() {
                 {t('partner_pickup_code', lang)}
               </div>
               <div style={{ fontSize: '.82rem', marginBottom: 10 }}>
-                <div>👤 <strong>{o.customer}</strong></div>
-                <div>☕ <strong>{o.coffeeAr}</strong></div>
-                <div>🕐 <strong>{o.time}</strong></div>
+                <div>👤 <strong>{o.customerName || o.customer_name || '—'}</strong></div>
+                <div>☕ <strong>{o.coffee || o.coffeeAr || '—'}</strong></div>
+                <div>🕐 <strong>{o.pickupTime || o.time || '—'}</strong></div>
               </div>
               {o.status !== 'completed' && (
                 <div style={{ display: 'flex', gap: 6 }}>
@@ -79,7 +75,7 @@ export default function PartnerOrders() {
                     onChange={(e) => setVerifyCodes({ ...verifyCodes, [o.id]: e.target.value })}
                   />
                   <button className="action-btn green-btn" style={{ width: 'auto', padding: '0 16px', fontSize: '.8rem' }}
-                    onClick={() => { handleVerify(o.id); setVerifyCodes({ ...verifyCodes, [o.id]: '' }); }}>{t('partner_verify', lang)}</button>
+                    onClick={() => handleVerify(o)}>{t('partner_verify', lang)}</button>
                 </div>
               )}
             </div>

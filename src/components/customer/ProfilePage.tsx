@@ -70,9 +70,9 @@ export default function ProfilePage() {
       <div style={{ background: '#fff', borderRadius: 'var(--r-md)', padding: 14, boxShadow: 'var(--sh-sm)', marginBottom: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--latte)' }}>
           <span style={{ fontSize: '.85rem' }}>{t('notifications_title', store.lang)}</span>
-          <label style={{ position: 'relative', width: 44, height: 24 }}>
-            <input type="checkbox" defaultChecked style={{ opacity: 0, width: 0, height: 0 }} />
-            <span style={{ position: 'absolute', inset: 0, borderRadius: 40, cursor: 'pointer', transition: '.25s', background: 'var(--green)' }} />
+          <label className="ios-switch">
+            <input type="checkbox" defaultChecked />
+            <span className="slider" style={{ background: 'var(--green)' }} />
           </label>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--latte)' }}>
