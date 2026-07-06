@@ -124,7 +124,7 @@ export default function SubscriptionModal() {
               onClick={() => setSelectedPlanId(plan.id)}>
               <div className="sub-header">
                 <div className="sub-name">{name}</div>
-                <div className="sub-price">⃁ {plan.price_weekly}/{store.lang === 'ar' ? 'أسبوع' : 'wk'}</div>
+                <div className="sub-price">﷼ {plan.price_weekly}/{store.lang === 'ar' ? 'أسبوع' : 'wk'}</div>
               </div>
               <div className="sub-desc">{store.lang === 'ar' ? plan.description_ar : (plan.description_en || '')}</div>
               {plan.discount_percent > 0 && <div style={{ fontSize: '.7rem', color: 'var(--green)', fontWeight: 700, marginBottom: 4 }}>-{plan.discount_percent}% {store.lang === 'ar' ? 'خصم' : 'discount'}</div>}
@@ -161,7 +161,7 @@ export default function SubscriptionModal() {
                 {formatDate(startDateTime)} → {formatDate(endDateTime)}
               </div>
               <div style={{ fontSize: '.95rem', fontWeight: 900, color: 'var(--bark)', marginTop: 6 }}>
-                ⃁ {selectedPlan.price_weekly}/{store.lang === 'ar' ? 'أسبوع' : 'week'}
+                ﷼ {selectedPlan.price_weekly}/{store.lang === 'ar' ? 'أسبوع' : 'week'}
                 <span style={{ fontSize: '.7rem', fontWeight: 600, color: 'var(--text-light)', display: 'block' }}>
                   {store.lang === 'ar' ? '🔄 سيتم تجديده تلقائياً كل أسبوع' : '🔄 Auto-renews every week'}
                 </span>

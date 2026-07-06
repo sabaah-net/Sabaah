@@ -516,7 +516,7 @@ export const useAppStore = create<AppState>((set, get) => {
         set({
           partners: cafesData.map((c: any) => ({
             name: c.name_ar, location: c.location, status: c.status === 'active' ? 'active' : 'pending',
-            earnings: '0 ⃁', rating: c.rating || 0, inventory: c.inventory_enabled ? 92 : 0, inventoryEnabled: c.inventory_enabled,
+            earnings: '0 ﷼', rating: c.rating || 0, inventory: c.inventory_enabled ? 92 : 0, inventoryEnabled: c.inventory_enabled,
           })),
         });
       }

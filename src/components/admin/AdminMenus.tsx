@@ -139,7 +139,7 @@ export default function AdminMenus() {
                 <td><div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--latte)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.icon || '☕'}</div></td>
                 <td><strong>{item.name_ar}</strong></td>
                 <td style={{ color: 'var(--text-light)' }}>{item.name_en || '-'}</td>
-                <td>⃁ {(item.base_price).toFixed(2)}</td>
+                <td>﷼ {(item.base_price).toFixed(2)}</td>
                 <td style={{ fontSize: '.78rem', fontWeight: 700 }}>⭐ {item.points_per_item ?? 10}</td>
                 <td style={{ fontSize: '.78rem' }}>{item.cafes?.name_ar || '-'}</td>
                 <td>

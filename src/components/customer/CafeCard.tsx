@@ -7,27 +7,20 @@ interface CafeCardProps {
   selected: boolean;
   lang: Lang;
   onSelect: (cafe: Cafe) => void;
-  onToggleFav: (id: number) => void;
 }
 
-export default function CafeCard({ cafe, selected, lang, onSelect, onToggleFav }: CafeCardProps) {
+export default function CafeCard({ cafe, selected, lang, onSelect }: CafeCardProps) {
   return (
     <div
       className={`cafe-card ${cafe.isOpen ? '' : 'closed-cafe'} ${selected ? 'selected' : ''}`}
       onClick={() => cafe.isOpen && onSelect(cafe)}
     >
-      <button
-        className={`cafe-fav ${cafe.favorited ? 'active' : ''}`}
-        onClick={(e) => { e.stopPropagation(); onToggleFav(cafe.id); }}
-      >
-        ♥
-      </button>
       <div className="cafe-avatar">{cafe.emoji}</div>
       <div className="cafe-meta">
         <div className="cafe-name">{lang === 'ar' ? cafe.name : cafe.nameEn}</div>
         <div className="cafe-sub">{cafe.sub}</div>
         <div style={{ fontSize: '.65rem', color: 'var(--text-light)', marginTop: 3 }}>
-          ⏱️ {cafe.waitTime} • ♥ {cafe.favorites}
+          ⏱️ {cafe.waitTime}
         </div>
       </div>
       <div className="cafe-right">

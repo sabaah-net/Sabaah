@@ -123,7 +123,7 @@ export default function AdminSettings() {
                   <>
                     <span style={{ flex: 2, fontWeight: 700, fontSize: '.85rem' }}>{a.name}</span>
                     <span style={{ flex: 2, fontSize: '.8rem' }}>{a.nameEn}</span>
-                    <span style={{ width: 60, fontWeight: 600 }}>{a.price} ⃁</span>
+                    <span style={{ width: 60, fontWeight: 600 }}>{a.price} ﷼</span>
                     <button className="action-btn secondary" style={{ width: 'auto', padding: '4px 8px', fontSize: '.7rem', margin: 0 }}
                       onClick={() => setEditingAddonId(a.id)}>
                       ✏️

@@ -30,14 +30,6 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
     }, 100);
   };
 
-  const handleToggleFav = (id: number) => {
-    const cafe = store.cafes.find((c) => c.id === id);
-    if (cafe) {
-      cafe.favorited = !cafe.favorited;
-      show(t(cafe.favorited ? 'cafe_favorited_add' : 'cafe_favorited_remove', store.lang), 'info');
-    }
-  };
-
   const handleAddToCart = (type: string) => {
     if (!store.selectedCafe) {
       show(t('cafe_select_first', store.lang), 'error');
@@ -66,11 +58,6 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
     } else {
       store.setCart(store.cart.map((i) => i.type === type ? { ...i, qty: newQty } : i));
     }
-  };
-
-  const handleClearCart = () => {
-    store.setCart([]);
-    show(t('cart_cleared', store.lang), 'info');
   };
 
   const handlePlaceOrder = () => {
@@ -114,7 +101,7 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
               >
                 <div className="reorder-title">{o.icon} {o.coffeeAr || o.coffee}</div>
                 <div className="reorder-meta">{o.cafe}</div>
-                <div className="reorder-price">⃁ {o.amount.toFixed(2)}</div>
+                <div className="reorder-price">﷼ {o.amount.toFixed(2)}</div>
               </div>
             ))}
           </div>
@@ -149,7 +136,6 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
             selected={store.selectedCafe?.id === cafe.id}
             lang={store.lang}
             onSelect={handleSelectCafe}
-            onToggleFav={handleToggleFav}
           />
         ))}
       </div>
@@ -165,7 +151,6 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
       <CartPanel
         cart={store.cart}
         onUpdateQty={handleUpdateQty}
-        onClear={handleClearCart}
         onPlaceOrder={handlePlaceOrder}
       />
 
