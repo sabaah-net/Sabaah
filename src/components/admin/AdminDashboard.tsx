@@ -82,6 +82,29 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginBottom: 14 }}>
+        <div style={{ background: '#fff', borderRadius: 'var(--r-md)', padding: '14px 10px', textAlign: 'center', boxShadow: 'var(--sh-sm)' }}>
+          <div style={{ fontSize: '.68rem', color: 'var(--text-light)', marginBottom: 4 }}>{lang === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</div>
+          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--bark)' }}>{totalOrders}</div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 'var(--r-md)', padding: '14px 10px', textAlign: 'center', boxShadow: 'var(--sh-sm)' }}>
+          <div style={{ fontSize: '.68rem', color: 'var(--text-light)', marginBottom: 4 }}>{lang === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue'}</div>
+          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--green)' }}>⃁ {totalRevenue.toFixed(2)}</div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 'var(--r-md)', padding: '14px 10px', textAlign: 'center', boxShadow: 'var(--sh-sm)' }}>
+          <div style={{ fontSize: '.68rem', color: 'var(--text-light)', marginBottom: 4 }}>{lang === 'ar' ? 'طلبات اليوم' : "Today's Orders"}</div>
+          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--amber)' }}>{todayOrders}</div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 'var(--r-md)', padding: '14px 10px', textAlign: 'center', boxShadow: 'var(--sh-sm)' }}>
+          <div style={{ fontSize: '.68rem', color: 'var(--text-light)', marginBottom: 4 }}>{lang === 'ar' ? 'إيرادات اليوم' : "Today's Revenue"}</div>
+          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--amber)' }}>⃁ {todayRevenue.toFixed(2)}</div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 'var(--r-md)', padding: '14px 10px', textAlign: 'center', boxShadow: 'var(--sh-sm)' }}>
+          <div style={{ fontSize: '.68rem', color: 'var(--text-light)', marginBottom: 4 }}>{lang === 'ar' ? 'المستخدمين النشطين' : 'Active Users'}</div>
+          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--blue)' }}>{activeUsers}</div>
+        </div>
+      </div>
+
       <div className="kpi-grid">
         {kpis.map((k, i) => (
           <div key={i} className={`kpi-card ${k.color}`}>

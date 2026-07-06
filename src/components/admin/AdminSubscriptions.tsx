@@ -81,10 +81,10 @@ export default function AdminSubscriptions() {
         days_of_week: form.days, max_bookings: form.max_bookings,
       };
       if (modal === 'create') {
-        await createSubscriptionPlan(planData as any);
+        await createSubscriptionPlan(planData);
         show('Plan created', 'success');
       } else if (editId) {
-        await updateSubscriptionPlan(editId, planData as any);
+        await updateSubscriptionPlan(editId, planData);
         show('Plan updated', 'success');
       }
       setModal(null);

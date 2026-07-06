@@ -11,16 +11,6 @@ interface Plan {
   days_of_week?: string[];
 }
 
-function getNext30Days(): Date[] {
-  const days: Date[] = [];
-  for (let i = 0; i < 60; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    days.push(d);
-  }
-  return days;
-}
-
 function getMonthName(d: Date, ar: boolean): string {
   const names = ar
     ? ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
@@ -32,12 +22,21 @@ function formatDate(d: Date): string {
   return d.toISOString().split('T')[0];
 }
 
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function daysBetween(a: Date, b: Date): number {
+  return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 export default function SubscriptionModal() {
   const store = useAppStore();
   const { show } = useToast();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [startDate, setStartDate] = useState(formatDate(new Date()));
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -47,8 +46,6 @@ export default function SubscriptionModal() {
     getSubscriptionPlans().then(({ data }) => {
       if (data && data.length > 0) {
         setPlans(data as Plan[]);
-        const defaultDays = (data[0] as any).days_of_week || WEEK_DAYS.slice(1, 6);
-        setSelectedDays(Array.isArray(defaultDays) ? defaultDays : WEEK_DAYS.slice(1, 6));
         setSelectedPlanId(data[0].id);
       }
       setFetching(false);
@@ -56,18 +53,10 @@ export default function SubscriptionModal() {
   }, []);
 
   const selectedPlan = plans.find(p => p.id === selectedPlanId);
-  const days = getNext30Days();
-
-  const toggleDay = (day: string) => {
-    setSelectedDays(prev =>
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
-    );
-  };
 
   const handleActivate = async () => {
     if (!store.isLoggedIn) { show('يرجى تسجيل الدخول أولاً', 'error'); return; }
     if (!selectedPlanId || !selectedPlan) { show('اختر خطة', 'error'); return; }
-    if (selectedDays.length === 0) { show('اختر يوماً واحداً على الأقل', 'error'); return; }
     if (!store.currentUser?.profileId) return;
 
     setLoading(true);
@@ -75,7 +64,7 @@ export default function SubscriptionModal() {
       store.currentUser.profileId,
       selectedPlanId,
       startDate,
-      selectedDays,
+      [],
       selectedPlan.price_weekly,
     );
 
@@ -91,7 +80,13 @@ export default function SubscriptionModal() {
 
   const closeModal = () => document.getElementById('subModal')?.classList.remove('open');
 
-  const weekDaysUI = store.lang === 'ar' ? WEEK_DAYS_AR : WEEK_DAYS_EN;
+  const startDateTime = new Date(startDate);
+  const endDateTime = addDays(startDateTime, 29);
+  const totalDays = 30;
+  const todayStr = formatDate(new Date());
+  const remainingFromNow = startDate > todayStr
+    ? totalDays
+    : Math.max(0, daysBetween(new Date(todayStr), endDateTime) + 1);
 
   return (
     <div className="modal-overlay" id="subModal" onClick={(e) => e.target === e.currentTarget && closeModal()}>
@@ -109,8 +104,6 @@ export default function SubscriptionModal() {
               className={`sub-card ${isActive ? 'active' : ''}`}
               onClick={() => {
                 setSelectedPlanId(plan.id);
-                const pd = (plan as any).days_of_week;
-                if (Array.isArray(pd) && pd.length > 0) setSelectedDays(pd);
               }}>
               <div className="sub-header">
                 <div className="sub-name">{name}</div>
@@ -128,28 +121,6 @@ export default function SubscriptionModal() {
         })}
 
         <p className="section-title" style={{ marginTop: 16 }}>📅 {store.lang === 'ar' ? 'جدولة الاشتراك' : 'Schedule Subscription'}</p>
-
-        <div style={{ fontSize: '.8rem', fontWeight: 600, marginBottom: 6 }}>
-          {store.lang === 'ar' ? 'أيام التوصيل:' : 'Delivery days:'}
-        </div>
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 12 }}>
-          {weekDaysUI.map((dayLabel, i) => {
-            const dayKey = WEEK_DAYS[i];
-            const isSel = selectedDays.includes(dayKey);
-            return (
-              <button key={dayKey}
-                className="action-btn secondary"
-                style={{
-                  width: 'auto', padding: '5px 9px', fontSize: '.7rem', borderRadius: 20,
-                  background: isSel ? 'var(--amber)' : '', color: isSel ? '#fff' : '',
-                  borderColor: isSel ? 'var(--amber)' : '',
-                }}
-                onClick={() => toggleDay(dayKey)}>
-                {dayLabel}
-              </button>
-            );
-          })}
-        </div>
 
         <div style={{ fontSize: '.8rem', fontWeight: 600, marginBottom: 4 }}>
           {store.lang === 'ar' ? 'تاريخ البدء:' : 'Start date:'}
@@ -189,26 +160,54 @@ export default function SubscriptionModal() {
             for (let day = 1; day <= end.getDate(); day++) {
               const date = new Date(start.getFullYear(), start.getMonth(), day);
               const dateStr = formatDate(date);
-              const dayKey = WEEK_DAYS[date.getDay()];
               const isStart = dateStr === startDate;
               const isFuture = date >= new Date(new Date().toDateString());
-              const daySelected = selectedDays.includes(dayKey);
+
+              let remainingDays = 0;
+              if (isFuture && dateStr >= startDate) {
+                const startTime = new Date(startDate).getTime();
+                const dateTime = date.getTime();
+                const diffDays = Math.round((dateTime - startTime) / (1000 * 60 * 60 * 24));
+                remainingDays = 30 - diffDays;
+              }
+
               cells.push(
                 <div key={day}
                   onClick={() => isFuture && setStartDate(dateStr)}
                   style={{
                     textAlign: 'center', padding: '5px 0', cursor: isFuture ? 'pointer' : 'default',
                     borderRadius: 6, fontSize: '.7rem', fontWeight: isStart ? 900 : 500,
-                    background: isStart ? 'var(--amber)' : daySelected ? 'var(--cream)' : '',
+                    background: isStart ? 'var(--amber)' : '',
                     color: isStart ? '#fff' : isFuture ? '' : 'var(--text-light)',
                     opacity: isFuture ? 1 : 0.4,
+                    position: 'relative',
                   }}>
                   {day}
+                  {remainingDays > 0 && remainingDays <= 30 && (
+                    <span style={{
+                      position: 'absolute', top: -4, right: -4,
+                      background: remainingDays <= 5 ? '#e74c3c' : remainingDays <= 15 ? '#f39c12' : '#27ae60',
+                      color: '#fff', fontSize: '.6rem', fontWeight: 900,
+                      borderRadius: 10, padding: '2px 5px', lineHeight: 1.2, minWidth: 22, textAlign: 'center',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                    }}>{remainingDays}d</span>
+                  )}
                 </div>
               );
             }
             return cells;
           })()}
+        </div>
+
+        <div style={{
+          fontSize: '.75rem', color: 'var(--text-mid)', padding: '10px 0', textAlign: 'center',
+          borderTop: '1px solid var(--border)', marginTop: 8,
+        }}>
+          {store.lang === 'ar' ? (
+            <>📊 اشتراك <strong>30 يوم</strong> · يبدأ {getMonthName(startDateTime, true)} {startDateTime.getDate()} · <strong>{Math.max(0, remainingFromNow)} يوم</strong> متبقي</>
+          ) : (
+            <>📊 <strong>30-day</strong> subscription · Starting {getMonthName(startDateTime, false)} {startDateTime.getDate()} · <strong>{Math.max(0, remainingFromNow)} days</strong> remaining</>
+          )}
         </div>
 
         {selectedPlan && (

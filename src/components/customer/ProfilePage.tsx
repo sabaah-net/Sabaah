@@ -1,12 +1,31 @@
 'use client';
+import { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { ref, update } from 'firebase/database';
-import { db } from '../../lib/firebase';
+import { ref, update, push, set } from 'firebase/database';
+import { db, pushComplaint } from '../../lib/firebase';
 import { t } from '../../i18n';
 
 export default function ProfilePage() {
   const store = useAppStore();
   const unreadCount = store.notifications.filter(n => !n.read).length;
+  const [complaintSubject, setComplaintSubject] = useState('');
+  const [complaintDesc, setComplaintDesc] = useState('');
+  const [complaintSent, setComplaintSent] = useState(false);
+
+  const handleSubmitComplaint = async () => {
+    if (!complaintSubject.trim() || !complaintDesc.trim()) return;
+    pushComplaint({
+      userId: store.currentUser?.profileId || '',
+      userName: store.currentUser?.name || '',
+      subject: complaintSubject,
+      description: complaintDesc,
+      status: 'open',
+    });
+    setComplaintSubject('');
+    setComplaintDesc('');
+    setComplaintSent(true);
+    setTimeout(() => setComplaintSent(false), 3000);
+  };
 
   return (
     <div id="pageProfile">
@@ -64,16 +83,27 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Notification Inbox */}
+      {/* Complaint Form */}
       {store.isLoggedIn && (
+        <>
+          <p className="section-title" style={{ marginTop: 14 }}>⚠️ {store.lang === 'ar' ? 'تقديم شكوى' : 'File a Complaint'}</p>
+          <div style={{ background: '#fff', borderRadius: 'var(--r-md)', padding: 14, boxShadow: 'var(--sh-sm)', marginBottom: 10 }}>
+            <input className="coffee-input" style={{ marginBottom: 8 }} placeholder={store.lang === 'ar' ? 'الموضوع *' : 'Subject *'} value={complaintSubject} onChange={(e) => setComplaintSubject(e.target.value)} />
+            <textarea className="coffee-input" style={{ minHeight: 80, resize: 'vertical', marginBottom: 8 }} placeholder={store.lang === 'ar' ? 'الوصف *' : 'Description *'} value={complaintDesc} onChange={(e) => setComplaintDesc(e.target.value)} />
+            <button className="action-btn" style={{ width: '100%' }} onClick={handleSubmitComplaint} disabled={!complaintSubject.trim() || !complaintDesc.trim()}>
+              {complaintSent ? '✅ ' + (store.lang === 'ar' ? 'تم الإرسال' : 'Sent!') : (store.lang === 'ar' ? '📨 إرسال الشكوى' : '📨 Submit Complaint')}
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Notification Inbox */}
+      {store.isLoggedIn && store.notifications.length > 0 && (
         <div style={{ marginTop: 14 }}>
           <p className="section-title">
             {t('notifications_title', store.lang)} {unreadCount > 0 && <span style={{ fontSize: '.75rem', color: 'var(--amber)', fontWeight: 700 }}>({unreadCount})</span>}
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {store.notifications.length === 0 && (
-              <div style={{ textAlign: 'center', padding: 24 }}>{store.lang === 'ar' ? 'لا توجد إشعارات' : 'No notifications'}</div>
-            )}
             {store.notifications.sort((a, b) => {
               const timeA = (a as any).createdAt || a.time || '';
               const timeB = (b as any).createdAt || b.time || '';

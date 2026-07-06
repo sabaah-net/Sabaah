@@ -52,8 +52,11 @@ interface AppState {
   auditLog: AuditLogEntry[];
   campaigns: Campaign[];
   addons: Addon[];
+  currency: string;
+  userPosition: { lat: number; lng: number } | null;
 
   setLang: (lang: Lang) => void;
+  setCurrency: (currency: string) => void;
   setRole: (role: AppRole) => void;
   toggleTheme: () => void;
   setLoggedIn: (v: boolean, user?: CurrentUser | null) => void;
@@ -65,6 +68,7 @@ interface AppState {
   setSelectedGender: (g: string | null) => void;
   setMenuFilter: (f: string) => void;
   setAddons: (addons: Addon[]) => void;
+  setUserPosition: (pos: { lat: number; lng: number } | null) => void;
 
   signIn: (email: string, pass: string, name?: string) => Promise<void>;
   signUp: (email: string, pass: string, name: string, phone: string) => Promise<void>;
@@ -150,8 +154,11 @@ export const useAppStore = create<AppState>((set, get) => {
       { id: 'chocolate', name: 'شوكولاتة', nameEn: 'Chocolate', price: 5, icon: '🍫' },
       { id: 'croissant', name: 'كرواسون', nameEn: 'Croissant', price: 4, icon: '🥐' },
     ],
+    userPosition: null,
+    currency: 'SAR',
 
     setLang: (lang) => set((s) => { saveState({ ...s, lang }); return { lang }; }),
+    setCurrency: (currency) => set({ currency }),
     setRole: (role) => set({ role }),
     toggleTheme: () => set((s) => {
       const theme = s.theme === 'light' ? 'dark' : 'light';
@@ -183,6 +190,7 @@ export const useAppStore = create<AppState>((set, get) => {
     setSelectedGender: (g) => set({ selectedGender: g }),
     setMenuFilter: (f) => set({ menuFilter: f }),
     setAddons: (addons) => set({ addons }),
+    setUserPosition: (pos) => set({ userPosition: pos }),
 
     signIn: async (email, pass, name?) => {
       try {
@@ -355,7 +363,7 @@ export const useAppStore = create<AppState>((set, get) => {
             vat_amount: grandTotal - grandTotal / 1.15,
             platform_fee: 0,
             total_amount: grandTotal,
-            payment_method: method === 'wallet' ? 'wallet' : 'stcpay',
+            payment_method: method === 'wallet' ? 'wallet' : method === 'stcpay' ? 'stcpay' : 'credit',
             items: [...s.cart.map((c) => ({
               item_name_ar: c.name || c.type,
               icon: c.icon,
@@ -475,6 +483,7 @@ export const useAppStore = create<AppState>((set, get) => {
           x: 120 + i * 60, y: 80 + i * 40,
           lat: c.lat || 24.7136 + (i * 0.01),
           lng: c.lng || 46.6753 + (i * 0.01),
+          logo_url: c.logo_url || null,
           favorites: c.total_favorites || 0,
           waitTime: `${c.avg_wait_min || 5} دق`, favorited: false,
           email: c.email || '', serviceType: 'قهوة', status: c.status,
@@ -535,6 +544,7 @@ export const useAppStore = create<AppState>((set, get) => {
 
       const state = useAppStore.getState();
       if (state.isLoggedIn && state.currentUser?.profileId) {
+        startFirebaseWatchers(state.currentUser.profileId);
         try {
           const { data: profile } = await supabase.from('profiles')
             .select('id, loyalty_points, loyalty_tier, streak, wallet_balance')
@@ -553,6 +563,7 @@ export const useAppStore = create<AppState>((set, get) => {
           x: 120 + i * 60, y: 80 + i * 40,
           lat: c.lat || 24.7136 + (i * 0.01),
           lng: c.lng || 46.6753 + (i * 0.01),
+          logo_url: c.logo_url || null,
           favorites: c.total_favorites || 0,
           waitTime: `${c.avg_wait_min || 5} دق`, favorited: false,
           email: c.email || '', serviceType: 'قهوة', status: c.status,
@@ -571,6 +582,7 @@ function saveState(state: Partial<AppState>) {
       wallet: state.wallet,
       lang: state.lang,
       theme: state.theme,
+      currency: state.currency,
       cart: state.cart,
     };
     localStorage.setItem('sabaa_state', JSON.stringify(minimal));

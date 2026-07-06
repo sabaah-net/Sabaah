@@ -25,6 +25,9 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
   const handleSelectCafe = (cafe: typeof store.cafes[0]) => {
     store.setSelectedCafe(cafe);
     show(t('cafe_selected', store.lang).replace('{name}', cafe.name), 'success');
+    setTimeout(() => {
+      document.getElementById('coffeePanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const handleToggleFav = (id: number) => {
@@ -151,11 +154,13 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
         ))}
       </div>
 
-      <CoffeePanel
-        visible={!!store.selectedCafe}
-        onAddToCart={handleAddToCart}
-        selectedTypes={selectedTypes}
-      />
+      <div id="coffeePanel">
+        <CoffeePanel
+          visible={!!store.selectedCafe}
+          onAddToCart={handleAddToCart}
+          selectedTypes={selectedTypes}
+        />
+      </div>
 
       <CartPanel
         cart={store.cart}

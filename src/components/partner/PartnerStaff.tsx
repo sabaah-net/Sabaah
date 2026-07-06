@@ -6,6 +6,14 @@ import type { Lang } from '../../types';
 import { getStaff, addStaffMember, deleteStaffMember } from '../../lib/pickme';
 import type { StaffRow } from '../../lib/pickme';
 
+const PLACEHOLDER_STAFF = [
+  { id: 'p1', name: 'أحمد', role: 'باريستا', shift: 'صباحي', cafe_id: '' },
+  { id: 'p2', name: 'فاطمة', role: 'كاشير', shift: 'صباحي', cafe_id: '' },
+  { id: 'p3', name: 'سعيد', role: 'باريستا', shift: 'مسائي', cafe_id: '' },
+  { id: 'p4', name: 'نورة', role: 'مدير', shift: 'يوم كامل', cafe_id: '' },
+  { id: 'p5', name: 'خالد', role: 'باريستا', shift: 'مسائي', cafe_id: '' },
+];
+
 const roleLabel = (r: string, l: Lang) =>
   r === 'باريستا' || r === 'Barista' ? t('partner_staff_role_barista', l) :
   r === 'كاشير' || r === 'Cashier' ? t('partner_staff_role_cashier', l) :
@@ -46,7 +54,27 @@ export default function PartnerStaff({ cafeId }: { cafeId: string | null }) {
     setStaff(prev => prev.filter(s => s.id !== id));
   };
 
-  if (!cafeId) return <p style={{ color: 'var(--text-light)', padding: 20 }}>{lang === 'ar' ? 'لم يتم تعيين مقهى' : 'No cafe assigned'}</p>;
+  if (!cafeId) return (
+    <div>
+      <p className="section-title">{t('partner_staff_title', lang)}</p>
+      <p style={{ color: 'var(--text-light)', textAlign: 'center', padding: 20 }}>
+        {lang === 'ar' ? 'لم يتم تعيين مقهى — عرض بيانات تجريبية' : 'No cafe assigned — showing demo data'}
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {PLACEHOLDER_STAFF.map((s) => (
+          <div key={s.id} className="emp-card" style={{ opacity: .7 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--latte)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '.9rem' }}>{s.name.charAt(0)}</div>
+              <div>
+                <div style={{ fontSize: '.85rem', fontWeight: 700 }}>{s.name}</div>
+                <div style={{ fontSize: '.65rem', color: 'var(--text-light)' }}>{roleLabel(s.role, lang)} • {shiftLabel(s.shift, lang)}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div>
@@ -73,7 +101,19 @@ export default function PartnerStaff({ cafeId }: { cafeId: string | null }) {
       <p className="section-title">{t('partner_staff_today', lang)}</p>
       {loading && <p style={{ color: 'var(--text-light)', textAlign: 'center', padding: 20 }}>{lang === 'ar' ? 'جاري التحميل...' : 'Loading...'}</p>}
       {!loading && staff.length === 0 && (
-        <p style={{ color: 'var(--text-light)', textAlign: 'center', padding: 20 }}>{lang === 'ar' ? 'لا يوجد موظفون' : 'No staff members'}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {PLACEHOLDER_STAFF.map((s) => (
+            <div key={s.id} className="emp-card">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--latte)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '.9rem' }}>{s.name.charAt(0)}</div>
+                <div>
+                  <div style={{ fontSize: '.85rem', fontWeight: 700 }}>{s.name}</div>
+                  <div style={{ fontSize: '.65rem', color: 'var(--text-light)' }}>{roleLabel(s.role, lang)} • {shiftLabel(s.shift, lang)}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {staff.map((s) => (

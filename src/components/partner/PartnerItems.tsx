@@ -124,14 +124,14 @@ export default function PartnerItems() {
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700, fontSize: '.88rem' }}>{item.name_ar}</div>
                 <div style={{ fontSize: '.72rem' }}>{item.name_en} — {item.base_price} ⃁</div>
-                <div style={{ fontSize: '.68rem', marginTop: 2 }}>
-                  ⭐ {lang === 'ar' ? 'النقاط' : 'Points'}:
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                  <span style={{ fontSize: '.65rem', color: 'var(--text-light)', whiteSpace: 'nowrap' }}>⭐ {lang === 'ar' ? 'نقاط' : 'Points'}:</span>
                   <input
                     type="number" min="0" max="100"
                     value={item.points_per_item || 10}
                     onChange={(e) => handlePointsChange(item.id, Number(e.target.value))}
                     disabled={savingPoints === item.id}
-                    style={{ width: 50, padding: '1px 4px', borderRadius: 4, border: '1px solid var(--latte)', textAlign: 'center', fontSize: '.7rem', margin: '0 4px' }}
+                    style={{ width: 42, padding: '3px 6px', borderRadius: 6, border: '1.5px solid var(--latte)', textAlign: 'center', fontSize: '.78rem', fontWeight: 700, background: 'var(--cream)' }}
                   />
                 </div>
               </div>

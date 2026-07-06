@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { supabase } from '../../lib/supabase';
 import { t } from '../../i18n';
@@ -8,7 +8,6 @@ import PartnerInventory from './PartnerInventory';
 import PartnerStaff from './PartnerStaff';
 import PartnerPromos from './PartnerPromos';
 import PartnerItems from './PartnerItems';
-import { watchNotifications } from '../../lib/firebase';
 import { ref, onValue, off } from 'firebase/database';
 import { db } from '../../lib/firebase';
 
@@ -24,6 +23,9 @@ export default function PartnerPortal() {
   const [pointsPerItem, setPointsPerItem] = useState(10);
   const [savingPoints, setSavingPoints] = useState(false);
   const [notifCount, setNotifCount] = useState(0);
+  const [nearbyPopup, setNearbyPopup] = useState<{ title: string; body: string } | null>(null);
+  const seenNotifs = useRef<Set<string>>(new Set());
+  const popupTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     const pid = store.currentUser?.profileId;
@@ -44,8 +46,14 @@ export default function PartnerPortal() {
         const val = snap.val();
         const notifs = val ? Object.values(val) as any[] : [];
         setNotifCount(notifs.filter((n: any) => !n.read).length);
+        const latest = notifs[notifs.length - 1] as any;
+        if (latest && !seenNotifs.current.has(latest.id) && latest.icon === '📍') {
+          seenNotifs.current.add(latest.id);
+          setNearbyPopup({ title: latest.title, body: latest.body });
+          popupTimer.current = setTimeout(() => setNearbyPopup(null), 5000);
+        }
       });
-      cleanup = () => off(r, 'value', fn);
+      cleanup = () => { off(r, 'value', fn); clearTimeout(popupTimer.current); };
     }
     return () => { if (cleanup) cleanup(); };
   }, []);
@@ -67,50 +75,74 @@ export default function PartnerPortal() {
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '16px 14px 14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--bark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', color: '#fff' }}>☕</div>
+          <div>
+            <div style={{ fontWeight: 900, fontSize: '.95rem' }}>{lang === 'ar' ? 'لوحة التحكم' : 'Partner Dashboard'}</div>
+            <div style={{ fontSize: '.65rem', color: 'var(--text-light)' }}>{store.currentUser?.name || ''}</div>
+          </div>
+        </div>
+        <button className="action-btn secondary" style={{ width: 'auto', padding: '6px 14px', fontSize: '.72rem' }} onClick={signOut}>{t('logout_label', lang)}</button>
+      </div>
+
       <div style={{
         background: 'var(--bark)', color: '#fff', borderRadius: 'var(--r-md)',
-        padding: '16px 18px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14,
+        padding: '14px 16px', marginBottom: 12,
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8,
       }}>
-        <div>
-          <div style={{ fontSize: '.62rem', color: 'rgba(255,255,255,.5)' }}>{t('partner_today_earnings', lang)}</div>
-          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--caramel)' }}>⃁ 345.00</div>
-        </div>
-        <div>
-          <div style={{ fontSize: '.62rem', color: 'rgba(255,255,255,.5)' }}>{t('partner_orders', lang)}</div>
-          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--caramel)' }}>{store.partnerOrders.length}</div>
-        </div>
-        <div>
-          <div style={{ fontSize: '.62rem', color: 'rgba(255,255,255,.5)' }}>{t('partner_inventory', lang)}</div>
-          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--caramel)' }}>87%</div>
-        </div>
+        {[
+          { label: t('partner_today_earnings', lang), value: '⃁ 345.00' },
+          { label: t('partner_orders', lang), value: store.partnerOrders.length || '—' },
+          { label: t('partner_inventory', lang), value: store.inventory.length ? `${Math.round(store.inventory.reduce((a, b) => a + b.level, 0) / store.inventory.length)}%` : '—' },
+        ].map((s, i) => (
+          <div key={i} style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '.6rem', color: 'rgba(255,255,255,.5)', marginBottom: 2 }}>{s.label}</div>
+            <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--caramel)' }}>{s.value}</div>
+          </div>
+        ))}
       </div>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
-        <button className="action-btn secondary" style={{ width: 'auto', padding: '6px 14px', fontSize: '.75rem' }} onClick={signOut}>{t('logout_label', lang)}</button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '.75rem', background: 'var(--cream)', padding: '4px 10px', borderRadius: 8 }}>
-          <span>⭐ {t('points_per_item', lang) || 'Points/item'}:</span>
-          <input type="number" min="0" max="100" value={pointsPerItem}
-            onChange={(e) => setPointsPerItem(Number(e.target.value))}
-            style={{ width: 50, padding: '2px 4px', borderRadius: 4, border: '1px solid var(--latte)', textAlign: 'center' }} />
-          <button className="action-btn secondary" style={{ padding: '2px 8px', fontSize: '.65rem' }} disabled={savingPoints} onClick={handlePointsChange}>💾</button>
-        </div>
+
+      <div style={{
+        background: '#fff', borderRadius: 'var(--r-md)', padding: '12px 16px', marginBottom: 12,
+        display: 'flex', alignItems: 'center', gap: 12,
+        boxShadow: 'var(--sh-sm)', border: '1px solid var(--latte)',
+      }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: '50%', background: 'var(--bark)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', color: '#fff',
+        }}>⭐</div>
+        <span style={{ fontSize: '.82rem', fontWeight: 700, color: 'var(--text-mid)', whiteSpace: 'nowrap' }}>
+          {lang === 'ar' ? 'النقاط لكل عنصر' : 'Points per Item'}
+        </span>
+        <input type="number" min="0" max="100" value={pointsPerItem}
+          onChange={(e) => setPointsPerItem(Number(e.target.value))}
+          style={{
+            width: 48, padding: '6px 8px', borderRadius: 8, border: '1.5px solid var(--latte)',
+            textAlign: 'center', fontSize: '.9rem', fontWeight: 900, background: 'var(--cream)',
+          }} />
+        <button className="action-btn" style={{ width: 'auto', padding: '6px 14px', fontSize: '.72rem', whiteSpace: 'nowrap' }}
+          disabled={savingPoints} onClick={handlePointsChange}>
+          {savingPoints ? '...' : (lang === 'ar' ? 'حفظ' : 'Save')}
+        </button>
       </div>
 
       <div style={{
         background: isOpen ? 'var(--green-bg)' : 'var(--red-bg)',
-        border: `2px solid ${isOpen ? 'var(--green)' : 'var(--red)'}`,
-        borderRadius: 'var(--r-md)', padding: '14px 18px', marginBottom: 14,
+        border: `1.5px solid ${isOpen ? 'var(--green)' : 'var(--red)'}`,
+        borderRadius: 'var(--r-md)', padding: '12px 16px', marginBottom: 14,
         display: 'flex', alignItems: 'center', gap: 12,
       }}>
-        <span style={{ fontSize: '1.8rem' }}>{isOpen ? '🟢' : '🔴'}</span>
+        <span style={{ fontSize: '1.5rem' }}>{isOpen ? '🟢' : '🔴'}</span>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '.95rem', fontWeight: 900, color: isOpen ? 'var(--green)' : 'var(--red)' }}>
+          <div style={{ fontSize: '.9rem', fontWeight: 900, color: isOpen ? 'var(--green)' : 'var(--red)' }}>
             {isOpen ? t('partner_open', lang) : t('partner_closed', lang)}
           </div>
-          <div style={{ fontSize: '.72rem', color: isOpen ? '#4aaa7a' : '#e74c3c' }}>
+          <div style={{ fontSize: '.68rem', color: isOpen ? '#4aaa7a' : '#e74c3c' }}>
             {isOpen ? t('partner_accepting', lang) : t('partner_not_accepting', lang)}
           </div>
         </div>
-        <label style={{ position: 'relative', width: 50, height: 26, flexShrink: 0 }}>
+        <label style={{ position: 'relative', width: 46, height: 24, flexShrink: 0 }}>
           <input type="checkbox" checked={isOpen} onChange={handleToggle} style={{ opacity: 0, width: 0, height: 0 }} />
           <span style={{
             position: 'absolute', inset: 0, borderRadius: 40, cursor: 'pointer',
@@ -119,15 +151,15 @@ export default function PartnerPortal() {
         </label>
       </div>
 
-      <div className="admin-tabs">
+      <div className="admin-tabs" style={{ marginBottom: 12 }}>
         <button className={`admin-tab ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => setActiveTab('orders')}>
-          {t('partner_order_title', lang)} {notifCount > 0 && <span className="table-badge badge-red" style={{ marginLeft: 4 }}>{notifCount}</span>}
+          📋 {t('partner_order_title', lang)} {notifCount > 0 && <span className="table-badge badge-red" style={{ marginLeft: 4, verticalAlign: 'top' }}>{notifCount}</span>}
         </button>
-        <button className={`admin-tab ${activeTab === 'inventory' ? 'active' : ''}`} onClick={() => setActiveTab('inventory')}>{t('partner_inv_tab', lang)}</button>
-        <button className={`admin-tab ${activeTab === 'staff' ? 'active' : ''}`} onClick={() => setActiveTab('staff')}>{t('partner_staff_tab', lang)}</button>
-        <button className={`admin-tab ${activeTab === 'promos' ? 'active' : ''}`} onClick={() => setActiveTab('promos')}>{t('partner_promo_tab', lang)}</button>
+        <button className={`admin-tab ${activeTab === 'inventory' ? 'active' : ''}`} onClick={() => setActiveTab('inventory')}>📦 {t('partner_inv_tab', lang)}</button>
+        <button className={`admin-tab ${activeTab === 'staff' ? 'active' : ''}`} onClick={() => setActiveTab('staff')}>👥 {t('partner_staff_tab', lang)}</button>
+        <button className={`admin-tab ${activeTab === 'promos' ? 'active' : ''}`} onClick={() => setActiveTab('promos')}>🏷️ {t('partner_promo_tab', lang)}</button>
         <button className={`admin-tab ${activeTab === 'items' ? 'active' : ''}`} onClick={() => setActiveTab('items')}>
-          {lang === 'ar' ? '📋 عناصر القائمة' : '📋 Menu Items'}
+          ☕ {lang === 'ar' ? 'عناصر القائمة' : 'Menu Items'}
         </button>
       </div>
 
@@ -136,6 +168,28 @@ export default function PartnerPortal() {
       {activeTab === 'staff' && <PartnerStaff cafeId={cafeId} />}
       {activeTab === 'promos' && <PartnerPromos cafeId={cafeId} />}
       {activeTab === 'items' && <PartnerItems />}
+
+      {nearbyPopup && (
+        <div style={{
+          position: 'fixed', bottom: 20, right: 20, zIndex: 9999,
+          background: '#fff', borderRadius: 14, padding: '14px 18px',
+          boxShadow: '0 4px 20px rgba(0,0,0,.15)', maxWidth: 300,
+          borderLeft: '4px solid #d4a24c', animation: 'slideUp .3s ease',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <span style={{ fontSize: '1.2rem' }}>📍</span>
+            <span style={{ fontWeight: 900, fontSize: '.85rem', color: '#333' }}>{nearbyPopup.title}</span>
+          </div>
+          <div style={{ fontSize: '.78rem', color: '#666', lineHeight: 1.4 }}>{nearbyPopup.body}</div>
+          <button
+            onClick={() => setNearbyPopup(null)}
+            style={{
+              marginTop: 8, background: 'none', border: 'none', color: '#999',
+              fontSize: '.7rem', cursor: 'pointer', padding: 0,
+            }}
+          >{lang === 'ar' ? 'إغلاق' : 'Dismiss'}</button>
+        </div>
+      )}
     </div>
   );
 }

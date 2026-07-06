@@ -1,13 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { getSystemSettings, updateSystemSetting, addAuditLog, clearAllOrders } from '../../lib/supabase';
+import { getSystemSettings, updateSystemSetting, addAuditLog } from '../../lib/supabase';
 import { useToast } from '../shared/Toast';
 import { t } from '../../i18n';
 import type { Addon } from '../../types';
 
 export default function AdminSettings() {
-  const { lang, theme, toggleTheme, addons } = useAppStore();
+  const { lang, theme, toggleTheme, addons, currency } = useAppStore();
   const { show } = useToast();
   const [vatRate, setVatRate] = useState(15);
   const [loading, setLoading] = useState(true);
@@ -79,10 +79,13 @@ export default function AdminSettings() {
           <hr style={{ border: 'none', borderTop: '1px solid var(--latte)' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div><strong>{t('currency_label', lang)}</strong><div style={{ fontSize: '.78rem', color: 'var(--text-light)' }}>{t('currency_desc', lang)}</div></div>
-            <select className="coffee-input" style={{ width: 140 }}>
-              <option>{t('sar', lang)}</option>
-              <option>{t('usd', lang)}</option>
-              <option>{t('aed', lang)}</option>
+            <select className="coffee-input" style={{ width: 140, fontSize: '.85rem', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--latte)', background: '#fff', appearance: 'auto' }} value={currency} onChange={(e) => {
+              useAppStore.getState().setCurrency?.(e.target.value);
+              show('✅ ' + (lang === 'ar' ? 'تم تحديث العملة' : 'Currency updated'), 'success');
+            }}>
+              <option value="SAR">{t('sar', lang)}</option>
+              <option value="USD">{t('usd', lang)}</option>
+              <option value="AED">{t('aed', lang)}</option>
             </select>
           </div>
           <hr style={{ border: 'none', borderTop: '1px solid var(--latte)' }} />
@@ -129,23 +132,6 @@ export default function AdminSettings() {
                 )}
               </div>
             ))}
-          </div>
-          <hr style={{ border: 'none', borderTop: '1px solid var(--latte)' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div><strong>{t('danger_label', lang)}</strong><div style={{ fontSize: '.78rem', color: 'var(--red)' }}>{t('danger_desc', lang)}</div></div>
-            <button className="action-btn secondary" style={{ width: 'auto', padding: '8px 16px', fontSize: '.8rem', borderColor: 'var(--red)', color: 'var(--red)' }}
-              onClick={async () => {
-                try {
-                  await clearAllOrders();
-                  localStorage.removeItem('sabaa_state');
-                  show('✅ ' + t('data_deleted', lang), 'success');
-                  setTimeout(() => window.location.reload(), 1500);
-                } catch {
-                  show(t('settings_save_failed', lang), 'error');
-                }
-              }}>
-              {t('delete_btn', lang)}
-            </button>
           </div>
         </div>
       </div>

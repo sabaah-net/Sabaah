@@ -5,6 +5,12 @@ import { t } from '../../i18n';
 import { getPromotionsForCafe, createPromotion, togglePromotion, deletePromotion } from '../../lib/pickme';
 import type { PromotionRow } from '../../lib/pickme';
 
+const PLACEHOLDER_PROMOS = [
+  { id: 'pp1', name_ar: 'عرض الصباح', discount_percent: 20, start_time: '07:00', end_time: '10:00', is_active: true, cafe_id: '' },
+  { id: 'pp2', name_ar: 'عرض الغداء', discount_percent: 15, start_time: '12:00', end_time: '14:00', is_active: true, cafe_id: '' },
+  { id: 'pp3', name_ar: 'عرض المساء', discount_percent: 10, start_time: '18:00', end_time: '21:00', is_active: false, cafe_id: '' },
+];
+
 export default function PartnerPromos({ cafeId }: { cafeId: string | null }) {
   const store = useAppStore();
   const lang = store.lang;
@@ -50,7 +56,28 @@ export default function PartnerPromos({ cafeId }: { cafeId: string | null }) {
     setPromos(prev => prev.filter(p => p.id !== id));
   };
 
-  if (!cafeId) return <p style={{ color: 'var(--text-light)', padding: 20 }}>{lang === 'ar' ? 'لم يتم تعيين مقهى' : 'No cafe assigned'}</p>;
+  if (!cafeId) return (
+    <div>
+      <p className="section-title">{t('partner_promo_title', lang)}</p>
+      <p style={{ color: 'var(--text-light)', textAlign: 'center', padding: 20 }}>
+        {lang === 'ar' ? 'لم يتم تعيين مقهى — عرض بيانات تجريبية' : 'No cafe assigned — showing demo data'}
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {PLACEHOLDER_PROMOS.map((p) => (
+          <div key={p.id} style={{
+            background: '#fff', borderRadius: 'var(--r-sm)', padding: '10px 14px',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            boxShadow: 'var(--sh-sm)', borderRight: `3px solid ${p.is_active ? 'var(--green)' : 'var(--text-light)'}`, opacity: .7,
+          }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '.85rem', fontWeight: 700 }}>{p.name_ar}</div>
+              <div style={{ fontSize: '.65rem', color: 'var(--text-light)' }}>{t('partner_promo_discount', lang)} {p.discount_percent}% • {p.start_time?.slice(0, 5)} - {p.end_time?.slice(0, 5)}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div>
@@ -94,7 +121,29 @@ export default function PartnerPromos({ cafeId }: { cafeId: string | null }) {
           </div>
         ))}
         {!loading && promos.length === 0 && (
-          <p style={{ color: 'var(--text-light)', textAlign: 'center', padding: 20 }}>{lang === 'ar' ? 'لا توجد عروض' : 'No promotions'}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {PLACEHOLDER_PROMOS.map((p) => (
+              <div key={p.id} style={{
+                background: '#fff', borderRadius: 'var(--r-sm)', padding: '10px 14px',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                boxShadow: 'var(--sh-sm)', borderRight: `3px solid ${p.is_active ? 'var(--green)' : 'var(--text-light)'}`,
+              }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '.85rem', fontWeight: 700 }}>{p.name_ar}</div>
+                  <div style={{ fontSize: '.65rem', color: 'var(--text-light)' }}>{t('partner_promo_discount', lang)} {p.discount_percent}% • {p.start_time?.slice(0, 5)} - {p.end_time?.slice(0, 5)}</div>
+                </div>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <span style={{
+                    fontSize: '.65rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                    background: p.is_active ? 'var(--green-bg)' : 'var(--latte)',
+                    color: p.is_active ? 'var(--green)' : 'var(--text-light)',
+                  }}>
+                    {p.is_active ? t('partner_promo_active_label', lang) : t('partner_promo_inactive', lang)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

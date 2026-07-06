@@ -5,7 +5,7 @@ export type AppRole = 'customer' | 'partner' | 'superadmin';
 export type Lang = 'ar' | 'en' | 'zh' | 'fr' | 'es';
 export type Theme = 'light' | 'dark';
 export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'completed' | 'cancelled';
-export type PaymentMethod = 'wallet' | 'stcpay';
+export type PaymentMethod = 'wallet' | 'stcpay' | 'credit';
 export type TransactionType = 'credit' | 'debit';
 export type LoyaltyTier = 'bronze' | 'silver' | 'gold' | 'platinum';
 export type CafeStatus = 'active' | 'suspended' | 'pending' | 'closed';
@@ -70,6 +70,7 @@ export interface Cafe {
   y: number;
   lat: number;
   lng: number;
+  logo_url?: string | null;
   favorites: number;
   waitTime: string;
   favorited: boolean;
