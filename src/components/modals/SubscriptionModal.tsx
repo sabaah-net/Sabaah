@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { useToast } from '../shared/Toast';
 import { getSubscriptionPlans } from '../../lib/supabase';
@@ -182,7 +182,7 @@ export default function SubscriptionModal() {
             const now = new Date();
             const start = new Date(now.getFullYear(), now.getMonth() + viewMonth, 1);
             const end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
-            const cells: JSX.Element[] = [];
+            const cells: React.JSX.Element[] = [];
             for (let i = 0; i < start.getDay(); i++) {
               cells.push(<div key={`e-${i}`} />);
             }

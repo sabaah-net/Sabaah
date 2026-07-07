@@ -19,6 +19,10 @@
 -->
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
+  // Google Maps Configuration
+  const GOOGLE_MAPS_API_KEY = 'AIzaSyBmWwqydqnjF10ZMRK3uhn_j5pOZTZQMmQ';
+  const GOOGLE_MAPS_MAP_ID = '96d92d20372ba6e0cda09de9';
+</script>
 tailwind.config = {
   theme: {
     extend: {
@@ -304,7 +308,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);trans
         <button class="pill" onclick="filterCafe('fav',this)">❤️ المفضلة</button>
       </div>
 
-      <div class="map-box" id="cafeMap"></div>
+      <div id="cafeMap" style="background:var(--latte);border-radius:var(--radius-sm);height:160px;margin:0 14px 14px;position:relative;overflow:hidden"></div>
 
       <div class="cafe-grid" id="cafeGrid"></div>
 
@@ -636,9 +640,7 @@ function switchCustomerPage(pageId, btn) {
 // ============================================================
 function renderCafes(filter = 'all') {
   const grid = document.getElementById('cafeGrid');
-  const map = document.getElementById('cafeMap');
   grid.innerHTML = '';
-  map.innerHTML = '';
 
   cafes.forEach(c => {
     if (filter === 'open' && !c.isOpen) return;
@@ -655,9 +657,14 @@ function renderCafes(filter = 'all') {
         <div class="cafe-stat">⭐ ${c.rating} • ⏱️ ${c.wait} • 📍 ${c.dist}</div>
         <div style="margin-top:6px"><span class="cafe-status ${c.isOpen ? 'open' : 'closed'}">${c.isOpen ? '🟢 مفتوح' : '🔴 مغلق'}</span></div>
       </div>`;
-
-    map.innerHTML += `<div class="map-dot ${c.isOpen ? 'open' : 'closed'}" style="top:${c.y}%;left:${c.x}%;" title="${c.name}"></div>`;
   });
+
+  // Initialize or update Google Maps
+  if (!googleMap) {
+    initGoogleMaps();
+  } else {
+    renderMapMarkers();
+  }
 }
 
 function filterCafe(f, btn) {
@@ -683,7 +690,69 @@ function selectCafe(id) {
 }
 
 // ============================================================
-// RENDER COFFEES
+// GOOGLE MAPS
+// ============================================================
+let googleMap = null;
+let googleMarkers = [];
+
+async function initGoogleMaps() {
+  if (window.google && window.google.maps) {
+    renderMapMarkers();
+    return;
+  }
+
+  // Load Google Maps API
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&map_ids=${GOOGLE_MAPS_MAP_ID}&callback=onGoogleMapsLoaded`;
+  script.async = true;
+  script.defer = true;
+  document.head.appendChild(script);
+}
+
+window.onGoogleMapsLoaded = function() {
+  renderMapMarkers();
+};
+
+function renderMapMarkers() {
+  const mapElement = document.getElementById('cafeMap');
+  if (!mapElement || !window.google) return;
+
+  // Clear existing markers
+  googleMarkers.forEach(marker => marker.setMap(null));
+  googleMarkers = [];
+
+  // Create map
+  googleMap = new google.maps.Map(mapElement, {
+    center: { lat: 24.7136, lng: 46.6753 }, // Riyadh coordinates
+    zoom: 12,
+    mapId: GOOGLE_MAPS_MAP_ID,
+    disableDefaultUI: true,
+    zoomControl: true,
+  });
+
+  // Add markers for cafes
+  cafes.forEach(c => {
+    const marker = new google.maps.Marker({
+      position: { lat: 24.7136 + (c.y - 50) * 0.01, lng: 46.6753 + (c.x - 50) * 0.01 },
+      map: googleMap,
+      title: c.name,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 10,
+        fillColor: c.isOpen ? '#C0692A' : '#C0392B',
+        fillOpacity: 1,
+        strokeColor: '#FFFFFF',
+        strokeWeight: 2,
+      },
+    });
+
+    marker.addListener('click', () => selectCafe(c.id));
+    googleMarkers.push(marker);
+  });
+}
+
+// ============================================================
+// TOAST
 // ============================================================
 function renderCoffees(filter = 'all') {
   const grid = document.getElementById('coffeeGrid');

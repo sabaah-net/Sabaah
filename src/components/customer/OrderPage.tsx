@@ -1,17 +1,40 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { getGreeting, t } from '../../i18n';
 import { generatePickupCode, useToast } from '../../lib/utils';
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 import CafeCard from './CafeCard';
 import CoffeePanel from './CoffeePanel';
 import CartPanel from './CartPanel';
 import type { CoffeeItem } from '../../types';
 
+// Google Maps type declarations
+declare global {
+  namespace google {
+    namespace maps {
+      class Map {
+        constructor(mapDiv: HTMLDivElement, options?: any);
+      }
+      class Marker {
+        constructor(options?: any);
+        addListener(eventName: string, handler: () => void): void;
+        setMap(map: Map | null): void;
+      }
+      namespace SymbolPath {
+        const CIRCLE: any;
+      }
+    }
+  }
+}
+
 export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () => void; onOpenVoice: () => void }) {
   const store = useAppStore();
   const { show } = useToast();
   const [mapExpanded, setMapExpanded] = useState(false);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const googleMapRef = useRef<google.maps.Map | null>(null);
+  const markersRef = useRef<google.maps.Marker[]>([]);
 
   useEffect(() => {
     store.refreshCafes();
@@ -76,6 +99,76 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
 
   const selectedTypes = store.cart.map((item) => item.type);
 
+  // Initialize Google Maps
+  useEffect(() => {
+    const initMap = async () => {
+      if (!mapRef.current || googleMapRef.current) return;
+
+      try {
+        // Set API options using new functional API
+        setOptions({
+          key: 'AIzaSyBmWwqydqnjF10ZMRK3uhn_j5pOZTZQMmQ',
+          libraries: ['places'],
+        });
+
+        // Import the maps library
+        await importLibrary('maps');
+        
+        // @ts-ignore - google.maps is loaded dynamically
+        const map = new google.maps.Map(mapRef.current, {
+          center: { lat: 24.7136, lng: 46.6753 }, // Riyadh coordinates
+          zoom: 12,
+          mapId: '96d92d20372ba6e0cda09de9',
+          disableDefaultUI: true,
+          zoomControl: true,
+        });
+
+        googleMapRef.current = map;
+        updateMapMarkers(map);
+      } catch (error) {
+        console.error('Error loading Google Maps:', error);
+      }
+    };
+
+    initMap();
+  }, []);
+
+  // Update markers when cafes change
+  useEffect(() => {
+    if (googleMapRef.current) {
+      updateMapMarkers(googleMapRef.current);
+    }
+  }, [store.cafes]);
+
+  const updateMapMarkers = (map: google.maps.Map) => {
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.setMap(null));
+    markersRef.current = [];
+
+    // Add markers for cafes
+    store.cafes.forEach((cafe) => {
+      const marker = new google.maps.Marker({
+        position: { 
+          lat: 24.7136 + ((cafe.y || 50) - 50) * 0.01, 
+          lng: 46.6753 + ((cafe.x || 50) - 50) * 0.01 
+        },
+        map: map,
+        title: cafe.name,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: cafe.isOpen ? '#C0692A' : '#C0392B',
+          fillOpacity: 1,
+          strokeColor: '#FFFFFF',
+          strokeWeight: 2,
+        },
+      });
+
+      marker.addListener('click', () => handleSelectCafe(cafe));
+      markersRef.current.push(marker);
+    });
+  };
+
   return (
     <div className="view active" id="pageOrder">
       <div className="hero-banner">
@@ -95,42 +188,36 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
           <p className="section-title">{t('order_again', store.lang)}</p>
           <div className="smart-reorder">
             {store.orders.slice(0, 3).map((o) => (
-              <div
-                key={o.id}
-                className="reorder-chip"
-                onClick={() => {
-                  const cafe = store.cafes.find((c) => c.name === o.cafe);
-                  if (cafe) {
-                    store.setSelectedCafe(cafe);
-                    show(t('quick_order_added', store.lang), 'success');
-                  }
-                }}
-              >
-                <div className="reorder-title">{o.icon} {o.coffeeAr || o.coffee}</div>
-                <div className="reorder-meta">{o.cafe}</div>
-                <div className="reorder-price">⃁ {o.amount.toFixed(2)}</div>
-              </div>
-            ))}
+                <div
+                  key={o.id}
+                  className="reorder-chip"
+                  onClick={() => {
+                    const cafe = store.cafes.find((c) => c.name === o.cafe);
+                    if (cafe) {
+                      store.setSelectedCafe(cafe);
+                      show(t('quick_order_added', store.lang), 'success');
+                    }
+                  }}
+                >
+                  <div className="reorder-title">{o.icon} {o.coffeeAr || o.coffee}</div>
+                  <div className="reorder-meta">{o.cafe}</div>
+                  <div className="reorder-price">⃁ {(o.amount || 0).toFixed(2)}</div>
+                </div>
+              ))}
           </div>
         </>
       )}
 
       <div className={`map-wrap ${mapExpanded ? 'expanded' : 'collapsed'}`}>
-        <svg className="map-svg-el" viewBox="0 0 480 280">
-          <rect width="480" height="280" fill="#E8DDD0" />
-          <rect x="0" y="120" width="480" height="16" fill="#D0C0A8" rx="2" />
-          <rect x="72" y="0" width="14" height="280" fill="#D0C0A8" rx="2" />
-          <rect x="332" y="0" width="14" height="280" fill="#D0C0A8" rx="2" />
-          {store.cafes.map((c) => (
-            <g key={c.id} style={{ cursor: 'pointer' }} transform={`translate(${c.x}, ${c.y})`} onClick={() => handleSelectCafe(c)}>
-              <circle r="18" fill={c.isOpen ? 'var(--amber)' : 'var(--red)'} opacity="0.15" />
-              <circle r="10" fill={c.isOpen ? 'var(--amber)' : 'var(--red)'} stroke="#fff" strokeWidth="2" />
-              <text y="4" textAnchor="middle" fill="#fff" fontSize="8" fontWeight="900">{c.id}</text>
-            </g>
-          ))}
-          <circle id="userDot" cx="240" cy="128" r="5" fill="#1A6FA8" />
-          <circle cx="240" cy="128" r="13" fill="#1A6FA8" opacity=".15" />
-        </svg>
+        <div 
+          ref={mapRef} 
+          style={{ 
+            width: '100%', 
+            height: '100%', 
+            background: 'var(--latte)',
+            borderRadius: 'var(--radius-sm)'
+          }} 
+        />
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
