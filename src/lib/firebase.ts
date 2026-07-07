@@ -59,6 +59,37 @@ export function updateOrderStatusInFirebase(userId: string, orderId: string, sta
   update(ref(db, `orders/${userId}/${orderId}`), { status });
 }
 
+export async function verifyPickupCodeOnce(cafeId: string | number | undefined, code: string) {
+  const normalized = code.trim().toUpperCase();
+  if (!normalized) return null;
+
+  const snap = await get(ref(db, 'orders'));
+  const all = snap.val() || {};
+  const cafeToken = cafeId !== undefined && cafeId !== null ? String(cafeId) : '';
+
+  for (const userId of Object.keys(all)) {
+    for (const orderId of Object.keys(all[userId] || {})) {
+      const order = all[userId][orderId] || {};
+      const orderCode = String(order.pickupCode || '').trim().toUpperCase();
+      const orderCafe = String(order.cafeId || order.cafe_uuid || order.cafe || '').trim();
+      const isCafeMatch = !cafeToken || orderCafe === cafeToken || String(order.userId || '') === cafeToken;
+      const isActive = order.status === 'pending' || order.status === 'preparing' || order.status === 'ready';
+      const alreadyUsed = Boolean(order.pickupVerifiedAt || order.pickupCodeUsed || order.status === 'picked' || order.status === 'completed');
+
+      if (isCafeMatch && isActive && !alreadyUsed && orderCode === normalized) {
+        await update(ref(db, `orders/${userId}/${orderId}`), {
+          status: 'completed',
+          pickupCodeUsed: true,
+          pickupVerifiedAt: nowISO(),
+        });
+        return { userId, orderId, order };
+      }
+    }
+  }
+
+  return null;
+}
+
 export function watchAllOrders(cb: (orders: any[]) => void): () => void {
   const r = ref(db, 'orders');
   const fn = onValue(r, (snap) => {

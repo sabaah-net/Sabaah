@@ -52,8 +52,8 @@ export default function AdminDashboard() {
   const activeUsers = store.users.filter(u => u.status === 'active').length;
 
   const kpis = [
-    { label: t('kpi_total_revenue', lang), val: `﷼ ${totalRevenue.toFixed(2)}`, color: 'green', icon: '💰', delta: '▲ 12%' },
-    { label: t('kpi_revenue_today', lang), val: `﷼ ${todayRevenue.toFixed(2)}`, color: 'amber', icon: '📈', delta: '▲ 8%' },
+    { label: t('kpi_total_revenue', lang), val: `⃁ ${totalRevenue.toFixed(2)}`, color: 'green', icon: '💰', delta: '▲ 12%' },
+    { label: t('kpi_revenue_today', lang), val: `⃁ ${todayRevenue.toFixed(2)}`, color: 'amber', icon: '📈', delta: '▲ 8%' },
     { label: t('kpi_orders_today', lang), val: String(todayOrders), color: 'blue', icon: '📦', delta: '▲ 15%' },
     { label: t('kpi_active_users', lang), val: String(activeUsers), color: 'purple', icon: '👥', delta: '▲ 5%' },
   ];
@@ -89,7 +89,7 @@ export default function AdminDashboard() {
         </div>
         <div style={{ background: '#fff', borderRadius: 'var(--r-md)', padding: '14px 10px', textAlign: 'center', boxShadow: 'var(--sh-sm)' }}>
           <div style={{ fontSize: '.68rem', color: 'var(--text-light)', marginBottom: 4 }}>{lang === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue'}</div>
-          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--green)' }}>﷼ {totalRevenue.toFixed(2)}</div>
+          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--green)' }}><span className="currency-sym">⃁</span>{totalRevenue.toFixed(2)}</div>
         </div>
         <div style={{ background: '#fff', borderRadius: 'var(--r-md)', padding: '14px 10px', textAlign: 'center', boxShadow: 'var(--sh-sm)' }}>
           <div style={{ fontSize: '.68rem', color: 'var(--text-light)', marginBottom: 4 }}>{lang === 'ar' ? 'طلبات اليوم' : "Today's Orders"}</div>
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
         </div>
         <div style={{ background: '#fff', borderRadius: 'var(--r-md)', padding: '14px 10px', textAlign: 'center', boxShadow: 'var(--sh-sm)' }}>
           <div style={{ fontSize: '.68rem', color: 'var(--text-light)', marginBottom: 4 }}>{lang === 'ar' ? 'إيرادات اليوم' : "Today's Revenue"}</div>
-          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--amber)' }}>﷼ {todayRevenue.toFixed(2)}</div>
+          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--amber)' }}><span className="currency-sym">⃁</span>{todayRevenue.toFixed(2)}</div>
         </div>
         <div style={{ background: '#fff', borderRadius: 'var(--r-md)', padding: '14px 10px', textAlign: 'center', boxShadow: 'var(--sh-sm)' }}>
           <div style={{ fontSize: '.68rem', color: 'var(--text-light)', marginBottom: 4 }}>{lang === 'ar' ? 'المستخدمين النشطين' : 'Active Users'}</div>
@@ -143,8 +143,8 @@ export default function AdminDashboard() {
                   <td><strong>{o.id}</strong></td>
                   <td>{t('th_customer', lang)}</td>
                   <td>{o.cafe}</td>
-                  <td>﷼ {o.amount.toFixed(2)}</td>
-                  <td>﷼ {o.vat.toFixed(2)}</td>
+                  <td><span className="currency-sym">⃁</span>{o.amount.toFixed(2)}</td>
+                  <td><span className="currency-sym">⃁</span>{o.vat.toFixed(2)}</td>
                   <td><span className={`table-badge badge-${o.status === 'completed' ? 'green' : o.status === 'ready' ? 'blue' : 'amber'}`}>
                     {o.status === 'pending' ? '⏳' : o.status === 'ready' ? '✅' : '✓'} {t(`status_${o.status}`, lang) || o.status}
                   </span></td>

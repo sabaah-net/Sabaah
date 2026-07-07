@@ -1,11 +1,12 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../shared/Toast';
+import { Coffee } from 'lucide-react';
 
-export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export default function AuthPage() {
   const { lang, signIn, signUp } = useAppStore();
   const { show } = useToast();
   const [tab, setTab] = useState<'login' | 'register' | 'partner'>('login');
@@ -18,14 +19,6 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
   const [mapsUrl, setMapsUrl] = useState('');
   const [crFile, setCrFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const el = document.getElementById('authModal');
-    if (el) {
-      if (isOpen) el.classList.add('open');
-      else el.classList.remove('open');
-    }
-  }, [isOpen]);
 
   const crExtensions = ['pdf', 'png', 'jpg', 'jpeg'];
   const handleCrFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,13 +47,11 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
       if (tab === 'login') {
         await signIn(email, pass);
         show(t('success_login', lang), 'success');
-        onClose(); setCrFile(null);
         return;
       }
       if (tab === 'register') {
         await signUp(email, pass, name, phone);
         show(t('success_signup', lang), 'success');
-        onClose(); setCrFile(null);
         return;
       }
       if (tab === 'partner') {
@@ -103,7 +94,6 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
           cr_file_url: crFileUrl || null,
         }).select().single();
         if (profileError) throw profileError;
-
         await supabase.from('profiles').update({ password: pass }).eq('auth_id', authUserId);
 
         try {
@@ -127,7 +117,6 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
         }
 
         show(t('success_signup', lang), 'success');
-        onClose(); setCrFile(null);
       }
     } catch (e: any) {
       show(e.message || t('error_generic', lang), 'error');
@@ -146,11 +135,32 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
   );
 
   return (
-    <div className="modal-overlay" id="authModal" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal-sheet" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
-        <div className="modal-handle" />
-        <div className="modal-title">{t('sign_in', lang)}</div>
-        <div style={{ display: 'flex', gap: 0, marginBottom: 16, borderRadius: 10, overflow: 'hidden', border: '2px solid var(--latte)' }}>
+    <div style={{
+      minHeight: '100dvh', background: 'linear-gradient(160deg, var(--bark) 0%, var(--espresso) 50%, #1A0E08 100%)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+    }}>
+      <div style={{
+        background: 'var(--foam)', borderRadius: 'var(--r-lg)', padding: '32px 24px',
+        maxWidth: 420, width: '100%', boxShadow: '0 24px 80px rgba(0,0,0,.35)',
+        animation: 'slideUp .45s ease',
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <div style={{
+            width: 72, height: 72, borderRadius: '50%', background: 'var(--amber)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 14px', boxShadow: '0 8px 24px rgba(192,105,42,.25)',
+          }}>
+            <Coffee size={36} color="#fff" />
+          </div>
+          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--bark)' }}>{t('sign_in', lang)}</div>
+          <div style={{ fontSize: '.78rem', color: 'var(--text-light)', marginTop: 4 }}>
+            {tab === 'login' ? (lang === 'ar' ? 'أهلاً بعودتك' : 'Welcome back') :
+             tab === 'register' ? (lang === 'ar' ? 'أنشئ حسابك الجديد' : 'Create your new account') :
+             (lang === 'ar' ? 'سجل كشريك' : 'Register as Partner')}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderRadius: 10, overflow: 'hidden', border: '2px solid var(--latte)' }}>
           {tabBtn('login', t('sign_in_tab', lang))}
           {tabBtn('register', t('register_tab', lang))}
           {tabBtn('partner', 'Partner')}
@@ -208,7 +218,6 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
         <button className="action-btn" style={{ width: '100%', opacity: loading ? 0.6 : 1 }} disabled={loading} onClick={handleSubmit}>
           {loading ? t('loading', lang) : (tab === 'login' ? t('sign_in_tab', lang) : tab === 'partner' ? (t('register_as_partner', lang) || 'Register as Partner') : t('create_account', lang))}
         </button>
-        <button className="modal-close" onClick={() => { onClose(); setCrFile(null); }} style={{ position: 'absolute', top: 14, left: 14 }}>✕</button>
       </div>
     </div>
   );

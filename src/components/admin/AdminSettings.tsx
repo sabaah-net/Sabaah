@@ -4,15 +4,13 @@ import { useAppStore } from '../../store/useAppStore';
 import { getSystemSettings, updateSystemSetting, addAuditLog } from '../../lib/supabase';
 import { useToast } from '../shared/Toast';
 import { t } from '../../i18n';
-import type { Addon } from '../../types';
+
 
 export default function AdminSettings() {
-  const { lang, theme, toggleTheme, addons, currency } = useAppStore();
+  const { lang, theme, toggleTheme, currency } = useAppStore();
   const { show } = useToast();
   const [vatRate, setVatRate] = useState(15);
   const [loading, setLoading] = useState(true);
-  const [addonList, setAddonList] = useState<Addon[]>(addons);
-  const [editingAddonId, setEditingAddonId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -88,51 +86,7 @@ export default function AdminSettings() {
               <option value="AED">{t('aed', lang)}</option>
             </select>
           </div>
-          <hr style={{ border: 'none', borderTop: '1px solid var(--latte)' }} />
-          <div>
-            <div style={{ fontWeight: 800, fontSize: '.9rem', marginBottom: 8 }}>🧃 {lang === 'ar' ? 'إدارة الإضافات' : 'Add-ons Management'}</div>
-            <div style={{ fontSize: '.78rem', marginBottom: 10 }}>{lang === 'ar' ? 'تعديل اسم وسعر وأيقونة كل إضافة' : 'Edit name, price & icon for each add-on'}</div>
-            {addonList.map((a, i) => (
-              <div key={a.id} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: '1.2rem', width: 28, textAlign: 'center' }}>{a.icon}</span>
-                {editingAddonId === a.id ? (
-                  <>
-                    <input className="coffee-input" style={{ flex: 2, margin: 0 }} value={a.name} onChange={(e) => {
-                      const list = [...addonList]; list[i] = { ...list[i], name: e.target.value }; setAddonList(list);
-                    }} placeholder={lang === 'ar' ? 'الاسم (عربي)' : 'Name (Ar)'} />
-                    <input className="coffee-input" style={{ flex: 2, margin: 0 }} value={a.nameEn} onChange={(e) => {
-                      const list = [...addonList]; list[i] = { ...list[i], nameEn: e.target.value }; setAddonList(list);
-                    }} placeholder={lang === 'ar' ? 'الاسم (إنجليزي)' : 'Name (En)'} />
-                    <input className="coffee-input" style={{ width: 60, margin: 0 }} type="number" value={a.price} onChange={(e) => {
-                      const list = [...addonList]; list[i] = { ...list[i], price: Math.max(0, parseFloat(e.target.value) || 0) }; setAddonList(list);
-                    }} />
-                    <input className="coffee-input" style={{ width: 50, margin: 0 }} value={a.icon} onChange={(e) => {
-                      const list = [...addonList]; list[i] = { ...list[i], icon: e.target.value }; setAddonList(list);
-                    }} />
-                    <button className="action-btn secondary" style={{ width: 'auto', padding: '6px 10px', fontSize: '.7rem', margin: 0 }}
-                      onClick={() => {
-                        const s = useAppStore.getState();
-                        (s as any).setAddons?.(addonList);
-                        setEditingAddonId(null);
-                        show('✅ ' + (lang === 'ar' ? 'تم الحفظ' : 'Saved'), 'success');
-                      }}>
-                      💾
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <span style={{ flex: 2, fontWeight: 700, fontSize: '.85rem' }}>{a.name}</span>
-                    <span style={{ flex: 2, fontSize: '.8rem' }}>{a.nameEn}</span>
-                    <span style={{ width: 60, fontWeight: 600 }}>{a.price} ﷼</span>
-                    <button className="action-btn secondary" style={{ width: 'auto', padding: '4px 8px', fontSize: '.7rem', margin: 0 }}
-                      onClick={() => setEditingAddonId(a.id)}>
-                      ✏️
-                    </button>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
+
         </div>
       </div>
     </div>

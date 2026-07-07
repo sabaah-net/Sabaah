@@ -160,7 +160,7 @@ export default function PartnerPortal() {
         </button>
       </div>
 
-      {activeTab === 'orders' && <PartnerOrders cafeId={cafeId} />}
+      {activeTab === 'orders' && <PartnerOrders />}
       {activeTab === 'inventory' && <PartnerInventory />}
       {activeTab === 'staff' && <PartnerStaff cafeId={cafeId} partnerRole={partnerRole} />}
       {activeTab === 'promos' && <PartnerPromos cafeId={cafeId} />}

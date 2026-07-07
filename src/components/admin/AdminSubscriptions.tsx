@@ -132,7 +132,7 @@ export default function AdminSubscriptions() {
                 <div style={{ fontSize: '.75rem', color: 'var(--text-light)', marginTop: 2 }}>{(lang === 'ar' ? p.description_ar : p.description_en) || ''}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--bark)' }}>﷼ {p.price_weekly.toFixed(2)}<span style={{ fontSize: '.7rem', fontWeight: 400, color: 'var(--text-light)' }}>/{lang === 'ar' ? 'أسبوع' : 'wk'}</span></div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--bark)' }}><span className="currency-sym">⃁</span>{p.price_weekly.toFixed(2)}<span style={{ fontSize: '.7rem', fontWeight: 400, color: 'var(--text-light)' }}>/{lang === 'ar' ? 'أسبوع' : 'wk'}</span></div>
                 {p.discount_percent > 0 && <div style={{ fontSize: '.75rem', color: 'var(--green)', fontWeight: 700 }}>-{p.discount_percent}% {lang === 'ar' ? 'خصم' : 'discount'}</div>}
                 {p.free_delivery && <div style={{ fontSize: '.7rem', color: 'var(--amber)', fontWeight: 600 }}>🚚 {lang === 'ar' ? 'توصيل مجاني' : 'Free delivery'}</div>}
               </div>

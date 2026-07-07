@@ -60,7 +60,7 @@ export default function AdminNotifications() {
         title,
         body: message,
         icon: '🔔',
-        time: lang === 'ar' ? 'الآن' : 'Just now',
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
         read: false,
         priority: 'high',
         audience: audienceLabel,

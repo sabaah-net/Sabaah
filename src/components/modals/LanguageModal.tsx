@@ -1,10 +1,19 @@
 'use client';
+import { useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
 import type { Lang } from '../../types';
 
-export default function LanguageModal() {
+export default function LanguageModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { lang, setLang } = useAppStore();
+
+  useEffect(() => {
+    const el = document.getElementById('langModal');
+    if (el) {
+      if (isOpen) el.classList.add('open');
+      else el.classList.remove('open');
+    }
+  }, [isOpen]);
 
   const languages: { code: Lang; label: string; dir: string }[] = [
     { code: 'ar', label: t('language_ar', lang), dir: 'rtl' },
@@ -17,15 +26,13 @@ export default function LanguageModal() {
   const selectLang = (code: Lang) => {
     setLang(code);
     document.documentElement.dir = code === 'ar' ? 'rtl' : 'ltr';
-    close();
+    onClose();
   };
 
-  const close = () => document.getElementById('langModal')?.classList.remove('open');
-
   return (
-    <div className="modal-overlay" id="langModal" onClick={(e) => e.target === e.currentTarget && close()}>
+    <div className="modal-overlay" id="langModal" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal">
-        <button className="modal-close" onClick={close}>✕</button>
+        <button className="modal-close" onClick={onClose}>✕</button>
         <div className="modal-title">{t('language_select', lang)}</div>
         {languages.map((l) => (
           <button

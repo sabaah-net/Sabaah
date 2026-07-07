@@ -164,7 +164,7 @@ export default function AdminUsers() {
                 <td>{u.email}</td>
                 <td><span className={`table-badge badge-${u.role === 'Partner' ? 'blue' : u.role === 'Sabaa' ? 'amber' : 'green'}`}>{u.role}</span></td>
                 <td><span className={`table-badge badge-${u.status === 'active' ? 'green' : 'red'}`}>{statusLabel[u.status] || u.status}</span></td>
-                <td>﷼ {(u.wallet_balance || 0).toFixed(2)}</td>
+                <td><span className="currency-sym">⃁</span>{(u.wallet_balance || 0).toFixed(2)}</td>
                 <td>⭐ {u.loyalty_points || 0}</td>
                 <td style={{ fontSize: '.78rem', color: 'var(--text-light)' }}>{u.last_login ? new Date(u.last_login).toLocaleDateString('en-US') : '-'}</td>
                 <td>

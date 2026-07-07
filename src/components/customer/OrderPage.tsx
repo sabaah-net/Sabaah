@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { getGreeting, t } from '../../i18n';
 import { generatePickupCode, useToast } from '../../lib/utils';
@@ -12,7 +12,7 @@ import type { CoffeeItem } from '../../types';
 export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () => void; onOpenVoice: () => void }) {
   const store = useAppStore();
   const { show } = useToast();
-  const [mapExpanded, setMapExpanded] = useState(false);
+  const [mapExpanded, setMapExpanded] = useState(true);
   const mapRef = useRef<HTMLDivElement>(null);
   const googleMapRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
@@ -69,6 +69,9 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
   };
 
   const selectedTypes = store.cart.map((item) => item.type);
+  const visibleCafes = store.cafes.filter((cafe) => cafe.isOpen);
+
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   // Initialize Google Maps
   useEffect(() => {
@@ -76,25 +79,36 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
       if (!mapRef.current || googleMapRef.current) return;
 
       try {
-        // Set API options using new functional API
         setOptions({
           key: 'AIzaSyBmWwqydqnjF10ZMRK3uhn_j5pOZTZQMmQ',
-          libraries: ['places'],
+          libraries: ['places', 'marker'],
         });
 
-        // Import the maps library
         await importLibrary('maps');
-        
-        // @ts-ignore - google.maps is loaded dynamically
-        const map = new google.maps.Map(mapRef.current, {
-          center: { lat: 24.7136, lng: 46.6753 }, // Riyadh coordinates
+        await importLibrary('marker');
+
+        if (!window.google?.maps) throw new Error('google.maps not available after loading');
+        const map = new window.google.maps.Map(mapRef.current, {
+          center: { lat: 24.7136, lng: 46.6753 },
           zoom: 12,
           mapId: '96d92d20372ba6e0cda09de9',
           disableDefaultUI: true,
           zoomControl: true,
+          styles: [
+            { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+            { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+            { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+            { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#E8DDD0' }] },
+            { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#F9F4EE' }] },
+            { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#EBE0D2' }] },
+            { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#EBE0D2' }] },
+            { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#F9F4EE' }] },
+            { featureType: 'administrative', elementType: 'labels.text.fill', stylers: [{ color: '#5C4033' }] },
+          ],
         });
 
         googleMapRef.current = map;
+        setMapLoaded(true);
         updateMapMarkers(map);
       } catch (error) {
         console.error('Error loading Google Maps:', error);
@@ -109,34 +123,42 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
     if (googleMapRef.current) {
       updateMapMarkers(googleMapRef.current);
     }
-  }, [store.cafes]);
+  }, [visibleCafes]);
 
   const updateMapMarkers = (map: google.maps.Map) => {
-    // Clear existing markers
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
 
-    // Add markers for cafes
-    store.cafes.forEach((cafe) => {
-      const marker = new google.maps.Marker({
-        position: { 
-          lat: 24.7136 + ((cafe.y || 50) - 50) * 0.01, 
-          lng: 46.6753 + ((cafe.x || 50) - 50) * 0.01 
-        },
-        map: map,
+    visibleCafes.forEach((cafe) => {
+      if (!cafe.lat || !cafe.lng) return;
+
+      const markerEl = document.createElement('div');
+      markerEl.innerHTML = `
+        <div style="
+          width: 46px; height: 46px; border-radius: 50%;
+          background: ${cafe.isOpen ? 'var(--amber)' : 'var(--red)'};
+          border: 3px solid #fff;
+          box-shadow: 0 2px 12px rgba(0,0,0,.25), 0 0 0 4px ${cafe.isOpen ? 'rgba(217,119,36,.2)' : 'rgba(192,57,43,.2)'};
+          display: flex; align-items: center; justify-content: center;
+          font-size: 20px; cursor: pointer;
+          transition: transform .2s;
+        " title="${cafe.name}">
+          ${cafe.emoji || cafe.name?.charAt(0) || '☕'}
+        </div>
+      `;
+      const content = markerEl.firstElementChild as HTMLElement;
+      content.addEventListener('mouseenter', () => { content.style.transform = 'scale(1.15)'; });
+      content.addEventListener('mouseleave', () => { content.style.transform = 'scale(1)'; });
+
+      const marker = new window.google.maps.marker.AdvancedMarkerElement({
+        position: { lat: cafe.lat, lng: cafe.lng },
+        map,
         title: cafe.name,
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 10,
-          fillColor: cafe.isOpen ? '#C0692A' : '#C0392B',
-          fillOpacity: 1,
-          strokeColor: '#FFFFFF',
-          strokeWeight: 2,
-        },
+        content,
       });
 
       marker.addListener('click', () => handleSelectCafe(cafe));
-      markersRef.current.push(marker);
+      markersRef.current.push(marker as any);
     });
   };
 
@@ -158,9 +180,9 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
         <>
           <p className="section-title">{t('order_again', store.lang)}</p>
           <div className="smart-reorder">
-            {store.orders.slice(0, 3).map((o) => (
+            {store.orders.slice(0, 3).map((o, idx) => (
               <div
-                key={o.id}
+                key={`${o.id}-${idx}`}
                 className="reorder-chip"
                 onClick={() => {
                   const cafe = store.cafes.find((c) => c.name === o.cafe);
@@ -172,7 +194,7 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
               >
                 <div className="reorder-title">{o.icon} {o.coffeeAr || o.coffee}</div>
                 <div className="reorder-meta">{o.cafe}</div>
-                <div className="reorder-price">⃁ {o.amount.toFixed(2)}</div>
+                <div className="reorder-price"><span className="currency-sym">⃁</span>{(o.amount || 0).toFixed(2)}</div>
               </div>
             ))}
           </div>
@@ -180,21 +202,21 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
       )}
 
       <div className={`map-wrap ${mapExpanded ? 'expanded' : 'collapsed'}`}>
-        <svg className="map-svg-el" viewBox="0 0 480 280">
-          <rect width="480" height="280" fill="#E8DDD0" />
-          <rect x="0" y="120" width="480" height="16" fill="#D0C0A8" rx="2" />
-          <rect x="72" y="0" width="14" height="280" fill="#D0C0A8" rx="2" />
-          <rect x="332" y="0" width="14" height="280" fill="#D0C0A8" rx="2" />
-          {store.cafes.map((c) => (
-            <g key={c.id} style={{ cursor: 'pointer' }} transform={`translate(${c.x}, ${c.y})`} onClick={() => handleSelectCafe(c)}>
-              <circle r="18" fill={c.isOpen ? 'var(--amber)' : 'var(--red)'} opacity="0.15" />
-              <circle r="10" fill={c.isOpen ? 'var(--amber)' : 'var(--red)'} stroke="#fff" strokeWidth="2" />
-              <text y="4" textAnchor="middle" fill="#fff" fontSize="8" fontWeight="900">{c.id}</text>
-            </g>
-          ))}
-          <circle id="userDot" cx="240" cy="128" r="5" fill="#1A6FA8" />
-          <circle cx="240" cy="128" r="13" fill="#1A6FA8" opacity=".15" />
-        </svg>
+        <div ref={mapRef} style={{ display: mapLoaded ? 'block' : 'none', position: 'absolute', inset: 0, width: '100%', height: '100%', borderRadius: 'var(--r-md)' }} />
+        {!mapLoaded && (
+          <svg className="map-svg-el" viewBox="0 0 480 280" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+            <rect width="480" height="280" fill="#E8DDD0" />
+            {visibleCafes.map((c) => (
+              <g key={c.id} style={{ cursor: 'pointer' }} transform={`translate(${c.x}, ${c.y})`} onClick={() => handleSelectCafe(c)}>
+                <circle r="18" fill={c.isOpen ? 'var(--amber)' : 'var(--red)'} opacity="0.15" />
+                <circle r="10" fill={c.isOpen ? 'var(--amber)' : 'var(--red)'} stroke="#fff" strokeWidth="2" />
+                <text y="4" textAnchor="middle" fill="#fff" fontSize="8" fontWeight="900">{c.id}</text>
+              </g>
+            ))}
+            <circle id="userDot" cx="240" cy="128" r="5" fill="#1A6FA8" />
+            <circle cx="240" cy="128" r="13" fill="#1A6FA8" opacity=".15" />
+          </svg>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>

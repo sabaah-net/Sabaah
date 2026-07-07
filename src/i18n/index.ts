@@ -38,6 +38,7 @@ const translations: Record<Lang, I18nDict> = {
     th_order_no: 'رقم الطلب', th_customer: 'العميل', th_cafe: 'المقهى', th_amount: 'المبلغ', th_vat: 'ض.ق.م', th_status: 'الحالة', th_pickup_code: 'كود الاستلام',
     // AdminLiveOps
     pending: 'منتظر', preparing: 'قيد التحضير',
+    ops_site_status: 'حالة الموقع', open_cafes_label: 'مقاهي مفتوحة', closed_cafes_label: 'مقاهي مغلقة', preparing_label: 'قيد التحضير', completed_label: 'مكتملة',
     ops_desk: '🚨 طاولة العمليات', quick_search: 'بحث سريع...',
     th_order: 'الطلب', th_time: 'الوقت', th_action: 'إجراء',
     btn_prepare: '➡ تحضير', btn_deliver: '✅ تسليم',
@@ -135,7 +136,7 @@ const translations: Record<Lang, I18nDict> = {
     wallet_balance_label: 'رصيد المحفظة', sar_label: 'ريال سعودي',
     topup_btn: '💳 شحن الرصيد', subscriptions: '📅 الاشتراكات',
     recent_transactions: '📋 المعاملات الأخيرة',
-    order_history_title: '📋 سجل الطلبات', code_label: 'كود:',
+    order_history_title: '📋 سجل الطلبات', code_label: 'كود:', reorder_label: '↻ إعادة الطلب',
     calendar_title: '📅 التقويم',
     open_label: 'مفتوح', closed_label: 'مغلق',
     language_ar: 'العربية', language_select: 'اختيار اللغة',
@@ -253,6 +254,7 @@ const translations: Record<Lang, I18nDict> = {
     th_order_no: 'Order No.', th_customer: 'Customer', th_cafe: 'Cafe', th_amount: 'Amount', th_vat: 'VAT', th_status: 'Status', th_pickup_code: 'Pickup Code',
     // AdminLiveOps
     pending: 'Pending', preparing: 'Preparing',
+    ops_site_status: 'Site Status', open_cafes_label: 'Open Cafes', closed_cafes_label: 'Closed Cafes', preparing_label: 'Preparing', completed_label: 'Completed',
     ops_desk: '🚨 Ops Desk', quick_search: 'Quick search...',
     th_order: 'Order', th_time: 'Time', th_action: 'Action',
     btn_prepare: '➡ Prepare', btn_deliver: '✅ Deliver',
@@ -467,6 +469,7 @@ const translations: Record<Lang, I18nDict> = {
     recent_orders: '📋 Recent Orders', search_order_no: 'Search by order no...',
     th_order_no: 'Order No.', th_customer: 'Customer', th_cafe: 'Cafe', th_amount: 'Amount', th_vat: 'VAT', th_status: 'Status', th_pickup_code: 'Pickup Code',
     pending: 'Pending', preparing: 'Preparing',
+    ops_site_status: 'Site Status', open_cafes_label: 'Open Cafes', closed_cafes_label: 'Closed Cafes', preparing_label: 'Preparing', completed_label: 'Completed',
     ops_desk: '🚨 Ops Desk', quick_search: 'Quick search...',
     th_order: 'Order', th_time: 'Time', th_action: 'Action',
     btn_prepare: '➡ Prepare', btn_deliver: '✅ Deliver',
@@ -660,6 +663,7 @@ const translations: Record<Lang, I18nDict> = {
     recent_orders: '📋 Recent Orders', search_order_no: 'Search by order no...',
     th_order_no: 'Order No.', th_customer: 'Customer', th_cafe: 'Cafe', th_amount: 'Amount', th_vat: 'VAT', th_status: 'Status', th_pickup_code: 'Pickup Code',
     pending: 'Pending', preparing: 'Preparing',
+    ops_site_status: 'État du site', open_cafes_label: 'Cafés ouverts', closed_cafes_label: 'Cafés fermés', preparing_label: 'En préparation', completed_label: 'Terminé',
     ops_desk: '🚨 Ops Desk', quick_search: 'Quick search...',
     th_order: 'Order', th_time: 'Time', th_action: 'Action',
     btn_prepare: '➡ Prepare', btn_deliver: '✅ Deliver',
@@ -853,6 +857,7 @@ const translations: Record<Lang, I18nDict> = {
     recent_orders: '📋 Recent Orders', search_order_no: 'Search by order no...',
     th_order_no: 'Order No.', th_customer: 'Customer', th_cafe: 'Cafe', th_amount: 'Amount', th_vat: 'VAT', th_status: 'Status', th_pickup_code: 'Pickup Code',
     pending: 'Pending', preparing: 'Preparing',
+    ops_site_status: 'Estado del sitio', open_cafes_label: 'Cafés abiertos', closed_cafes_label: 'Cafés cerrados', preparing_label: 'Preparando', completed_label: 'Completado',
     ops_desk: '🚨 Ops Desk', quick_search: 'Quick search...',
     th_order: 'Order', th_time: 'Time', th_action: 'Action',
     btn_prepare: '➡ Prepare', btn_deliver: '✅ Deliver',
@@ -1024,6 +1029,10 @@ export function getGreeting(lang: Lang): string {
   if (hour < 17) return lang === 'ar' ? 'مساء الخير 🌤️' : 'Good Afternoon 🌤️';
   return lang === 'ar' ? 'مساء القهوة 🌙' : 'Good Evening 🌙';
 }
+
+export const getStatusClass = (s: string): string => {
+  return s;
+};
 
 export const getStatusLabel = (s: string, lang: Lang): string => {
   const map: Record<string, string> = {

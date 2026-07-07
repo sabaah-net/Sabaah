@@ -8,7 +8,6 @@ import { pushSubscription } from '../../lib/firebase';
 interface Plan {
   id: string; name_ar: string; name_en: string; description_ar: string; description_en: string;
   price_weekly: number; features: string[]; discount_percent: number; free_delivery: boolean;
-  days_of_week?: string[];
 }
 
 function formatDate(d: Date): string {
@@ -27,7 +26,7 @@ function getWeekNumber(d: Date): number {
   return Math.ceil((diff / (1000 * 60 * 60 * 24) + startOfYear.getDay() + 1) / 7);
 }
 
-export default function SubscriptionModal() {
+export default function SubscriptionModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const store = useAppStore();
   const { show } = useToast();
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -36,6 +35,13 @@ export default function SubscriptionModal() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [activeSub, setActiveSub] = useState<any>(null);
+  const [viewMonth, setViewMonth] = useState(0);
+  const WEEK_DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+  const MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+  const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function getMonthName(d: Date, ar: boolean): string {
+    return ar ? MONTHS_AR[d.getMonth()] : MONTHS_EN[d.getMonth()];
+  }
 
   useEffect(() => {
     (async () => {
@@ -79,12 +85,18 @@ export default function SubscriptionModal() {
         auto_renew: true,
       });
       show('✅ ' + (store.lang === 'ar' ? 'تم تفعيل الاشتراك بنجاح! سيتم تجديده أسبوعياً' : 'Subscription activated! Weekly renewal'), 'success');
-      closeModal();
+      onClose();
     }
     setLoading(false);
   };
 
-  const closeModal = () => document.getElementById('subModal')?.classList.remove('open');
+  useEffect(() => {
+    const el = document.getElementById('subModal');
+    if (el) {
+      if (isOpen) el.classList.add('open');
+      else el.classList.remove('open');
+    }
+  }, [isOpen]);
 
   const startDateTime = new Date(startDate);
   const endDateTime = addDays(startDateTime, 7);
@@ -93,7 +105,7 @@ export default function SubscriptionModal() {
   const remainingDays = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
 
   return (
-    <div className="modal-overlay" id="subModal" onClick={(e) => e.target === e.currentTarget && closeModal()}>
+    <div className="modal-overlay" id="subModal" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
         <div className="modal-handle" />
         <div className="modal-title">📅 {store.lang === 'ar' ? 'اشتراكات القهوة الأسبوعية' : 'Weekly Coffee Subs'}</div>
@@ -124,7 +136,7 @@ export default function SubscriptionModal() {
               onClick={() => setSelectedPlanId(plan.id)}>
               <div className="sub-header">
                 <div className="sub-name">{name}</div>
-                <div className="sub-price">﷼ {plan.price_weekly}/{store.lang === 'ar' ? 'أسبوع' : 'wk'}</div>
+                <div className="sub-price"><span className="currency-sym">⃁</span>{plan.price_weekly}/{store.lang === 'ar' ? 'أسبوع' : 'wk'}</div>
               </div>
               <div className="sub-desc">{store.lang === 'ar' ? plan.description_ar : (plan.description_en || '')}</div>
               {plan.discount_percent > 0 && <div style={{ fontSize: '.7rem', color: 'var(--green)', fontWeight: 700, marginBottom: 4 }}>-{plan.discount_percent}% {store.lang === 'ar' ? 'خصم' : 'discount'}</div>}
@@ -139,19 +151,9 @@ export default function SubscriptionModal() {
 
         {selectedPlan && (
           <>
-            <p className="section-title" style={{ marginTop: 16 }}>📅 {store.lang === 'ar' ? 'جدولة الاشتراك' : 'Schedule Subscription'}</p>
-            <div style={{ fontSize: '.8rem', fontWeight: 600, marginBottom: 4 }}>
-              {store.lang === 'ar' ? 'تاريخ البدء:' : 'Start date:'}
-            </div>
-            <input type="date" className="coffee-input" value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              min={formatDate(new Date())} style={{ marginBottom: 12 }} />
+            <p className="section-title" style={{ marginTop: 16 }}>📅 {store.lang === 'ar' ? 'اختر تاريخ البدء' : 'Pick Start Date'}</p>
 
-        <div style={{ fontSize: '.8rem', fontWeight: 600, marginBottom: 6 }}>
-          {store.lang === 'ar' ? 'اختر تاريخ البدء من التقويم:' : 'Pick your start date on the calendar:'}
-        </div>
-
-        <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 8 }}>
           <button className="action-btn secondary" style={{ padding: '4px 10px', fontSize: '.72rem' }}
             onClick={() => setViewMonth(Math.max(0, viewMonth - 1))}>◀</button>
           {(() => {
@@ -171,24 +173,22 @@ export default function SubscriptionModal() {
             const now = new Date();
             const start = new Date(now.getFullYear(), now.getMonth() + viewMonth, 1);
             const end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
-            const cells: JSX.Element[] = [];
+            const cells: React.ReactElement[] = [];
             for (let i = 0; i < start.getDay(); i++) {
               cells.push(<div key={`e-${i}`} />);
             }
             for (let day = 1; day <= end.getDate(); day++) {
               const date = new Date(start.getFullYear(), start.getMonth(), day);
               const dateStr = formatDate(date);
-              const dayKey = WEEK_DAYS[date.getDay()];
               const isStart = dateStr === startDate;
               const isFuture = date >= new Date(new Date().toDateString());
-              const daySelected = selectedDays.includes(dayKey);
               cells.push(
                 <div key={day}
                   onClick={() => isFuture && setStartDate(dateStr)}
                   style={{
                     textAlign: 'center', padding: '5px 0', cursor: isFuture ? 'pointer' : 'default',
                     borderRadius: 6, fontSize: '.7rem', fontWeight: isStart ? 900 : 500,
-                    background: isStart ? 'var(--amber)' : daySelected ? 'var(--cream)' : '',
+                    background: isStart ? 'var(--amber)' : '',
                     color: isStart ? '#fff' : isFuture ? '' : 'var(--text-light)',
                     opacity: isFuture ? 1 : 0.4,
                   }}>
@@ -200,20 +200,20 @@ export default function SubscriptionModal() {
           })()}
         </div>
 
-        {selectedPlan && (
-          <div style={{
-            fontSize: '.72rem', color: 'var(--text-mid)', padding: '8px 0', textAlign: 'center',
-          }}>
-            {store.lang === 'ar' ? 'سعر الاشتراك:' : 'Subscription price:'} <strong>⃁ {selectedPlan.price_weekly}</strong>
-          </div>
-        )}
+        <div style={{
+          fontSize: '.72rem', color: 'var(--text-mid)', padding: '8px 0', textAlign: 'center',
+        }}>
+          {store.lang === 'ar' ? 'سعر الاشتراك:' : 'Subscription price:'} <strong><span className="currency-sym">⃁</span>{selectedPlan.price_weekly}</strong>
+        </div>
 
         <button className="action-btn green-btn" disabled={loading || fetching || !selectedPlan} onClick={handleActivate} style={{ marginTop: 8 }}>
           {loading ? (store.lang === 'ar' ? 'جاري...' : 'Processing...') : (store.lang === 'ar' ? '✅ تفعيل الاشتراك (أسبوعي)' : '✅ Activate Weekly')}
         </button>
-        <button className="action-btn secondary" style={{ marginTop: 8 }} onClick={closeModal}>
+        <button className="action-btn secondary" style={{ marginTop: 8 }} onClick={onClose}>
           {store.lang === 'ar' ? 'إلغاء' : 'Cancel'}
         </button>
+          </>
+        )}
       </div>
     </div>
   );

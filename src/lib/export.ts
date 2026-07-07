@@ -38,7 +38,7 @@ const SABAAH_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10
 </svg>`;
 
 export function downloadPDF(title: string, tables: { caption: string; headers: string[]; rows: string[][] }[]) {
-  const logoBase64 = `data:image/svg+xml;base64,${btoa(SABAAH_LOGO_SVG)}`;
+  const logoBase64 = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(SABAAH_LOGO_SVG)))}`;
   const html = `<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>${title}</title>
 <style>
   @page { size: A4; margin: 15mm; }

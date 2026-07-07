@@ -6,15 +6,19 @@ import { watchAllOrders, updateOrderStatusInFirebase } from '../../lib/firebase'
 import { t } from '../../i18n';
 
 export default function AdminLiveOps() {
-  const { cafes, lang, currentUser } = useAppStore();
+  const { cafes, lang, currentUser, role } = useAppStore();
   const [allOrders, setAllOrders] = useState<any[]>([]);
   const [filter, setFilter] = useState('');
+  const [viewOnly, setViewOnly] = useState(false);
 
   useEffect(() => {
     return watchAllOrders((orders) => setAllOrders(orders));
   }, []);
 
+  const canAct = !viewOnly && role === 'superadmin';
+
   const handleAction = async (order: any) => {
+    if (!canAct) return;
     try {
       const nextStatus = order.status === 'pending' ? 'ready' : order.status === 'ready' ? 'completed' : order.status;
       const uid = order.userId;
@@ -56,34 +60,45 @@ export default function AdminLiveOps() {
         </div>
       </div>
 
-      <div className="ops-status-grid">
-        <div className="ops-stat-card">
-          <div className="ops-stat-label">{t('ops_site_status', lang) || (lang === 'ar' ? 'حالة الموقع' : 'Site Status')}</div>
-          <div className="ops-stat-value ops-online">● {t('system_online', lang)}</div>
+      <div className="ops-stats-container">
+        <div className="ops-stat-row">
+          <div className="ops-stat-card">
+            <div className="ops-stat-label">{t('ops_site_status', lang)}</div>
+            <div className="ops-stat-value ops-online">● {t('system_online', lang)}</div>
+          </div>
+          <div className="ops-stat-card">
+            <div className="ops-stat-label">{t('open_cafes_label', lang)}</div>
+            <div className="ops-stat-value ops-green">{activeCafes}</div>
+          </div>
+          <div className="ops-stat-card">
+            <div className="ops-stat-label">{t('closed_cafes_label', lang)}</div>
+            <div className="ops-stat-value ops-red">{closedCafes}</div>
+          </div>
+          <div className="ops-stat-card">
+            <div className="ops-stat-label">{t('preparing_label', lang)}</div>
+            <div className="ops-stat-value ops-amber">{preparing.length}</div>
+          </div>
         </div>
-        <div className="ops-stat-card">
-          <div className="ops-stat-label">{lang === 'ar' ? 'مقاهي مفتوحة' : 'Open Cafes'}</div>
-          <div className="ops-stat-value ops-green">{activeCafes}</div>
-        </div>
-        <div className="ops-stat-card">
-          <div className="ops-stat-label">{lang === 'ar' ? 'مقاهي مغلقة' : 'Closed Cafes'}</div>
-          <div className="ops-stat-value ops-red">{closedCafes}</div>
-        </div>
-        <div className="ops-stat-card">
-          <div className="ops-stat-label">{lang === 'ar' ? 'قيد التحضير' : 'Preparing'}</div>
-          <div className="ops-stat-value ops-amber">{preparing.length}</div>
+        <div className="ops-stat-row">
+          <div className="ops-stat-card">
+            <div className="ops-stat-label">{t('pending', lang)}</div>
+            <div className="ops-stat-value ops-amber">{pending.length}</div>
+          </div>
+          <div className="ops-stat-card">
+            <div className="ops-stat-label">{t('completed_label', lang)}</div>
+            <div className="ops-stat-value ops-green">{completed.length}</div>
+          </div>
         </div>
       </div>
 
-      <div className="ops-sub-grid">
-        <div className="ops-stat-card">
-          <div className="ops-stat-label">{t('ops_pending', lang) || (lang === 'ar' ? 'قيد الانتظار' : 'Pending')}</div>
-          <div className="ops-stat-value ops-amber">{pending.length}</div>
-        </div>
-        <div className="ops-stat-card">
-          <div className="ops-stat-label">{lang === 'ar' ? 'مكتملة' : 'Completed'}</div>
-          <div className="ops-stat-value ops-green">{completed.length}</div>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 8 }}>
+        <span style={{ fontSize: '.72rem', color: 'var(--text-light)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <label className="ios-switch" style={{ transform: 'scale(.7)', transformOrigin: 'right center' }}>
+            <input type="checkbox" checked={viewOnly} onChange={() => setViewOnly(!viewOnly)} />
+            <span className="slider" style={{ background: viewOnly ? 'var(--green)' : 'var(--latte)' }} />
+          </label>
+          {viewOnly ? (lang === 'ar' ? 'عرض فقط' : 'View Only') : (lang === 'ar' ? 'تحكم كامل' : 'Full Control')}
+        </span>
       </div>
 
       <div className="admin-table-wrap">
@@ -96,18 +111,22 @@ export default function AdminLiveOps() {
             <tr><th>{t('th_order', lang)}</th><th>{t('th_customer', lang)}</th><th>{t('th_cafe', lang)}</th><th>{t('th_amount', lang)}</th><th>{t('th_time', lang)}</th><th>{t('th_status', lang)}</th><th>{t('th_action', lang)}</th></tr>
           </thead>
           <tbody>
-            {filtered.slice(0, 30).map(o => (
-              <tr key={o.id}>
+            {filtered.slice(0, 30).map((o, idx) => (
+              <tr key={`${o.id}-${idx}`}>
                 <td><strong>#{o.id}</strong></td>
                 <td>{o.customerName || o.customer_name || t('th_customer', lang)}</td>
                 <td>{o.cafe || o.cafe_name || '-'}</td>
-                <td>{o.amount ? `${Number(o.amount).toFixed(2)} ﷼` : o.total_amount ? `${Number(o.total_amount).toFixed(2)} ﷼` : '-'}</td>
+                <td>{o.amount ? <>{Number(o.amount).toFixed(2)}<span className="currency-sym">⃁</span></> : o.total_amount ? <>{Number(o.total_amount).toFixed(2)}<span className="currency-sym">⃁</span></> : '-'}</td>
                 <td style={{ fontSize: '.78rem' }}>{o.date || o.createdAt ? new Date(o.date || o.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '-'}</td>
                 <td><span className={`table-badge badge-${o.status === 'completed' ? 'green' : o.status === 'ready' || o.status === 'preparing' ? 'blue' : 'amber'}`}>{t(`status_${o.status}`, lang) || o.status}</span></td>
                 <td>
-                  <button className="action-btn secondary" style={{ padding: '4px 12px', fontSize: '.72rem', width: 'auto' }} onClick={() => handleAction(o)}>
-                    {o.status === 'pending' ? t('btn_prepare', lang) : o.status === 'ready' || o.status === 'preparing' ? t('btn_deliver', lang) : '—'}
-                  </button>
+                  {canAct ? (
+                    <button className="action-btn secondary" style={{ padding: '4px 12px', fontSize: '.72rem', width: 'auto' }} onClick={() => handleAction(o)}>
+                      {o.status === 'pending' ? t('btn_prepare', lang) : o.status === 'ready' || o.status === 'preparing' ? t('btn_deliver', lang) : '—'}
+                    </button>
+                  ) : (
+                    <span style={{ fontSize: '.7rem', color: 'var(--text-light)' }}>{lang === 'ar' ? '—' : '—'}</span>
+                  )}
                 </td>
               </tr>
             ))}

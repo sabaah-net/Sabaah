@@ -90,12 +90,18 @@ function startFirebaseWatchers(userId: string) {
 
   fbCleanups.push(
     watchOrders(userId, (orders) => {
-      useAppStore.setState({ orders });
+      const current = useAppStore.getState().orders;
+      if (orders.length > 0 || current.length === 0) {
+        useAppStore.setState({ orders });
+      }
     })
   );
   fbCleanups.push(
     watchTransactions(userId, (txns) => {
-      useAppStore.setState({ transactions: txns as any[] });
+      const current = useAppStore.getState().transactions;
+      if (txns.length > 0 || current.length === 0) {
+        useAppStore.setState({ transactions: txns as any[] });
+      }
     })
   );
 
@@ -241,6 +247,11 @@ export const useAppStore = create<AppState>((set, get) => {
           throw new Error('Your account is pending admin approval');
         }
 
+        const roleName = String(profile.role || '').toLowerCase();
+        if (roleName.includes('admin')) {
+          throw new Error(t('error_email_not_found', lang));
+        }
+
         const user: CurrentUser = {
           name: `${profile.first_name} ${profile.last_name}`,
           phone: profile.phone,
@@ -255,8 +266,6 @@ export const useAppStore = create<AppState>((set, get) => {
         const roleMap: Record<string, AppRole> = {
           Customer: 'customer',
           Partner: 'partner',
-          Admin: 'superadmin',
-          'Super Admin': 'superadmin',
         };
 
         set((s) => {
@@ -425,7 +434,7 @@ export const useAppStore = create<AppState>((set, get) => {
           body: s.lang === 'ar'
             ? `تم تأكيد طلبك من ${s.selectedCafe?.name || ''} — كود الاستلام: ${pickupCode}`
             : `Order confirmed at ${s.selectedCafe?.nameEn || ''} — Pickup code: ${pickupCode}`,
-          time: s.lang === 'ar' ? 'الآن' : 'Just now',
+          time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
           read: false,
           icon: '☕',
           priority: 'high',
@@ -479,7 +488,8 @@ export const useAppStore = create<AppState>((set, get) => {
       import('firebase/database').then(({ set }) => {
         set(r, {
           id: notifId, title, body, icon,
-          time: 'الآن', read: false, priority,
+          time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+          read: false, priority,
           createdAt: new Date().toISOString(),
         });
       });
@@ -516,7 +526,7 @@ export const useAppStore = create<AppState>((set, get) => {
         set({
           partners: cafesData.map((c: any) => ({
             name: c.name_ar, location: c.location, status: c.status === 'active' ? 'active' : 'pending',
-            earnings: '0 ﷼', rating: c.rating || 0, inventory: c.inventory_enabled ? 92 : 0, inventoryEnabled: c.inventory_enabled,
+            earnings: '0 ⃁', rating: c.rating || 0, inventory: c.inventory_enabled ? 92 : 0, inventoryEnabled: c.inventory_enabled,
           })),
         });
       }
@@ -567,13 +577,53 @@ export const useAppStore = create<AppState>((set, get) => {
       }
 
       const state = useAppStore.getState();
-      if (state.isLoggedIn && state.currentUser?.profileId) {
-        startFirebaseWatchers(state.currentUser.profileId);
+      const pid = state.currentUser?.profileId;
+      if (state.isLoggedIn && pid) {
+        startFirebaseWatchers(pid);
         try {
           const { data: profile } = await supabase.from('profiles')
             .select('id, loyalty_points, loyalty_tier, streak, wallet_balance')
-            .eq('id', state.currentUser.profileId).maybeSingle();
+            .eq('id', pid).maybeSingle();
           if (profile) set({ wallet: profile.wallet_balance || 0 });
+
+          // Load existing orders & transactions from Supabase
+          const [ordersRes, txnsRes] = await Promise.all([
+            getOrders(pid),
+            getTransactions(pid),
+          ]);
+          const cafeMap = Object.fromEntries(
+            (useAppStore.getState().cafes || []).map((c: any) => [c.cafe_uuid, c.name])
+          );
+          const mappedOrders = (ordersRes.data || []).map((o: any) => ({
+              id: o.order_number || o.id,
+              cafe: cafeMap[o.cafe_id] || o.cafe_id,
+              coffee: (o.order_items || []).map((i: any) => i.item_name_ar).join(', '),
+              coffeeAr: (o.order_items || []).map((i: any) => i.item_name_ar).join(', '),
+              amount: o.total_amount || 0,
+              base: o.subtotal || 0,
+              vat: o.vat_amount || 0,
+              status: o.status || 'pending',
+              date: o.created_at ? new Date(o.created_at).toLocaleDateString('en-CA') : '',
+              icon: '☕',
+              pickupCode: o.pickup_code || '----',
+              items: (o.order_items || []).map((i: any) => ({
+                type: i.item_name_ar,
+                qty: i.quantity,
+                price: i.unit_price,
+                name: i.item_name_ar,
+                icon: i.icon || '☕',
+              })),
+            }));
+          set({ orders: mappedOrders });
+
+          const mappedTxns = (txnsRes.data || []).map((t: any) => ({
+              title: t.description_ar || t.description_en || '',
+              titleEn: t.description_en || t.description_ar || '',
+              amount: Math.abs(t.amount || 0),
+              type: t.type || 'debit',
+              date: t.created_at ? new Date(t.created_at).toLocaleDateString('en-CA') : '',
+            }));
+          set({ transactions: mappedTxns });
         } catch {}
       }
     },

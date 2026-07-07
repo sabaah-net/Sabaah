@@ -171,7 +171,7 @@ export default function AdminApprovals() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <div style={{ fontSize: '1rem', fontWeight: 800 }}>{item.icon} {item.name_ar}</div>
-                  <div style={{ fontSize: '.78rem' }}>{item.name_en} — {item.base_price} ﷼</div>
+                  <div style={{ fontSize: '.78rem' }}>{item.name_en} — {item.base_price}<span className="currency-sym">⃁</span></div>
                   <div style={{ fontSize: '.75rem' }}>{item.description}</div>
                   <div style={{ fontSize: '.7rem', fontWeight: 600, marginTop: 4 }}>
                     🏪 {item.cafe_name}

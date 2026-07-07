@@ -1,8 +1,19 @@
 'use client';
+import { useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { ref, update } from 'firebase/database';
 import { db } from '../../lib/firebase';
 import { t } from '../../i18n';
+
+function formatNotifTime(n: any, lang: string): string {
+  const ts = (n as any).createdAt || n.time;
+  if (!ts) return '';
+  const d = new Date(ts);
+  if (!isNaN(d.getTime())) {
+    return d.toLocaleTimeString(lang === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+  return n.time || '';
+}
 
 function getDateGroup(dateStr: string): string {
   if (!dateStr) return 'older';
@@ -29,10 +40,16 @@ function getDateGroupLabel(group: string, ar: boolean): string {
   return labels[group] || group;
 }
 
-export default function NotifInbox() {
+export default function NotifInbox({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { lang, notifications } = useAppStore();
 
-  const close = () => document.getElementById('notifInbox')?.classList.remove('open');
+  useEffect(() => {
+    const el = document.getElementById('notifInbox');
+    if (el) {
+      if (isOpen) el.classList.add('open');
+      else el.classList.remove('open');
+    }
+  }, [isOpen]);
 
   const markRead = (id: string | number) => {
     update(ref(db, `notifications/${String(id)}`), { read: true });
@@ -75,7 +92,7 @@ export default function NotifInbox() {
               {lang === 'ar' ? 'تحديد الكل كمقروء' : 'Mark all read'}
             </button>
           )}
-          <button className="notif-close" onClick={close}>✕</button>
+          <button className="notif-close" onClick={onClose}>✕</button>
         </div>
       </div>
       <div className="notif-inbox-body">
@@ -104,7 +121,7 @@ export default function NotifInbox() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: n.read ? 500 : 700, fontSize: '.85rem' }}>{n.title}</div>
                     <div style={{ fontSize: '.78rem', color: 'var(--text-light)', marginTop: 2 }}>{n.body}</div>
-                    <div style={{ fontSize: '.65rem', color: 'var(--text-mid)', marginTop: 4, fontWeight: 600 }}>{n.time}</div>
+                    <div style={{ fontSize: '.65rem', color: 'var(--text-mid)', marginTop: 4, fontWeight: 600 }}>{formatNotifTime(n, lang)}</div>
                   </div>
                 </div>
               ))}

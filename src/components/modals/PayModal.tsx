@@ -35,10 +35,14 @@ function formatTime(d: Date | undefined, lang?: string): string {
   try {
     const h = d.getHours();
     const m = d.getMinutes().toString().padStart(2, '0');
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const h24 = h.toString().padStart(2, '0');
-    const timeStr = `${h24}:${m} ${ampm}`;
-    return lang === 'ar' ? toArabicNumeral(timeStr) : timeStr;
+    const h12 = h % 12 || 12;
+    const ampm = h >= 12 ? 'pm' : 'am';
+    const timeStr = `${h12}:${m}${ampm}`;
+    if (lang === 'ar') {
+      const arabic = toArabicNumeral(`${h12}:${m}م`);
+      return arabic.replace(/م/g, 'م');
+    }
+    return timeStr;
   } catch {
     return '—';
   }
@@ -52,7 +56,7 @@ const methods = [
   { key: 'credit', icon: '💳', labelKey: 'credit_method' },
 ] as const;
 
-export default function PayModal() {
+export default function PayModal({ isOpen, onClose, onPaymentSuccess }: { isOpen: boolean; onClose: () => void; onPaymentSuccess?: () => void }) {
   const store = useAppStore();
   const { show } = useToast();
   const [method, setMethod] = useState<'wallet' | 'stcpay' | 'credit'>('wallet');
@@ -114,10 +118,17 @@ export default function PayModal() {
     store.setSelectedPickupSlot(formatTime(slots[selectedSlotIndex], store.lang));
     await store.processPayment(method, selectedAddons);
     show(t('payment_successful', store.lang), 'success');
-    closeModal();
+    onClose();
+    onPaymentSuccess?.();
   };
 
-  const closeModal = () => document.getElementById('payModal')?.classList.remove('open');
+  useEffect(() => {
+    const el = document.getElementById('payModal');
+    if (el) {
+      if (isOpen) el.classList.add('open');
+      else el.classList.remove('open');
+    }
+  }, [isOpen]);
 
   const toggleAddon = (addon: Addon) => {
     setSelectedAddons((prev) =>
@@ -128,10 +139,10 @@ export default function PayModal() {
   const walletSufficient = store.wallet >= total;
 
   return (
-    <div className="modal-overlay" id="payModal" onClick={(e) => e.target === e.currentTarget && closeModal()}>
+    <div className="modal-overlay" id="payModal" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
         <div className="modal-handle" />
-        <button className="modal-close" onClick={closeModal} style={{ position: 'absolute', left: 18, top: 22, fontSize: '1.3rem', fontWeight: 700 }}>✕</button>
+        <button className="modal-close" onClick={onClose} style={{ position: 'absolute', left: 18, top: 22, fontSize: '1.3rem', fontWeight: 700 }}>✕</button>
         <div className="modal-title" style={{ fontSize: '1.25rem' }}>{t('pay_modal_title', store.lang)}</div>
 
         {/* Cafe summary card */}
@@ -226,7 +237,7 @@ export default function PayModal() {
             padding: '10px 14px', marginBottom: 10,
             border: '1px solid rgba(216,193,177,.1)',
           }}>
-            <div style={{ fontSize: '.78rem', fontWeight: 700, color: 'var(--text-light)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.5px' }}>
+            <div style={{ fontSize: '.78rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.5px' }}>
               🧃 {store.lang === 'ar' ? 'إضافات' : 'Add-ons'}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
@@ -239,7 +250,7 @@ export default function PayModal() {
                     style={{
                       all: 'unset', cursor: 'pointer',
                       background: isSelected ? 'var(--amber)' : 'var(--latte)',
-                      color: isSelected ? '#fff' : 'var(--text-main)',
+                      color: '#111',
                       borderRadius: '16px', padding: '10px 4px',
                       textAlign: 'center', transition: 'all .2s',
                       boxShadow: isSelected ? '0 4px 12px rgba(111,76,62,.25)' : 'var(--sh-sm)',
@@ -247,10 +258,10 @@ export default function PayModal() {
                     }}
                   >
                     <div style={{ fontSize: '1.4rem', marginBottom: 2 }}>{addon.icon}</div>
-                    <div style={{ fontWeight: 800, fontSize: '.82rem', marginBottom: 2 }}>
+                    <div style={{ fontWeight: 800, fontSize: '.82rem', marginBottom: 2, color: '#111' }}>
                       {store.lang === 'ar' ? addon.name : addon.nameEn}
                     </div>
-                    <div style={{ fontSize: '.82rem', fontWeight: 800, color: isSelected ? '#fff' : 'var(--amber)' }}>
+                    <div style={{ fontSize: '.82rem', fontWeight: 800, color: '#111' }}>
                       +<PriceTag value={addon.price} />
                     </div>
                   </button>
@@ -261,9 +272,9 @@ export default function PayModal() {
               <div style={{
                 fontSize: '.78rem', fontWeight: 700, textAlign: 'right',
                 marginTop: 5, paddingTop: 4, borderTop: '1px solid var(--latte)',
-                color: 'var(--text-mid)',
+                color: 'var(--text-main)',
               }}>
-                {store.lang === 'ar' ? 'إجمالي الإضافات' : 'Add-ons total'}: <span style={{ color: 'var(--amber)' }}>+<PriceTag value={addonTotal} /></span>
+                {store.lang === 'ar' ? 'إجمالي الإضافات' : 'Add-ons total'}: <span style={{ color: '#111' }}>+<PriceTag value={addonTotal} /></span>
               </div>
             )}
           </div>
@@ -275,8 +286,8 @@ export default function PayModal() {
           padding: '10px 14px', marginBottom: 10,
           border: '1px solid rgba(216,193,177,.1)',
         }}>
-          <div style={{ fontSize: '.78rem', fontWeight: 700, color: 'var(--text-light)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.5px', textAlign: 'center' }}>
-            ⏱️ {t('pickup_time', store.lang) || 'Pickup Time'}
+          <div style={{ fontSize: '.78rem', fontWeight: 700, color: 'var(--text-light)', marginBottom: 4, letterSpacing: '.5px', textAlign: 'center', textTransform: store.lang === 'ar' ? 'none' : 'uppercase' }}>
+            ⏱️ {store.lang === 'ar' ? 'موعد الاستلام' : 'Pickup Time'}
           </div>
           {slots.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '10px 0', color: 'var(--text-light)', fontSize: '.8rem' }}>

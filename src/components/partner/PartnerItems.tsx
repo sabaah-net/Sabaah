@@ -149,7 +149,7 @@ export default function PartnerItems() {
               <span style={{ fontSize: '1.3rem' }}>{item.icon || '☕'}</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700, fontSize: '.88rem' }}>{item.name_ar}</div>
-                <div style={{ fontSize: '.72rem' }}>{item.name_en} — {item.base_price} ﷼</div>
+                <div style={{ fontSize: '.72rem' }}>{item.name_en} — <span className="currency-sym">⃁</span>{item.base_price}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                   <span style={{ fontSize: '.65rem', color: 'var(--text-light)', whiteSpace: 'nowrap' }}>⭐ {lang === 'ar' ? 'نقاط' : 'Points'}:</span>
                   <input

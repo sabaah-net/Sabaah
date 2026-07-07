@@ -30,7 +30,7 @@ interface MatchResult {
   coffee?: string;
 }
 
-export default function VoiceModal() {
+export default function VoiceModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const store = useAppStore();
   const { show } = useToast();
   const recognitionRef = useRef<any>(null);
@@ -55,6 +55,14 @@ export default function VoiceModal() {
     }
   }, []);
 
+  useEffect(() => {
+    const el = document.getElementById('voiceModal');
+    if (el) {
+      if (isOpen) el.classList.add('open');
+      else el.classList.remove('open');
+    }
+  }, [isOpen]);
+
   const resetState = () => {
     setTranscript('');
     transcriptRef.current = '';
@@ -72,7 +80,7 @@ export default function VoiceModal() {
       recognitionRef.current = null;
     }
     setIsListening(false);
-    document.getElementById('voiceModal')?.classList.remove('open');
+    onClose();
     setTimeout(resetState, 300);
   };
 

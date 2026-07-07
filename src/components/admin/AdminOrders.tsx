@@ -81,7 +81,7 @@ export default function AdminOrders() {
                 <td><strong>{o.order_number || o.id}</strong></td>
                 <td>{o.customer_name || '-'}</td>
                 <td>{o.cafe_name || '-'}</td>
-                <td>{o.total_amount ? `${Number(o.total_amount).toFixed(2)} ﷼` : '-'}</td>
+                <td>{o.total_amount ? <>{Number(o.total_amount).toFixed(2)}<span className="currency-sym">⃁</span></> : '-'}</td>
                 <td><span className="table-badge badge-amber">{o.payment_method || '-'}</span></td>
                 <td><span className={`table-badge badge-${o.status === 'completed' ? 'green' : o.status === 'pending' ? 'amber' : 'blue'}`}>{o.status}</span></td>
                 <td style={{ fontSize: '.78rem' }}>{o.created_at ? new Date(o.created_at).toLocaleDateString('en-US') : '-'}</td>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import dynamic from 'next/dynamic';
 import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
 import { ToastProvider } from '../components/shared/Toast';
@@ -11,6 +10,7 @@ import RewardsPage from '../components/customer/RewardsPage';
 import WalletPage from '../components/customer/WalletPage';
 import HistoryPage from '../components/customer/HistoryPage';
 import ProfilePage from '../components/customer/ProfilePage';
+import AuthPage from '../components/customer/AuthPage';
 import AuthModal from '../components/modals/AuthModal';
 import PayModal from '../components/modals/PayModal';
 import OrderSuccessModal from '../components/modals/OrderSuccessModal';
@@ -20,16 +20,31 @@ import LanguageModal from '../components/modals/LanguageModal';
 import VoiceModal from '../components/modals/VoiceModal';
 import NotifInbox from '../components/modals/NotifInbox';
 import ChatBot from '../components/shared/ChatBot';
+import { ModalCtx, type ModalState } from '../lib/modal-context';
+import { Coffee, Trophy, Wallet, ClipboardList, User } from 'lucide-react';
 
-const PartnerPortal = dynamic(() => import('../components/partner/PartnerPortal'), { ssr: false });
-const AdminShell = dynamic(() => import('../components/admin/AdminShell'), { ssr: false });
+import PartnerPortal from '../components/partner/PartnerPortal';
 
 type CustomerPage = 'pageOrder' | 'pageRewards' | 'pageWallet' | 'pageHistory' | 'pageProfile';
+
+const pageIcons: Record<CustomerPage, React.ReactNode> = {
+  pageOrder: <Coffee size={22} />,
+  pageRewards: <Trophy size={22} />,
+  pageWallet: <Wallet size={22} />,
+  pageHistory: <ClipboardList size={22} />,
+  pageProfile: <User size={22} />,
+};
 
 export default function HomePage() {
   const store = useAppStore();
   const [mounted, setMounted] = useState(false);
   const [activePage, setActivePage] = useState<CustomerPage>('pageOrder');
+  const [modals, setModals] = useState<ModalState>({
+    auth: false, pay: false, topUp: false, subs: false, lang: false, voice: false, notif: false, orderSuccess: false,
+  });
+
+  const openModal = (key: keyof ModalState) => setModals((p) => ({ ...p, [key]: true }));
+  const closeModal = (key: keyof ModalState) => setModals((p) => ({ ...p, [key]: false }));
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -43,17 +58,21 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    if (store.isLoggedIn && store.role === 'superadmin') {
+      store.signOut();
+    }
+  }, [store.isLoggedIn, store.role]);
+
+  useEffect(() => {
     document.documentElement.dir = store.lang === 'ar' ? 'rtl' : 'ltr';
   }, [store.lang]);
 
   if (!mounted) return null;
 
-  if (store.isLoggedIn && store.role === 'superadmin') {
+  if (!store.isLoggedIn) {
     return (
       <ToastProvider>
-        <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>{t('loading_text', store.lang)}</div>}>
-          <AdminShell />
-        </Suspense>
+        <AuthPage />
       </ToastProvider>
     );
   }
@@ -61,36 +80,38 @@ export default function HomePage() {
   if (store.isLoggedIn && store.role === 'partner') {
     return (
       <ToastProvider>
-        <div className="shell">
-          <Header
-            onOpenAuth={() => document.getElementById('authModal')?.classList.add('open')}
-            onOpenNotif={() => document.getElementById('notifInbox')?.classList.toggle('open')}
-            onOpenLang={() => document.getElementById('langModal')?.classList.add('open')}
-          />
-          <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>{t('loading_text', store.lang)}</div>}>
-            <PartnerPortal />
-          </Suspense>
-        </div>
-        <AuthModal />
-        <LanguageModal />
-        <NotifInbox />
-        <ChatBot />
+        <ModalCtx.Provider value={{ open: openModal, close: closeModal }}>
+          <div className="shell">
+            <Header
+              onOpenAuth={() => openModal('auth')}
+              onOpenNotif={() => openModal('notif')}
+              onOpenLang={() => openModal('lang')}
+            />
+            <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>{t('loading_text', store.lang)}</div>}>
+              <PartnerPortal />
+            </Suspense>
+          </div>
+          <AuthModal isOpen={modals.auth} onClose={() => closeModal('auth')} />
+          <LanguageModal isOpen={modals.lang} onClose={() => closeModal('lang')} />
+          <NotifInbox isOpen={modals.notif} onClose={() => closeModal('notif')} />
+          <ChatBot />
+        </ModalCtx.Provider>
       </ToastProvider>
     );
   }
 
-  const pages: { id: CustomerPage; icon: string; label: string }[] = [
-    { id: 'pageOrder', icon: '☕', label: t('order', store.lang) },
-    { id: 'pageRewards', icon: '🏆', label: t('rewards', store.lang) },
-    { id: 'pageWallet', icon: '💰', label: t('wallet', store.lang) },
-    { id: 'pageHistory', icon: '📋', label: t('history', store.lang) },
-    { id: 'pageProfile', icon: '👤', label: t('profile', store.lang) },
+  const pages: { id: CustomerPage; label: string }[] = [
+    { id: 'pageOrder', label: t('order', store.lang) },
+    { id: 'pageRewards', label: t('rewards', store.lang) },
+    { id: 'pageWallet', label: t('wallet', store.lang) },
+    { id: 'pageHistory', label: t('history', store.lang) },
+    { id: 'pageProfile', label: t('profile', store.lang) },
   ];
 
   const pageComponents: Record<CustomerPage, React.ReactNode> = {
     pageOrder: <OrderPage
-      onOpenPay={() => document.getElementById('payModal')?.classList.add('open')}
-      onOpenVoice={() => document.getElementById('voiceModal')?.classList.add('open')}
+      onOpenPay={() => openModal('pay')}
+      onOpenVoice={() => openModal('voice')}
     />,
     pageRewards: <RewardsPage />,
     pageWallet: <WalletPage />,
@@ -100,44 +121,48 @@ export default function HomePage() {
 
   return (
     <ToastProvider>
-      <div className="shell">
-        <div className="offline-banner" id="offlineBanner">{t('offline_banner', store.lang)}</div>
-        <Header
-          onOpenAuth={() => document.getElementById('authModal')?.classList.add('open')}
-          onOpenNotif={() => document.getElementById('notifInbox')?.classList.toggle('open')}
-          onOpenLang={() => document.getElementById('langModal')?.classList.add('open')}
-        />
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minHeight: 0 }}>
-          <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-            {Object.entries(pageComponents).map(([id, component]) => (
-              <div key={id} style={{ display: activePage === id ? 'block' : 'none', height: '100%', overflowY: 'auto' }}>
-                {component}
-              </div>
-            ))}
+      <ModalCtx.Provider value={{ open: openModal, close: closeModal }}>
+        <div className="shell">
+          <div className="offline-banner" id="offlineBanner">{t('offline_banner', store.lang)}</div>
+          <Header
+            onOpenAuth={() => openModal('auth')}
+            onOpenNotif={() => openModal('notif')}
+            onOpenLang={() => openModal('lang')}
+          />
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minHeight: 0 }}>
+            <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+              {Object.entries(pageComponents).map(([id, component]) => (
+                <div key={id} style={{ display: activePage === id ? 'block' : 'none', height: '100%', overflowY: 'auto' }}>
+                  {component}
+                </div>
+              ))}
+            </div>
+            <nav className="bottom-nav">
+              {pages.map((p) => (
+                <button
+                  key={p.id}
+                  className={`nav-btn ${activePage === p.id ? 'active' : ''}`}
+                  onClick={() => setActivePage(p.id)}
+                >
+                  <span className="nav-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {pageIcons[p.id]}
+                  </span>
+                  <span>{p.label}</span>
+                </button>
+              ))}
+            </nav>
           </div>
-          <nav className="bottom-nav">
-            {pages.map((p) => (
-              <button
-                key={p.id}
-                className={`nav-btn ${activePage === p.id ? 'active' : ''}`}
-                onClick={() => setActivePage(p.id)}
-              >
-                <span className="nav-icon">{p.icon}</span>
-                <span>{p.label}</span>
-              </button>
-            ))}
-          </nav>
         </div>
-      </div>
-      <AuthModal />
-      <PayModal />
-      <OrderSuccessModal />
-      <TopUpModal />
-      <SubscriptionModal />
-      <LanguageModal />
-      <VoiceModal />
-      <NotifInbox />
-      <ChatBot />
+        <AuthModal isOpen={modals.auth} onClose={() => closeModal('auth')} />
+        <PayModal isOpen={modals.pay} onClose={() => closeModal('pay')} onPaymentSuccess={() => { closeModal('pay'); openModal('orderSuccess'); }} />
+        <TopUpModal isOpen={modals.topUp} onClose={() => closeModal('topUp')} />
+        <SubscriptionModal isOpen={modals.subs} onClose={() => closeModal('subs')} />
+        <LanguageModal isOpen={modals.lang} onClose={() => closeModal('lang')} />
+        <VoiceModal isOpen={modals.voice} onClose={() => closeModal('voice')} />
+        <NotifInbox isOpen={modals.notif} onClose={() => closeModal('notif')} />
+        <OrderSuccessModal isOpen={modals.orderSuccess} onClose={() => closeModal('orderSuccess')} />
+        <ChatBot />
+      </ModalCtx.Provider>
     </ToastProvider>
   );
 }
