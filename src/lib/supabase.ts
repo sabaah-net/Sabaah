@@ -194,12 +194,15 @@ export async function getAllSubscriptionPlans() {
 export async function createSubscriptionPlan(plan: {
   name_ar: string; name_en: string; description_ar: string; description_en: string;
   price_weekly: number; features: string[]; discount_percent: number; free_delivery: boolean;
+  days_of_week?: string[]; max_bookings?: number;
 }) {
   return supabase.from('subscription_plans').insert({
     name_ar: plan.name_ar, name_en: plan.name_en || plan.name_ar,
     description_ar: plan.description_ar, description_en: plan.description_en || plan.description_ar,
     price_weekly: plan.price_weekly, features: JSON.stringify(plan.features),
     discount_percent: plan.discount_percent, free_delivery: plan.free_delivery,
+    days_of_week: plan.days_of_week ? JSON.stringify(plan.days_of_week) : null,
+    max_bookings: plan.max_bookings || null,
   }).select().single();
 }
 
@@ -207,6 +210,7 @@ export async function updateSubscriptionPlan(id: string, plan: {
   name_ar?: string; name_en?: string; description_ar?: string; description_en?: string;
   price_weekly?: number; features?: string[]; is_active?: boolean;
   discount_percent?: number; free_delivery?: boolean;
+  days_of_week?: string[]; max_bookings?: number;
 }) {
   const updates: Record<string, any> = {};
   if (plan.name_ar !== undefined) updates.name_ar = plan.name_ar;
@@ -218,6 +222,8 @@ export async function updateSubscriptionPlan(id: string, plan: {
   if (plan.is_active !== undefined) updates.is_active = plan.is_active;
   if (plan.discount_percent !== undefined) updates.discount_percent = plan.discount_percent;
   if (plan.free_delivery !== undefined) updates.free_delivery = plan.free_delivery;
+  if (plan.days_of_week !== undefined) updates.days_of_week = JSON.stringify(plan.days_of_week);
+  if (plan.max_bookings !== undefined) updates.max_bookings = plan.max_bookings;
   return supabase.from('subscription_plans').update(updates).eq('id', id);
 }
 
@@ -417,4 +423,29 @@ export async function clearAllOrders() {
   await supabase.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
   await supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
   await supabase.from('transactions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+}
+
+// ---- PENDING MENU ITEMS (partner → admin approval) ----
+export async function pushPendingMenuItem(item: {
+  cafe_id: string;
+  cafe_name: string;
+  name_ar: string;
+  name_en: string;
+  description: string;
+  base_price: number;
+  icon: string;
+  submitted_by: string;
+}) {
+  return supabase.from('pending_menu_items').insert({
+    ...item,
+    status: 'pending',
+  }).select().single();
+}
+
+export async function fetchPendingMenuItems() {
+  return supabase.from('pending_menu_items').select('*').order('created_at', { ascending: false });
+}
+
+export async function updatePendingMenuItemStatus(id: string, status: 'approved' | 'rejected') {
+  return supabase.from('pending_menu_items').update({ status }).eq('id', id);
 }

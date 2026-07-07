@@ -16,6 +16,7 @@ interface MenuRow {
   description: string | null;
   sales_count: number;
   icon: string;
+  points_per_item: number;
 }
 
 export default function AdminMenus() {
@@ -28,7 +29,7 @@ export default function AdminMenus() {
   const [editId, setEditId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [form, setForm] = useState({ name_ar: '', name_en: '', description: '', base_price: 7, status: 'active', cafe_id: '' });
+  const [form, setForm] = useState({ name_ar: '', name_en: '', description: '', base_price: 7, status: 'active', cafe_id: '', points_per_item: 10 });
 
   const fetchAll = async () => {
     const [itemsRes, cafesRes] = await Promise.all([
@@ -45,13 +46,13 @@ export default function AdminMenus() {
 
   const openAdd = () => {
     setEditId(null);
-    setForm({ name_ar: '', name_en: '', description: '', base_price: 7, status: 'active', cafe_id: '' });
+    setForm({ name_ar: '', name_en: '', description: '', base_price: 7, status: 'active', cafe_id: '', points_per_item: 10 });
     setModalMode('add'); setError(''); setSuccess('');
   };
 
   const openEdit = (item: MenuRow) => {
     setEditId(item.id);
-    setForm({ name_ar: item.name_ar, name_en: item.name_en || '', description: item.description || '', base_price: item.base_price, status: item.status, cafe_id: item.cafe_id });
+    setForm({ name_ar: item.name_ar, name_en: item.name_en || '', description: item.description || '', base_price: item.base_price, status: item.status, cafe_id: item.cafe_id, points_per_item: item.points_per_item || 10 });
     setModalMode('edit'); setError(''); setSuccess('');
   };
 
@@ -66,6 +67,7 @@ export default function AdminMenus() {
           name_en: form.name_en || form.name_ar,
           description: form.description || null,
           base_price: form.base_price,
+          points_per_item: form.points_per_item,
           vat_rate: 15,
           status: form.status,
           is_featured: false,
@@ -80,6 +82,7 @@ export default function AdminMenus() {
           description: form.description || null,
           base_price: form.base_price,
           status: form.status,
+          points_per_item: form.points_per_item,
         });
         if (err) throw err;
         setSuccess(`✅ ${form.name_ar} updated`);
@@ -124,11 +127,11 @@ export default function AdminMenus() {
       <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
-            <tr><th>#</th><th>{t('th_image', lang)}</th><th>{t('name', lang)}</th><th>English</th><th>{t('th_price', lang)}</th><th>{t('th_cafe', lang)}</th><th>{t('th_status', lang)}</th><th>{t('th_actions', lang)}</th></tr>
+            <tr><th>#</th><th>{t('th_image', lang)}</th><th>{t('name', lang)}</th><th>English</th><th>{t('th_price', lang)}</th><th>⭐</th><th>{t('th_cafe', lang)}</th><th>{t('th_status', lang)}</th><th>{t('th_actions', lang)}</th></tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={8} style={{ textAlign: 'center', padding: 24, color: 'var(--text-light)' }}>{t('no_items', lang)}</td></tr>
+              <tr><td colSpan={9} style={{ textAlign: 'center', padding: 24, color: 'var(--text-light)' }}>{t('no_items', lang)}</td></tr>
             )}
             {filtered.map((item, i) => (
               <tr key={item.id}>
@@ -136,7 +139,8 @@ export default function AdminMenus() {
                 <td><div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--latte)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.icon || '☕'}</div></td>
                 <td><strong>{item.name_ar}</strong></td>
                 <td style={{ color: 'var(--text-light)' }}>{item.name_en || '-'}</td>
-                <td>⃁ {(item.base_price).toFixed(2)}</td>
+                <td>﷼ {(item.base_price).toFixed(2)}</td>
+                <td style={{ fontSize: '.78rem', fontWeight: 700 }}>⭐ {item.points_per_item ?? 10}</td>
                 <td style={{ fontSize: '.78rem' }}>{item.cafes?.name_ar || '-'}</td>
                 <td>
                   <span className={`table-badge badge-${item.status === 'active' ? 'green' : 'amber'}`}
@@ -174,6 +178,7 @@ export default function AdminMenus() {
               <option value="active">{t('available', lang)}</option>
               <option value="inactive">{t('unavailable', lang)}</option>
             </select>
+            <input className="coffee-input" type="number" min="0" max="100" placeholder="⭐ Points per item" value={form.points_per_item} onChange={(e) => setForm({ ...form, points_per_item: Number(e.target.value) })} />
             <button className="action-btn" style={{ width: '100%', marginTop: 8, opacity: loading ? 0.6 : 1 }} disabled={loading} onClick={handleSave}>
               {loading ? t('item_saving', lang) : modalMode === 'add' ? t('item_add', lang) : `💾 ${t('save_btn', lang)}`}
             </button>

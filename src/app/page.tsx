@@ -14,6 +14,8 @@ import ProfilePage from '../components/customer/ProfilePage';
 import AuthModal from '../components/modals/AuthModal';
 import PayModal from '../components/modals/PayModal';
 import OrderSuccessModal from '../components/modals/OrderSuccessModal';
+import TopUpModal from '../components/modals/TopUpModal';
+import SubscriptionModal from '../components/modals/SubscriptionModal';
 import LanguageModal from '../components/modals/LanguageModal';
 import VoiceModal from '../components/modals/VoiceModal';
 import NotifInbox from '../components/modals/NotifInbox';
@@ -130,6 +132,8 @@ export default function HomePage() {
       <AuthModal />
       <PayModal />
       <OrderSuccessModal />
+      <TopUpModal />
+      <SubscriptionModal />
       <LanguageModal />
       <VoiceModal />
       <NotifInbox />

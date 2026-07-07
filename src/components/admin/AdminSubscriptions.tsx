@@ -81,10 +81,10 @@ export default function AdminSubscriptions() {
         days_of_week: form.days, max_bookings: form.max_bookings,
       };
       if (modal === 'create') {
-        await createSubscriptionPlan(planData as any);
+        await createSubscriptionPlan(planData);
         show('Plan created', 'success');
       } else if (editId) {
-        await updateSubscriptionPlan(editId, planData as any);
+        await updateSubscriptionPlan(editId, planData);
         show('Plan updated', 'success');
       }
       setModal(null);
@@ -132,7 +132,7 @@ export default function AdminSubscriptions() {
                 <div style={{ fontSize: '.75rem', color: 'var(--text-light)', marginTop: 2 }}>{(lang === 'ar' ? p.description_ar : p.description_en) || ''}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--bark)' }}>⃁ {p.price_weekly.toFixed(2)}<span style={{ fontSize: '.7rem', fontWeight: 400, color: 'var(--text-light)' }}>/{lang === 'ar' ? 'شهر' : 'mo'}</span></div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--bark)' }}>﷼ {p.price_weekly.toFixed(2)}<span style={{ fontSize: '.7rem', fontWeight: 400, color: 'var(--text-light)' }}>/{lang === 'ar' ? 'أسبوع' : 'wk'}</span></div>
                 {p.discount_percent > 0 && <div style={{ fontSize: '.75rem', color: 'var(--green)', fontWeight: 700 }}>-{p.discount_percent}% {lang === 'ar' ? 'خصم' : 'discount'}</div>}
                 {p.free_delivery && <div style={{ fontSize: '.7rem', color: 'var(--amber)', fontWeight: 600 }}>🚚 {lang === 'ar' ? 'توصيل مجاني' : 'Free delivery'}</div>}
               </div>

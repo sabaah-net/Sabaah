@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { getGreeting, t } from '../../i18n';
 import { generatePickupCode, useToast } from '../../lib/utils';
@@ -8,25 +8,6 @@ import CafeCard from './CafeCard';
 import CoffeePanel from './CoffeePanel';
 import CartPanel from './CartPanel';
 import type { CoffeeItem } from '../../types';
-
-// Google Maps type declarations
-declare global {
-  namespace google {
-    namespace maps {
-      class Map {
-        constructor(mapDiv: HTMLDivElement, options?: any);
-      }
-      class Marker {
-        constructor(options?: any);
-        addListener(eventName: string, handler: () => void): void;
-        setMap(map: Map | null): void;
-      }
-      namespace SymbolPath {
-        const CIRCLE: any;
-      }
-    }
-  }
-}
 
 export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () => void; onOpenVoice: () => void }) {
   const store = useAppStore();
@@ -45,14 +26,9 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
   const handleSelectCafe = (cafe: typeof store.cafes[0]) => {
     store.setSelectedCafe(cafe);
     show(t('cafe_selected', store.lang).replace('{name}', cafe.name), 'success');
-  };
-
-  const handleToggleFav = (id: number) => {
-    const cafe = store.cafes.find((c) => c.id === id);
-    if (cafe) {
-      cafe.favorited = !cafe.favorited;
-      show(t(cafe.favorited ? 'cafe_favorited_add' : 'cafe_favorited_remove', store.lang), 'info');
-    }
+    setTimeout(() => {
+      document.getElementById('coffeePanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const handleAddToCart = (type: string) => {
@@ -83,11 +59,6 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
     } else {
       store.setCart(store.cart.map((i) => i.type === type ? { ...i, qty: newQty } : i));
     }
-  };
-
-  const handleClearCart = () => {
-    store.setCart([]);
-    show(t('cart_cleared', store.lang), 'info');
   };
 
   const handlePlaceOrder = () => {
@@ -188,36 +159,42 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
           <p className="section-title">{t('order_again', store.lang)}</p>
           <div className="smart-reorder">
             {store.orders.slice(0, 3).map((o) => (
-                <div
-                  key={o.id}
-                  className="reorder-chip"
-                  onClick={() => {
-                    const cafe = store.cafes.find((c) => c.name === o.cafe);
-                    if (cafe) {
-                      store.setSelectedCafe(cafe);
-                      show(t('quick_order_added', store.lang), 'success');
-                    }
-                  }}
-                >
-                  <div className="reorder-title">{o.icon} {o.coffeeAr || o.coffee}</div>
-                  <div className="reorder-meta">{o.cafe}</div>
-                  <div className="reorder-price">⃁ {(o.amount || 0).toFixed(2)}</div>
-                </div>
-              ))}
+              <div
+                key={o.id}
+                className="reorder-chip"
+                onClick={() => {
+                  const cafe = store.cafes.find((c) => c.name === o.cafe);
+                  if (cafe) {
+                    store.setSelectedCafe(cafe);
+                    show(t('quick_order_added', store.lang), 'success');
+                  }
+                }}
+              >
+                <div className="reorder-title">{o.icon} {o.coffeeAr || o.coffee}</div>
+                <div className="reorder-meta">{o.cafe}</div>
+                <div className="reorder-price">⃁ {o.amount.toFixed(2)}</div>
+              </div>
+            ))}
           </div>
         </>
       )}
 
       <div className={`map-wrap ${mapExpanded ? 'expanded' : 'collapsed'}`}>
-        <div 
-          ref={mapRef} 
-          style={{ 
-            width: '100%', 
-            height: '100%', 
-            background: 'var(--latte)',
-            borderRadius: 'var(--radius-sm)'
-          }} 
-        />
+        <svg className="map-svg-el" viewBox="0 0 480 280">
+          <rect width="480" height="280" fill="#E8DDD0" />
+          <rect x="0" y="120" width="480" height="16" fill="#D0C0A8" rx="2" />
+          <rect x="72" y="0" width="14" height="280" fill="#D0C0A8" rx="2" />
+          <rect x="332" y="0" width="14" height="280" fill="#D0C0A8" rx="2" />
+          {store.cafes.map((c) => (
+            <g key={c.id} style={{ cursor: 'pointer' }} transform={`translate(${c.x}, ${c.y})`} onClick={() => handleSelectCafe(c)}>
+              <circle r="18" fill={c.isOpen ? 'var(--amber)' : 'var(--red)'} opacity="0.15" />
+              <circle r="10" fill={c.isOpen ? 'var(--amber)' : 'var(--red)'} stroke="#fff" strokeWidth="2" />
+              <text y="4" textAnchor="middle" fill="#fff" fontSize="8" fontWeight="900">{c.id}</text>
+            </g>
+          ))}
+          <circle id="userDot" cx="240" cy="128" r="5" fill="#1A6FA8" />
+          <circle cx="240" cy="128" r="13" fill="#1A6FA8" opacity=".15" />
+        </svg>
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
@@ -236,21 +213,21 @@ export default function OrderPage({ onOpenPay, onOpenVoice }: { onOpenPay: () =>
             selected={store.selectedCafe?.id === cafe.id}
             lang={store.lang}
             onSelect={handleSelectCafe}
-            onToggleFav={handleToggleFav}
           />
         ))}
       </div>
 
-      <CoffeePanel
-        visible={!!store.selectedCafe}
-        onAddToCart={handleAddToCart}
-        selectedTypes={selectedTypes}
-      />
+      <div id="coffeePanel">
+        <CoffeePanel
+          visible={!!store.selectedCafe}
+          onAddToCart={handleAddToCart}
+          selectedTypes={selectedTypes}
+        />
+      </div>
 
       <CartPanel
         cart={store.cart}
         onUpdateQty={handleUpdateQty}
-        onClear={handleClearCart}
         onPlaceOrder={handlePlaceOrder}
       />
 

@@ -1,15 +1,18 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { getSystemSettings, updateSystemSetting, addAuditLog, clearAllOrders } from '../../lib/supabase';
+import { getSystemSettings, updateSystemSetting, addAuditLog } from '../../lib/supabase';
 import { useToast } from '../shared/Toast';
 import { t } from '../../i18n';
+import type { Addon } from '../../types';
 
 export default function AdminSettings() {
-  const { lang, theme, toggleTheme } = useAppStore();
+  const { lang, theme, toggleTheme, addons, currency } = useAppStore();
   const { show } = useToast();
   const [vatRate, setVatRate] = useState(15);
   const [loading, setLoading] = useState(true);
+  const [addonList, setAddonList] = useState<Addon[]>(addons);
+  const [editingAddonId, setEditingAddonId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -66,7 +69,7 @@ export default function AdminSettings() {
           <hr style={{ border: 'none', borderTop: '1px solid var(--latte)' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div><strong>{t('notif_label', lang)}</strong><div style={{ fontSize: '.78rem', color: 'var(--text-light)' }}>{t('notif_desc', lang)}</div></div>
-            <label className="switch"><input type="checkbox" defaultChecked /><span className="slider" /></label>
+            <label className="ios-switch"><input type="checkbox" defaultChecked /><span className="slider" style={{ background: 'var(--green)' }} /></label>
           </div>
           <hr style={{ border: 'none', borderTop: '1px solid var(--latte)' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -76,28 +79,59 @@ export default function AdminSettings() {
           <hr style={{ border: 'none', borderTop: '1px solid var(--latte)' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div><strong>{t('currency_label', lang)}</strong><div style={{ fontSize: '.78rem', color: 'var(--text-light)' }}>{t('currency_desc', lang)}</div></div>
-            <select className="coffee-input" style={{ width: 140 }}>
-              <option>{t('sar', lang)}</option>
-              <option>{t('usd', lang)}</option>
-              <option>{t('aed', lang)}</option>
+            <select className="coffee-input" style={{ width: 140, fontSize: '.85rem', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--latte)', background: '#fff', appearance: 'auto' }} value={currency} onChange={(e) => {
+              useAppStore.getState().setCurrency?.(e.target.value);
+              show('✅ ' + (lang === 'ar' ? 'تم تحديث العملة' : 'Currency updated'), 'success');
+            }}>
+              <option value="SAR">{t('sar', lang)}</option>
+              <option value="USD">{t('usd', lang)}</option>
+              <option value="AED">{t('aed', lang)}</option>
             </select>
           </div>
           <hr style={{ border: 'none', borderTop: '1px solid var(--latte)' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div><strong>{t('danger_label', lang)}</strong><div style={{ fontSize: '.78rem', color: 'var(--red)' }}>{t('danger_desc', lang)}</div></div>
-            <button className="action-btn secondary" style={{ width: 'auto', padding: '8px 16px', fontSize: '.8rem', borderColor: 'var(--red)', color: 'var(--red)' }}
-              onClick={async () => {
-                try {
-                  await clearAllOrders();
-                  localStorage.removeItem('sabaa_state');
-                  show('✅ ' + t('data_deleted', lang), 'success');
-                  setTimeout(() => window.location.reload(), 1500);
-                } catch {
-                  show(t('settings_save_failed', lang), 'error');
-                }
-              }}>
-              {t('delete_btn', lang)}
-            </button>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: '.9rem', marginBottom: 8 }}>🧃 {lang === 'ar' ? 'إدارة الإضافات' : 'Add-ons Management'}</div>
+            <div style={{ fontSize: '.78rem', marginBottom: 10 }}>{lang === 'ar' ? 'تعديل اسم وسعر وأيقونة كل إضافة' : 'Edit name, price & icon for each add-on'}</div>
+            {addonList.map((a, i) => (
+              <div key={a.id} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: '1.2rem', width: 28, textAlign: 'center' }}>{a.icon}</span>
+                {editingAddonId === a.id ? (
+                  <>
+                    <input className="coffee-input" style={{ flex: 2, margin: 0 }} value={a.name} onChange={(e) => {
+                      const list = [...addonList]; list[i] = { ...list[i], name: e.target.value }; setAddonList(list);
+                    }} placeholder={lang === 'ar' ? 'الاسم (عربي)' : 'Name (Ar)'} />
+                    <input className="coffee-input" style={{ flex: 2, margin: 0 }} value={a.nameEn} onChange={(e) => {
+                      const list = [...addonList]; list[i] = { ...list[i], nameEn: e.target.value }; setAddonList(list);
+                    }} placeholder={lang === 'ar' ? 'الاسم (إنجليزي)' : 'Name (En)'} />
+                    <input className="coffee-input" style={{ width: 60, margin: 0 }} type="number" value={a.price} onChange={(e) => {
+                      const list = [...addonList]; list[i] = { ...list[i], price: Math.max(0, parseFloat(e.target.value) || 0) }; setAddonList(list);
+                    }} />
+                    <input className="coffee-input" style={{ width: 50, margin: 0 }} value={a.icon} onChange={(e) => {
+                      const list = [...addonList]; list[i] = { ...list[i], icon: e.target.value }; setAddonList(list);
+                    }} />
+                    <button className="action-btn secondary" style={{ width: 'auto', padding: '6px 10px', fontSize: '.7rem', margin: 0 }}
+                      onClick={() => {
+                        const s = useAppStore.getState();
+                        (s as any).setAddons?.(addonList);
+                        setEditingAddonId(null);
+                        show('✅ ' + (lang === 'ar' ? 'تم الحفظ' : 'Saved'), 'success');
+                      }}>
+                      💾
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ flex: 2, fontWeight: 700, fontSize: '.85rem' }}>{a.name}</span>
+                    <span style={{ flex: 2, fontSize: '.8rem' }}>{a.nameEn}</span>
+                    <span style={{ width: 60, fontWeight: 600 }}>{a.price} ﷼</span>
+                    <button className="action-btn secondary" style={{ width: 'auto', padding: '4px 8px', fontSize: '.7rem', margin: 0 }}
+                      onClick={() => setEditingAddonId(a.id)}>
+                      ✏️
+                    </button>
+                  </>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>

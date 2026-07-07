@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { useToast } from '../shared/Toast';
+import { pushTransaction } from '../../lib/firebase';
 
 const PRESETS = [50, 100, 200, 500];
 
@@ -16,7 +17,19 @@ export default function TopUpModal() {
     setLoading(true);
     await new Promise(r => setTimeout(r, 800));
     store.setWallet(store.wallet + amount);
-    show(`Wallet topped up with ${amount.toFixed(2)} SAR`, 'success');
+    const pid = store.currentUser?.profileId;
+    if (pid) {
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      pushTransaction(pid, {
+        title: store.lang === 'ar' ? 'شحن المحفظة' : 'Wallet Top Up',
+        titleEn: 'Wallet Top Up',
+        amount: amount,
+        type: 'credit',
+        date: dateStr,
+      });
+    }
+    show(store.lang === 'ar' ? `تم شحن المحفظة بمبلغ ${amount.toFixed(2)} ريال` : `Wallet topped up with ${amount.toFixed(2)} SAR`, 'success');
     setLoading(false);
     closeModal();
   };
@@ -32,7 +45,7 @@ export default function TopUpModal() {
 
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
           <div style={{ fontSize: '.75rem', color: 'var(--text-light)', marginBottom: 4 }}>{store.lang === 'ar' ? 'الرصيد الحالي' : 'Current Balance'}</div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--bark)' }}>⃁ {store.wallet.toFixed(2)}</div>
+          <div style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--bark)' }}>﷼ {store.wallet.toFixed(2)}</div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
@@ -40,7 +53,7 @@ export default function TopUpModal() {
             <button key={p} className={`pay-method ${amount === p ? 'active' : ''}`}
               style={{ padding: '12px', fontSize: '1rem', fontWeight: 800 }}
               onClick={() => setAmount(p)}>
-              ⃁ {p}
+              ﷼ {p}
             </button>
           ))}
         </div>
@@ -55,7 +68,7 @@ export default function TopUpModal() {
 
         <button className="action-btn" style={{ width: '100%', padding: 14, fontSize: '1rem', opacity: loading ? 0.6 : 1 }}
           disabled={loading || amount <= 0} onClick={handleTopUp}>
-          {loading ? (store.lang === 'ar' ? 'جاري...' : 'Processing...') : `💳 ${(store.lang === 'ar' ? 'شحن' : 'Pay')} ⃁ ${amount.toFixed(2)}`}
+          {loading ? (store.lang === 'ar' ? 'جاري...' : 'Processing...') : `💳 ${(store.lang === 'ar' ? 'شحن' : 'Pay')} ﷼ ${amount.toFixed(2)}`}
         </button>
       </div>
     </div>

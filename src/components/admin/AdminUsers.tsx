@@ -36,7 +36,7 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', phone: '', password: '', role: 'Customer', status: 'active', wallet_balance: 0, loyalty_points: 0, city: '', assignedCafeId: '' });
+  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', phone: '', password: '', role: 'Customer', partner_role: '', sabaa_role: '', status: 'active', wallet_balance: 0, loyalty_points: 0, city: '', assignedCafeId: '' });
 
   const fetchUsers = async () => {
     const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
@@ -56,13 +56,13 @@ export default function AdminUsers() {
   const openEdit = (u: UserRow) => {
     setEditUser(u);
     const assigned = cafes.find(c => c.owner_id === u.id);
-    setForm({ first_name: u.first_name, last_name: u.last_name, email: u.email, phone: u.phone || '', password: '', role: u.role, status: u.status, wallet_balance: u.wallet_balance, loyalty_points: u.loyalty_points, city: u.city, assignedCafeId: assigned?.id || '' });
+    setForm({ first_name: u.first_name, last_name: u.last_name, email: u.email, phone: u.phone || '', password: '', role: u.role, partner_role: (u as any).partner_role || '', sabaa_role: (u as any).sabaa_role || '', status: u.status, wallet_balance: u.wallet_balance, loyalty_points: u.loyalty_points, city: u.city, assignedCafeId: assigned?.id || '' });
     setModalMode('edit'); setError(''); setSuccess('');
   };
 
   const openCreate = () => {
     setEditUser(null);
-    setForm({ first_name: '', last_name: '', email: '', phone: '', password: '', role: 'Customer', status: 'active', wallet_balance: 0, loyalty_points: 0, city: 'riyadh', assignedCafeId: '' });
+    setForm({ first_name: '', last_name: '', email: '', phone: '', password: '', role: 'Customer', partner_role: '', sabaa_role: '', status: 'active', wallet_balance: 0, loyalty_points: 0, city: 'riyadh', assignedCafeId: '' });
     setModalMode('create'); setError(''); setSuccess('');
   };
 
@@ -89,7 +89,10 @@ export default function AdminUsers() {
         });
         if (profileError) throw profileError;
 
-        await supabase.from('profiles').update({ status: form.status, wallet_balance: form.wallet_balance, loyalty_points: form.loyalty_points, city: form.city }).eq('id', authUserId);
+        const extra: any = {};
+        if (form.role === 'Partner') extra.partner_role = form.partner_role || null;
+        else if (form.role === 'Sabaa') extra.sabaa_role = form.sabaa_role || null;
+        await supabase.from('profiles').update({ status: form.status, wallet_balance: form.wallet_balance, loyalty_points: form.loyalty_points, city: form.city, ...extra }).eq('id', authUserId);
         await supabase.from('profiles').update({ password: form.password }).eq('auth_id', authUserId);
 
         if (form.assignedCafeId) {
@@ -103,9 +106,12 @@ export default function AdminUsers() {
           const { error: err } = await updateProfileRole(editUser.id, form.role);
           if (err) throw err;
         }
+        const extra: any = {};
+        if (form.role === 'Partner') extra.partner_role = form.partner_role || null;
+        else if (form.role === 'Sabaa') extra.sabaa_role = form.sabaa_role || null;
+        else { extra.partner_role = null; extra.sabaa_role = null; }
+        await updateProfile(editUser.id, { status: form.status, city: form.city, ...extra });
         await updateUserWalletAndPoints(editUser.id, form.wallet_balance, form.loyalty_points);
-        const { error: err } = await updateProfile(editUser.id, { status: form.status, city: form.city });
-        if (err) throw err;
 
         if (form.assignedCafeId) {
           const currentOwner = cafes.find(c => c.id === form.assignedCafeId)?.owner_id;
@@ -156,9 +162,9 @@ export default function AdminUsers() {
                 <td><strong>{u.first_name} {u.last_name}</strong></td>
                 <td dir="ltr" style={{ fontSize: '.82rem' }}>{u.phone || '-'}</td>
                 <td>{u.email}</td>
-                <td><span className={`table-badge badge-${u.role === 'Partner' ? 'blue' : u.role === 'Super Admin' || u.role === 'Admin' ? 'amber' : 'green'}`}>{u.role}</span></td>
+                <td><span className={`table-badge badge-${u.role === 'Partner' ? 'blue' : u.role === 'Sabaa' ? 'amber' : 'green'}`}>{u.role}</span></td>
                 <td><span className={`table-badge badge-${u.status === 'active' ? 'green' : 'red'}`}>{statusLabel[u.status] || u.status}</span></td>
-                <td>⃁ {(u.wallet_balance || 0).toFixed(2)}</td>
+                <td>﷼ {(u.wallet_balance || 0).toFixed(2)}</td>
                 <td>⭐ {u.loyalty_points || 0}</td>
                 <td style={{ fontSize: '.78rem', color: 'var(--text-light)' }}>{u.last_login ? new Date(u.last_login).toLocaleDateString('en-US') : '-'}</td>
                 <td>
@@ -192,11 +198,47 @@ export default function AdminUsers() {
             )}
 
             <label style={{ fontSize: '.78rem', color: 'var(--text-light)', marginBottom: 4, display: 'block', marginTop: modalMode === 'edit' ? 0 : 8 }}>{t('role', lang)}</label>
-            <select className="coffee-input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+            <select className="coffee-input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, partner_role: '', sabaa_role: '' })}>
               <option value="Customer">Customer</option>
               <option value="Partner">Partner</option>
-              <option value="Admin">Admin</option>
+              <option value="Sabaa">Sabaa</option>
             </select>
+
+            {form.role === 'Partner' && (
+              <>
+                <label style={{ fontSize: '.78rem', color: 'var(--text-light)', marginBottom: 4, display: 'block', marginTop: 8 }}>Partner Role</label>
+                <select className="coffee-input" value={form.partner_role} onChange={(e) => setForm({ ...form, partner_role: e.target.value })}>
+                  <option value="">— None —</option>
+                  {editUser && (editUser as any).partner_role && !['owner','finance','supervisor','staff','cashier'].includes((editUser as any).partner_role) && (
+                    <option value={(editUser as any).partner_role}>{(editUser as any).partner_role}</option>
+                  )}
+                  <option value="owner">Owner</option>
+                  <option value="finance">Finance</option>
+                  <option value="supervisor">Supervisor</option>
+                  <option value="staff">Staff</option>
+                  <option value="cashier">Cashier</option>
+                </select>
+              </>
+            )}
+
+            {form.role === 'Sabaa' && (
+              <>
+                <label style={{ fontSize: '.78rem', color: 'var(--text-light)', marginBottom: 4, display: 'block', marginTop: 8 }}>Sabaa Role</label>
+                <select className="coffee-input" value={form.sabaa_role} onChange={(e) => setForm({ ...form, sabaa_role: e.target.value })}>
+                  <option value="">— None —</option>
+                  {editUser && (editUser as any).sabaa_role && !['super_admin','finance','admin','operations','customer_care','sales','marketing'].includes((editUser as any).sabaa_role) && (
+                    <option value={(editUser as any).sabaa_role}>{(editUser as any).sabaa_role}</option>
+                  )}
+                  <option value="super_admin">Super Admin</option>
+                  <option value="finance">Finance</option>
+                  <option value="admin">Admin</option>
+                  <option value="operations">Operations</option>
+                  <option value="customer_care">Customer Care</option>
+                  <option value="sales">Sales</option>
+                  <option value="marketing">Marketing</option>
+                </select>
+              </>
+            )}
 
             <label style={{ fontSize: '.78rem', color: 'var(--text-light)', marginBottom: 4, display: 'block', marginTop: 8 }}>{t('status', lang)}</label>
             <select className="coffee-input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
