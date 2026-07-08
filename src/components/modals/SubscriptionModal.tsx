@@ -136,7 +136,7 @@ export default function SubscriptionModal({ isOpen, onClose }: { isOpen: boolean
               onClick={() => setSelectedPlanId(plan.id)}>
               <div className="sub-header">
                 <div className="sub-name">{name}</div>
-                <div className="sub-price"><span className="currency-sym">﷼</span>{plan.price_weekly}/{store.lang === 'ar' ? 'أسبوع' : 'wk'}</div>
+                <div className="sub-price"><span className="currency-sym">⃁</span>{plan.price_weekly}/{store.lang === 'ar' ? 'أسبوع' : 'wk'}</div>
               </div>
               <div className="sub-desc">{store.lang === 'ar' ? plan.description_ar : (plan.description_en || '')}</div>
               {plan.discount_percent > 0 && <div style={{ fontSize: '.7rem', color: 'var(--green)', fontWeight: 700, marginBottom: 4 }}>-{plan.discount_percent}% {store.lang === 'ar' ? 'خصم' : 'discount'}</div>}
@@ -203,7 +203,7 @@ export default function SubscriptionModal({ isOpen, onClose }: { isOpen: boolean
         <div style={{
           fontSize: '.72rem', color: 'var(--text-mid)', padding: '8px 0', textAlign: 'center',
         }}>
-          {store.lang === 'ar' ? 'سعر الاشتراك:' : 'Subscription price:'} <strong><span className="currency-sym">﷼</span>{selectedPlan.price_weekly}</strong>
+          {store.lang === 'ar' ? 'سعر الاشتراك:' : 'Subscription price:'} <strong><span className="currency-sym">⃁</span>{selectedPlan.price_weekly}</strong>
         </div>
 
         <button className="action-btn green-btn" disabled={loading || fetching || !selectedPlan} onClick={handleActivate} style={{ marginTop: 8 }}>

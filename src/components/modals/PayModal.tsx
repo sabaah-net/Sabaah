@@ -212,13 +212,25 @@ export default function PayModal({ isOpen, onClose, onPaymentSuccess }: { isOpen
               <span>-<PriceTag value={discountAmount} /></span>
             </div>
           )}
-          <div style={{
-            display: 'flex', justifyContent: 'space-between',
-            padding: '3px 0', fontSize: '.75rem', color: 'var(--text-light)',
-          }}>
-            <span>{t('th_vat', store.lang)} (15%)</span>
-            <span><PriceTag value={vatAmount} /></span>
-          </div>
+          {/* VAT breakdown */}
+          {beforeVat > 0 && (
+            <>
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '4px 0', fontSize: '.78rem', color: 'var(--text-light)',
+              }}>
+                <span>{store.lang === 'ar' ? 'المبلغ (بدون ضريبة)' : 'Subtotal (excl. VAT)'}</span>
+                <span><PriceTag value={beforeVat} /></span>
+              </div>
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '4px 0', fontSize: '.78rem', color: 'var(--amber)', fontWeight: 600,
+              }}>
+                <span>{store.lang === 'ar' ? 'ضريبة القيمة المضافة 15%' : 'VAT 15%'}</span>
+                <span>+<PriceTag value={vatAmount} /></span>
+              </div>
+            </>
+          )}
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
             padding: '8px 0 0', marginTop: 4,
@@ -227,8 +239,13 @@ export default function PayModal({ isOpen, onClose, onPaymentSuccess }: { isOpen
             <div>
               <div style={{ fontSize: '1rem', fontWeight: 900 }}>{t('cart_total', store.lang)}</div>
               <div style={{
-                fontSize: '.7rem', fontWeight: 600, color: 'var(--amber)',
+                fontSize: '.65rem', fontWeight: 600, color: 'var(--amber)',
                 marginTop: 1,
+              }}>
+                {store.lang === 'ar' ? 'شامل ضريبة القيمة المضافة 15%' : 'Incl. 15% VAT'}
+              </div>
+              <div style={{
+                fontSize: '.7rem', fontWeight: 600, color: 'var(--amber)',
               }}>
                 ⭐ +{earnedPoints} {t('loyalty_points_label', store.lang)}
               </div>

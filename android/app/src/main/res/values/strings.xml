@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">سبعة ٧</string>
+    <string name="title_activity_main">سبعة ٧</string>
+    <string name="package_name">com.sabaa.coffee</string>
+    <string name="custom_url_scheme">com.sabaa.coffee</string>
+</resources>

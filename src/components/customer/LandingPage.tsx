@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
+import { supabase } from '../../lib/supabase';
 import { Coffee, Gift, Wallet, Clock, Check, X, Send, ArrowRight } from 'lucide-react';
 import AuthPage from './AuthPage';
 
@@ -19,10 +20,11 @@ export default function LandingPage() {
     if (!form.name || !form.phone || !form.email || !form.message) return;
     setSending(true);
     try {
-      await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+      await supabase.from('contacts').insert({
+        name: form.name,
+        phone: form.phone,
+        email: form.email,
+        message: form.message,
       });
       setSent(true);
     } catch {} finally {

@@ -64,8 +64,9 @@ tailwind.config = {
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{font-size:16px;scroll-behavior:smooth}
-body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);transition:background .35s var(--kinetic),color .35s var(--kinetic);overflow-x:hidden}
+body{font-family:'Cairo','Noto Sans Arabic',sans-serif;background:var(--bg);color:var(--text);transition:background .35s var(--kinetic),color .35s var(--kinetic);overflow-x:hidden}
 .web-shell{display:flex;flex-direction:column;min-height:100dvh;max-width:480px;margin:0 auto;position:relative}
+.currency-sym{font-family:'Segoe UI','DejaVu Sans','Arial Unicode MS',sans-serif;font-size:1.15em;font-weight:700;margin-inline-end:1px;letter-spacing:0;line-height:1}
 /* Glassmorphism */
 .glass{background:var(--surface-glass) !important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.25);transition:background .35s var(--kinetic)}
 [data-theme="dark"] .glass{background:rgba(22,16,12,.5) !important}
@@ -341,9 +342,9 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);trans
       <div class="wallet-card">
         <div class="wallet-label">رصيد المحفظة</div>
         <div class="wallet-balance">150.00</div>
-        <div style="font-size:.75rem;color:rgba(255,255,255,.5)">ريال سعودي</div>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.5)"><span class="currency-sym">⃁</span></div>
         <div class="wallet-actions">
-          <button class="wallet-btn" onclick="showToast('💳 تم شحن 50 ﷼ بنجاح','success')">💳 شحن</button>
+          <button class="wallet-btn" onclick="showToast('💳 تم شحن 50 ⃁ بنجاح','success')">💳 شحن</button>
           <button class="wallet-btn" onclick="showToast('📅 إدارة الاشتراكات','info')">📅 اشتراك</button>
         </div>
       </div>
@@ -412,7 +413,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);trans
 
   <div style="flex:1;overflow-y:auto;padding:12px 0">
     <div class="partner-header">
-      <div><div class="partner-stat-label">أرباح اليوم</div><div class="partner-stat-val">345.00 ﷼</div></div>
+      <div><div class="partner-stat-label">أرباح اليوم</div><div class="partner-stat-val">345.00 ⃁</div></div>
       <div><div class="partner-stat-label">الطلبات</div><div class="partner-stat-val">8</div></div>
       <div><div class="partner-stat-label">المخزون</div><div class="partner-stat-val">87%</div></div>
     </div>
@@ -548,13 +549,13 @@ const rewards = [
 ];
 
 const transactions = [
-  { title:'شحن محفظة', amount:'+100 ﷼', type:'credit', date:'2026-06-10' },
-  { title:'طلب Brew92 - سوداء', amount:'-8.05 ﷼', type:'debit', date:'2026-06-11' },
-  { title:'مكافأة ولاء 15 نقطة', amount:'+15 ﷼', type:'credit', date:'2026-06-12' },
-  { title:'طلب Brew92 - سوداء', amount:'-8.05 ﷼', type:'debit', date:'2026-06-11' },
-  { title:'شحن محفظة', amount:'+50 ﷼', type:'credit', date:'2026-06-09' },
-  { title:'طلب قهوة السعودية', amount:'-6.90 ﷼', type:'debit', date:'2026-06-12' },
-  { title:'طلب إيليفن - سبانيش لاتيه', amount:'-13.80 ﷼', type:'debit', date:'2026-06-13' },
+  { title:'شحن محفظة', amount:'+100 ⃁', type:'credit', date:'2026-06-10' },
+  { title:'طلب Brew92 - سوداء', amount:'-8.05 ⃁', type:'debit', date:'2026-06-11' },
+  { title:'مكافأة ولاء 15 نقطة', amount:'+15 ⃁', type:'credit', date:'2026-06-12' },
+  { title:'طلب Brew92 - سوداء', amount:'-8.05 ⃁', type:'debit', date:'2026-06-11' },
+  { title:'شحن محفظة', amount:'+50 ⃁', type:'credit', date:'2026-06-09' },
+  { title:'طلب قهوة السعودية', amount:'-6.90 ⃁', type:'debit', date:'2026-06-12' },
+  { title:'طلب إيليفن - سبانيش لاتيه', amount:'-13.80 ⃁', type:'debit', date:'2026-06-13' },
 ];
 
 const adminOrders = [
@@ -764,7 +765,7 @@ function renderCoffees(filter = 'all') {
       <button class="coffee-btn ${inCart ? 'selected' : ''}" onclick="addToCart('${c.type}')">
         <span class="icon">${c.icon}</span>
         <span class="label">${c.label}</span>
-        <span style="font-size:.65rem;color:var(--amber);font-weight:700">${c.price} ﷼</span>
+        <span style="font-size:.65rem;color:var(--amber);font-weight:700">${c.price} ⃁</span>
       </button>`;
   });
 }
@@ -802,9 +803,9 @@ function renderCart() {
   let html = '<div style="font-size:.85rem;font-weight:800;margin-bottom:10px">🛒 سلة الطلب</div>';
   let total = 0;
   cart.forEach(c => { total += c.price * c.qty;
-    html += `<div class="cart-item"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:1.2rem">${c.icon}</span><div><div style="font-size:.8rem;font-weight:700">${c.label}</div><div style="font-size:.65rem;color:var(--text-light)">${c.price} ﷼ × ${c.qty}</div></div></div><div class="qty-btn" style="display:flex;align-items:center;gap:6px"><button class="qty-btn" onclick="updateQty('${c.type}',-1)">−</button><span style="font-weight:800;min-width:18px;text-align:center">${c.qty}</span><button class="qty-btn" onclick="updateQty('${c.type}',1)">+</button></div><div style="font-weight:900;color:var(--amber)">${(c.price*c.qty).toFixed(2)} ﷼</div></div>`;
+    html += `<div class="cart-item"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:1.2rem">${c.icon}</span><div><div style="font-size:.8rem;font-weight:700">${c.label}</div><div style="font-size:.65rem;color:var(--text-light)">${c.price} ⃁ × ${c.qty}</div></div></div><div class="qty-btn" style="display:flex;align-items:center;gap:6px"><button class="qty-btn" onclick="updateQty('${c.type}',-1)">−</button><span style="font-weight:800;min-width:18px;text-align:center">${c.qty}</span><button class="qty-btn" onclick="updateQty('${c.type}',1)">+</button></div><div style="font-weight:900;color:var(--amber)">${(c.price*c.qty).toFixed(2)} ⃁</div></div>`;
   });
-  html += `<div class="cart-total"><span>الإجمالي</span><span>${total.toFixed(2)} ﷼</span></div>`;
+  html += `<div class="cart-total"><span>الإجمالي</span><span>${total.toFixed(2)} ⃁</span></div>`;
   html += `<div style="display:flex;gap:8px;margin-top:10px"><button class="qty-btn" style="flex:1;border-radius:var(--radius-sm);padding:10px;height:auto;width:auto;font-size:.78rem" onclick="clearCart()">🗑️ إفراغ</button><button class="qty-btn" style="flex:2;border-radius:var(--radius-sm);padding:10px;height:auto;width:auto;font-size:.78rem;background:var(--amber);color:#fff;border-color:var(--amber)" onclick="placeOrder()">🛒 تأكيد الطلب</button></div>`;
   panel.innerHTML = html;
 }
@@ -868,7 +869,7 @@ function renderHistory() {
     `<div style="display:flex;gap:10px;align-items:center;background:var(--surface);border-radius:var(--radius-sm);padding:12px 14px;border:1px solid var(--latte);margin-bottom:8px">
       <div style="font-size:1.4rem">${o.icon}</div>
       <div style="flex:1;min-width:0"><div style="font-size:.82rem;font-weight:700">${o.cafe} - ${o.coffee}</div><div style="font-size:.65rem;color:var(--text-light)">${o.date}</div><div style="font-size:.62rem;color:var(--green);font-weight:700;margin-top:2px"><span class="dot dot-${o.status === 'completed' ? 'green' : 'amber'}"></span>${o.status === 'completed' ? 'مكتمل' : 'جاهز'}</div></div>
-      <div style="text-align:left"><div style="font-size:.85rem;font-weight:900;color:var(--amber)">${o.amount.toFixed(2)} ﷼</div><div style="font-size:.58rem;color:var(--text-light)">كود: <strong style="color:var(--bark)">${o.code}</strong></div></div>
+      <div style="text-align:left"><div style="font-size:.85rem;font-weight:900;color:var(--amber)">${o.amount.toFixed(2)} ⃁</div><div style="font-size:.58rem;color:var(--text-light)">كود: <strong style="color:var(--bark)">${o.code}</strong></div></div>
     </div>`
   ).join('');
   renderCalendar();
@@ -966,11 +967,11 @@ function renderAdminDashboard() {
   c.innerHTML = `
     <div class="ticker">
       <div class="ticker-badge"><span class="dot dot-red" style="animation:blink 1s infinite"></span> LIVE</div>
-      <div class="ticker-track"><div class="ticker-anim">SB-1046: طلب جديد من أحمد محمد - Brew92 - 8.05 ﷼ • SB-1045: تم التحضير - قهوة إسباني • مستخدم جديد: فهد سعد</div></div>
+      <div class="ticker-track"><div class="ticker-anim">SB-1046: طلب جديد من أحمد محمد - Brew92 - 8.05 ⃁ • SB-1045: تم التحضير - قهوة إسباني • مستخدم جديد: فهد سعد</div></div>
     </div>
     <div class="kpi-grid">
-      <div class="kpi-card glass"><div class="kpi-label">إجمالي الإيرادات</div><div class="kpi-val">8,715 ﷼</div><div class="kpi-delta up">▲ 12%</div></div>
-      <div class="kpi-card glass"><div class="kpi-label">إيرادات اليوم</div><div class="kpi-val">1,240 ﷼</div><div class="kpi-delta up">▲ 8%</div></div>
+      <div class="kpi-card glass"><div class="kpi-label">إجمالي الإيرادات</div><div class="kpi-val">8,715 ⃁</div><div class="kpi-delta up">▲ 12%</div></div>
+      <div class="kpi-card glass"><div class="kpi-label">إيرادات اليوم</div><div class="kpi-val">1,240 ⃁</div><div class="kpi-delta up">▲ 8%</div></div>
       <div class="kpi-card glass"><div class="kpi-label">طلبات اليوم</div><div class="kpi-val">142</div><div class="kpi-delta up">▲ 15%</div></div>
       <div class="kpi-card glass"><div class="kpi-label">العملاء النشطون</div><div class="kpi-val">3,890</div><div class="kpi-delta up">▲ 5%</div></div>
     </div>
@@ -999,7 +1000,7 @@ function renderAdminLiveOps() {
       <div class="kpi-card"><div class="kpi-label">✅ جاهزة</div><div class="kpi-val" style="color:var(--green)">1</div></div>
     </div>
     <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>الطلب</th><th>العميل</th><th>المقهى</th><th>المبلغ</th><th>الحالة</th><th>إجراء</th></tr></thead>
-    <tbody>${adminOrders.map(o => `<tr><td><strong>${o.id}</strong></td><td>${o.customer}</td><td>${o.cafe}</td><td>${o.amount.toFixed(2)} ﷼</td><td><span class="badge badge-${o.status === 'completed' ? 'green' : o.status === 'ready' ? 'blue' : 'amber'}">${o.status}</span></td><td><button class="qty-btn" style="padding:4px 12px;height:auto;width:auto;font-size:.68rem">${o.status === 'pending' ? '➡ تحضير' : '✅ تسليم'}</button></td></tr>`).join('')}</tbody></table></div>`;
+    <tbody>${adminOrders.map(o => `<tr><td><strong>${o.id}</strong></td><td>${o.customer}</td><td>${o.cafe}</td><td>${o.amount.toFixed(2)} ⃁</td><td><span class="badge badge-${o.status === 'completed' ? 'green' : o.status === 'ready' ? 'blue' : 'amber'}">${o.status}</span></td><td><button class="qty-btn" style="padding:4px 12px;height:auto;width:auto;font-size:.68rem">${o.status === 'pending' ? '➡ تحضير' : '✅ تسليم'}</button></td></tr>`).join('')}</tbody></table></div>`;
 }
 
 function renderAdminPartners() {
@@ -1020,21 +1021,21 @@ function renderAdminUsers() {
   document.getElementById('adminContent').innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><strong style="font-size:1rem">👥 المستخدمين</strong><input style="padding:6px 14px;border:1px solid var(--latte);border-radius:40px;font-size:.75rem;background:var(--cream);width:160px;font-family:'Cairo',sans-serif" placeholder="🔍 بحث..." /></div>
     <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>الاسم</th><th>البريد</th><th>الدور</th><th>الحالة</th><th>الطلبات</th><th>الإنفاق</th></tr></thead>
-    <tbody>${users.map(u => `<tr><td><strong>${u.name}</strong></td><td>${u.email}</td><td><span class="badge badge-blue">${u.role}</span></td><td><span class="badge badge-green">${u.status}</span></td><td>${u.orders}</td><td>${u.spent} ﷼</td></tr>`).join('')}</tbody></table></div>`;
+    <tbody>${users.map(u => `<tr><td><strong>${u.name}</strong></td><td>${u.email}</td><td><span class="badge badge-blue">${u.role}</span></td><td><span class="badge badge-green">${u.status}</span></td><td>${u.orders}</td><td>${u.spent} ⃁</td></tr>`).join('')}</tbody></table></div>`;
 }
 
 function renderAdminFinance() {
   document.getElementById('adminContent').innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
-      <div class="kpi-card"><div class="kpi-label">الإيرادات الكلية</div><div class="kpi-val" style="color:var(--green)">87,250 ﷼</div><div class="kpi-delta up">▲ 18.5%</div></div>
-      <div class="kpi-card"><div class="kpi-label">إيرادات الشهر</div><div class="kpi-val" style="color:var(--blue)">12,480 ﷼</div><div class="kpi-delta up">▲ 8.2%</div></div>
-      <div class="kpi-card"><div class="kpi-label">العمولات</div><div class="kpi-val" style="color:var(--amber)">6,544 ﷼</div><div class="kpi-delta">7.5%</div></div>
-      <div class="kpi-card"><div class="kpi-label">المستحقات</div><div class="kpi-val" style="color:var(--red)">2,180 ﷼</div><div class="kpi-down">4 شركاء</div></div>
+      <div class="kpi-card"><div class="kpi-label">الإيرادات الكلية</div><div class="kpi-val" style="color:var(--green)">87,250 ⃁</div><div class="kpi-delta up">▲ 18.5%</div></div>
+      <div class="kpi-card"><div class="kpi-label">إيرادات الشهر</div><div class="kpi-val" style="color:var(--blue)">12,480 ⃁</div><div class="kpi-delta up">▲ 8.2%</div></div>
+      <div class="kpi-card"><div class="kpi-label">العمولات</div><div class="kpi-val" style="color:var(--amber)">6,544 ⃁</div><div class="kpi-delta">7.5%</div></div>
+      <div class="kpi-card"><div class="kpi-label">المستحقات</div><div class="kpi-val" style="color:var(--red)">2,180 ⃁</div><div class="kpi-down">4 شركاء</div></div>
     </div>
     <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>المعاملة</th><th>التاريخ</th><th>النوع</th><th>المبلغ</th><th>الحالة</th></tr></thead>
-    <tbody><tr><td>TXN-001</td><td>2026-06-12</td><td><span class="badge badge-green">مبيعات</span></td><td>9.26 ﷼</td><td><span class="badge badge-green">مكتمل</span></td></tr>
-    <tr><td>TXN-002</td><td>2026-06-11</td><td><span class="badge badge-green">مبيعات</span></td><td>7.76 ﷼</td><td><span class="badge badge-green">مكتمل</span></td></tr>
-    <tr><td>TXN-003</td><td>2026-06-10</td><td><span class="badge badge-blue">عمولة</span></td><td>612.00 ﷼</td><td><span class="badge badge-amber">معلق</span></td></tr></tbody></table></div>`;
+    <tbody><tr><td>TXN-001</td><td>2026-06-12</td><td><span class="badge badge-green">مبيعات</span></td><td>9.26 ⃁</td><td><span class="badge badge-green">مكتمل</span></td></tr>
+    <tr><td>TXN-002</td><td>2026-06-11</td><td><span class="badge badge-green">مبيعات</span></td><td>7.76 ⃁</td><td><span class="badge badge-green">مكتمل</span></td></tr>
+    <tr><td>TXN-003</td><td>2026-06-10</td><td><span class="badge badge-blue">عمولة</span></td><td>612.00 ⃁</td><td><span class="badge badge-amber">معلق</span></td></tr></tbody></table></div>`;
 }
 
 function renderAdminAnalytics() {
@@ -1042,7 +1043,7 @@ function renderAdminAnalytics() {
     <div class="admin-table-wrap" style="margin-bottom:16px">
       <div style="padding:14px 16px;border-bottom:1px solid var(--latte);font-weight:800;font-size:.85rem">🔥 أفضل المشروبات</div>
       <table class="admin-table"><thead><tr><th>#</th><th>المشروب</th><th>المبيعات</th><th>الإيرادات</th><th>الشهرة</th></tr></thead>
-      <tbody>${['قهوة إسباني','سبانيش لاتيه','كورتادو','موكا','أمريكانو'].map((n,i) => `<tr><td style="font-weight:800;color:${i<3?'var(--amber)':'var(--text-light)'}">#${i+1}</td><td><strong>${n}</strong></td><td>${[1280,960,720,540,410][i].toLocaleString()}</td><td>${[10240,7680,5040,4320,2870][i].toLocaleString()} ﷼</td><td><div style="height:6px;background:var(--latte);border-radius:4px;overflow:hidden"><div style="height:6px;width:${100-(i*15)}%;background:${i===0?'var(--amber)':i===1?'var(--green)':i===2?'var(--blue)':'var(--text-light)'};border-radius:4px"></div></div></td></tr>`).join('')}</tbody></table>
+      <tbody>${['قهوة إسباني','سبانيش لاتيه','كورتادو','موكا','أمريكانو'].map((n,i) => `<tr><td style="font-weight:800;color:${i<3?'var(--amber)':'var(--text-light)'}">#${i+1}</td><td><strong>${n}</strong></td><td>${[1280,960,720,540,410][i].toLocaleString()}</td><td>${[10240,7680,5040,4320,2870][i].toLocaleString()} ⃁</td><td><div style="height:6px;background:var(--latte);border-radius:4px;overflow:hidden"><div style="height:6px;width:${100-(i*15)}%;background:${i===0?'var(--amber)':i===1?'var(--green)':i===2?'var(--blue)':'var(--text-light)'};border-radius:4px"></div></div></td></tr>`).join('')}</tbody></table>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
       <div class="kpi-card"><div style="font-size:.8rem;font-weight:700;margin-bottom:10px">توزيع الفئات</div><div style="display:flex;gap:12px;flex-wrap:wrap;font-size:.7rem">${['🟠 إسباني 45%','🟢 لاتيه 25%','🔵 كورتادو 18%','🟤 موكا 12%'].map(s => `<span>${s}</span>`).join('')}</div></div>

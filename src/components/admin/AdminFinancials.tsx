@@ -15,9 +15,9 @@ export default function AdminFinancials() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
         {[
-          { label: t('total_revenue_card', lang), val: `﷼ ${totalRevenue.toFixed(2)}`, sub: t('from_n_orders', lang).replace('{count}', String(orders.length)), color: 'var(--green)' },
-          { label: t('net_revenue', lang), val: `﷼ ${revenueAfterVat.toFixed(2)}`, sub: t('after_vat', lang), color: 'var(--blue)' },
-          { label: t('vat_total_card', lang), val: `﷼ ${totalVat.toFixed(2)}`, sub: t('vat_desc', lang), color: 'var(--amber)' },
+          { label: t('total_revenue_card', lang), val: `⃁ ${totalRevenue.toFixed(2)}`, sub: t('from_n_orders', lang).replace('{count}', String(orders.length)), color: 'var(--green)' },
+          { label: t('net_revenue', lang), val: `⃁ ${revenueAfterVat.toFixed(2)}`, sub: t('after_vat', lang), color: 'var(--blue)' },
+          { label: t('vat_total_card', lang), val: `⃁ ${totalVat.toFixed(2)}`, sub: t('vat_desc', lang), color: 'var(--amber)' },
           { label: t('order_count_card', lang), val: String(orders.length), sub: t('total_orders', lang), color: 'var(--purple)' },
         ].map((k, i) => (
           <div key={i} style={{ background: 'var(--foam)', borderRadius: 12, padding: 16 }}>
@@ -47,9 +47,9 @@ export default function AdminFinancials() {
                 <td>{o.date}</td>
                 <td><span className="table-badge badge-green">{t('sales_badge', lang)}</span></td>
                 <td style={{ fontSize: '.82rem' }}>{t('order_description', lang).replace('{cafe}', o.cafe).replace('{id}', String(o.id))}</td>
-                <td><span className="currency-sym">﷼</span>{o.base.toFixed(2)}</td>
-                <td><span className="currency-sym">﷼</span>{o.vat.toFixed(2)}</td>
-                <td><strong><span className="currency-sym">﷼</span>{o.amount.toFixed(2)}</strong></td>
+                <td><span className="currency-sym">⃁</span>{o.base.toFixed(2)}</td>
+                <td><span className="currency-sym">⃁</span>{o.vat.toFixed(2)}</td>
+                <td><strong><span className="currency-sym">⃁</span>{o.amount.toFixed(2)}</strong></td>
                 <td><span className={`table-badge badge-${o.status === 'completed' ? 'green' : 'amber'}`}>{o.status === 'completed' ? t('status_completed', lang) : o.status === 'ready' ? t('status_ready', lang) : t('status_pending', lang)}</span></td>
               </tr>
             ))}

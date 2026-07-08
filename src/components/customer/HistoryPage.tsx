@@ -75,7 +75,7 @@ export default function HistoryPage() {
               </div>
               <div className="order-card-bottom">
                 <div className="order-total">
-                  <span className="currency-sym">﷼</span>{(o.amount || 0).toFixed(2)}
+                  <span className="currency-sym">⃁</span>{(o.amount || 0).toFixed(2)}
                 </div>
                 <button className="reorder-btn" title={t('reorder_label', store.lang) || 'Reorder'} onClick={() => handleReorder(o)}>
                   ↻
@@ -104,7 +104,7 @@ export default function HistoryPage() {
               </div>
               <div className={`txn-amount ${txn.type === 'credit' ? 'credit' : 'debit'}`}>
                 {txn.type === 'credit' ? '+' : ''}
-                <span className="currency-sym">﷼</span>{txn.amount.toFixed(2)}
+                <span className="currency-sym">⃁</span>{txn.amount.toFixed(2)}
               </div>
             </div>
           ))}

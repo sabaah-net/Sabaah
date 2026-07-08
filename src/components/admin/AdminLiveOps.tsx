@@ -116,7 +116,7 @@ export default function AdminLiveOps() {
                 <td><strong>#{o.id}</strong></td>
                 <td>{o.customerName || o.customer_name || t('th_customer', lang)}</td>
                 <td>{o.cafe || o.cafe_name || '-'}</td>
-                <td>{o.amount ? <>{Number(o.amount).toFixed(2)}<span className="currency-sym">﷼</span></> : o.total_amount ? <>{Number(o.total_amount).toFixed(2)}<span className="currency-sym">﷼</span></> : '-'}</td>
+                <td>{o.amount ? <>{Number(o.amount).toFixed(2)}<span className="currency-sym">⃁</span></> : o.total_amount ? <>{Number(o.total_amount).toFixed(2)}<span className="currency-sym">⃁</span></> : '-'}</td>
                 <td style={{ fontSize: '.78rem' }}>{o.date || o.createdAt ? new Date(o.date || o.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '-'}</td>
                 <td><span className={`table-badge badge-${o.status === 'completed' ? 'green' : o.status === 'ready' || o.status === 'preparing' ? 'blue' : 'amber'}`}>{t(`status_${o.status}`, lang) || o.status}</span></td>
                 <td>

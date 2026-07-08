@@ -8,5 +8,5 @@ export function generatePickupCode(): string {
 }
 
 export function formatCurrency(val: number): string {
-  return '﷼ ' + val.toFixed(2);
+  return '⃁ ' + val.toFixed(2);
 }

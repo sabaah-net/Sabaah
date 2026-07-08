@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp"
+    android:height="240dp"
+    android:viewportWidth="240"
+    android:viewportHeight="240">
+    <!-- Background circle -->
+    <path
+        android:fillColor="#C78F38"
+        android:fillAlpha="0.15"
+        android:pathData="M120,120m-100,0a100,100 0,1 1,200 0a100,100 0,1 1,-200 0" />
+    <!-- ٧ character - main stem -->
+    <path
+        android:fillColor="#C78F38"
+        android:pathData="M120,60 L120,120 Q120,150 145,160 L140,150 Q125,140 125,120 L125,75 Q130,80 140,85 L140,75 Q130,68 120,60Z" />
+    <!-- ٧ character - top horizontal -->
+    <path
+        android:fillColor="#C78F38"
+        android:pathData="M100,65 L120,60 L120,72 L105,76 Q95,80 90,90 L80,85 Q85,70 100,65Z" />
+    <!-- Small coffee bean accent -->
+    <path
+        android:fillColor="#EDE3D5"
+        android:fillAlpha="0.3"
+        android:pathData="M160,170 Q170,160 175,170 Q180,180 170,185 Q160,180 160,170Z" />
+    <path
+        android:fillColor="#EDE3D5"
+        android:fillAlpha="0.2"
+        android:pathData="M70,175 Q80,165 85,175 Q90,185 80,190 Q70,185 70,175Z" />
+</vector>

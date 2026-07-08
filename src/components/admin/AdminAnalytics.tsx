@@ -88,7 +88,7 @@ export default function AdminAnalytics() {
                       <td style={{ fontWeight: 800, color: i <= 2 ? 'var(--amber)' : 'var(--text-light)' }}>#{i + 1}</td>
                       <td><strong>{item.name}</strong></td>
                       <td>{item.sales.toLocaleString()}</td>
-                      <td><span className="currency-sym">﷼</span>{item.revenue.toFixed(0)}</td>
+                      <td><span className="currency-sym">⃁</span>{item.revenue.toFixed(0)}</td>
                       <td>
                         <div style={{ height: 6, width: '100%', background: 'var(--latte)', borderRadius: 3, overflow: 'hidden' }}>
                           <div style={{ height: 6, width: `${pct}%`, background: i === 0 ? 'var(--amber)' : i === 1 ? 'var(--green)' : i === 2 ? 'var(--blue)' : 'var(--text-light)', borderRadius: 3 }} />

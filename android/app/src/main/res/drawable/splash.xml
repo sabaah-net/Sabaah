@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Dark espresso background -->
+    <item android:drawable="@color/splash_bg" />
+    <!-- Brand gradient overlay -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#1C110C"
+                android:endColor="#2A1A0E"
+                android:angle="135" />
+        </shape>
+    </item>
+    <!-- Logo mark - large ٧ -->
+    <item
+        android:width="200dp"
+        android:height="200dp"
+        android:gravity="center"
+        android:drawable="@drawable/splash_logo" />
+</layer-list>

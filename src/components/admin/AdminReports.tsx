@@ -119,21 +119,21 @@ export default function AdminReports() {
         headers: [t('report_total_orders', lang), t('report_total_revenue', lang), t('report_net_revenue', lang), t('report_avg_order', lang), 'VAT'],
         rows: [[
           String(summary.totalOrders),
-          `${summary.totalRevenue.toFixed(2)} SAR`,
-          `${summary.netRevenue.toFixed(2)} SAR`,
-          `${summary.avgOrderValue.toFixed(2)} SAR`,
-          `${summary.totalVat.toFixed(2)} SAR`,
+          `${summary.totalRevenue.toFixed(2)} ⃁`,
+          `${summary.netRevenue.toFixed(2)} ⃁`,
+          `${summary.avgOrderValue.toFixed(2)} ⃁`,
+          `${summary.totalVat.toFixed(2)} ⃁`,
         ]],
       };
       const bestTables = bestSellers.length > 0 ? {
         caption: t('report_best_selling', lang),
         headers: ['#', t('th_drink', lang), t('th_sales', lang), t('th_revenue', lang)],
-        rows: bestSellers.slice(0, 15).map((b, i) => [`#${i + 1}`, b.name, String(b.sales), `${b.revenue.toFixed(2)} SAR`]),
+        rows: bestSellers.slice(0, 15).map((b, i) => [`#${i + 1}`, b.name, String(b.sales), `${b.revenue.toFixed(2)} ⃁`]),
       } : null;
       const cafeTables = byCafe.length > 0 ? {
         caption: t('report_by_cafe', lang),
         headers: [t('th_rank', lang), t('th_name', lang), t('th_sales', lang), t('th_revenue', lang), t('th_percentage', lang)],
-        rows: byCafe.map((c, i) => [`#${i + 1}`, c.cafeName, String(c.orders), `${c.revenue.toFixed(2)} SAR`, `${summary.totalRevenue > 0 ? ((c.revenue / summary.totalRevenue) * 100).toFixed(1) : '0'}%`]),
+        rows: byCafe.map((c, i) => [`#${i + 1}`, c.cafeName, String(c.orders), `${c.revenue.toFixed(2)} ⃁`, `${summary.totalRevenue > 0 ? ((c.revenue / summary.totalRevenue) * 100).toFixed(1) : '0'}%`]),
       } : null;
 
       downloadPDF(`Sales Report ${dateLabel}`, [kpiTables, ...(bestTables ? [bestTables] : []), ...(cafeTables ? [cafeTables] : [])]);
@@ -151,7 +151,7 @@ export default function AdminReports() {
       const topTables = topCust.length > 0 ? {
         caption: t('report_top_customers', lang),
         headers: ['#', t('th_name', lang), t('th_email', lang), t('th_sales', lang), t('th_revenue', lang), t('th_tier', lang)],
-        rows: topCust.map((c, i) => [`#${i + 1}`, c.name, c.email, String(c.orders), `${c.totalSpent.toFixed(2)} SAR`, c.tier]),
+        rows: topCust.map((c, i) => [`#${i + 1}`, c.name, c.email, String(c.orders), `${c.totalSpent.toFixed(2)} ⃁`, c.tier]),
       } : null;
 
       downloadPDF(`Customer Report ${dateLabel}`, [kpiTables, ...(tierTables ? [tierTables] : []), ...(topTables ? [topTables] : [])]);
@@ -160,7 +160,7 @@ export default function AdminReports() {
       const ordersTable = {
         caption: lang === 'ar' ? 'الطلبات' : 'Orders',
         headers: ['ID', 'Customer', 'Cafe', 'Amount', 'Status', 'Date'],
-        rows: siteOrders.slice(0, 100).map(o => [o.id?.slice(0, 8), o.customer_name || '-', o.cafe_name || '-', `${o.total_amount || 0} SAR`, o.status || '-', o.created_at?.slice(0, 10) || '-']),
+        rows: siteOrders.slice(0, 100).map(o => [o.id?.slice(0, 8), o.customer_name || '-', o.cafe_name || '-', `${o.total_amount || 0} ⃁`, o.status || '-', o.created_at?.slice(0, 10) || '-']),
       };
       const usersTable = {
         caption: lang === 'ar' ? 'المستخدمين' : 'Users',
@@ -221,10 +221,10 @@ export default function AdminReports() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
             {[
               { label: t('report_total_orders', lang), val: summary.totalOrders.toLocaleString('en-US'), color: 'var(--green)' },
-              { label: t('report_total_revenue', lang), val: `﷼ ${summary.totalRevenue.toFixed(2)}`, color: 'var(--blue)' },
-              { label: t('report_net_revenue', lang), val: `﷼ ${summary.netRevenue.toFixed(2)}`, color: 'var(--purple)' },
-              { label: t('report_avg_order', lang), val: `﷼ ${summary.avgOrderValue.toFixed(2)}`, color: 'var(--amber)' },
-              { label: 'VAT', val: `﷼ ${summary.totalVat.toFixed(2)}`, color: 'var(--red)' },
+              { label: t('report_total_revenue', lang), val: `⃁ ${summary.totalRevenue.toFixed(2)}`, color: 'var(--blue)' },
+              { label: t('report_net_revenue', lang), val: `⃁ ${summary.netRevenue.toFixed(2)}`, color: 'var(--purple)' },
+              { label: t('report_avg_order', lang), val: `⃁ ${summary.avgOrderValue.toFixed(2)}`, color: 'var(--amber)' },
+              { label: 'VAT', val: `⃁ ${summary.totalVat.toFixed(2)}`, color: 'var(--red)' },
             ].map((k, i) => (
               <div key={i} style={{ background: 'var(--foam)', borderRadius: 12, padding: 14 }}>
                 <div style={{ fontSize: '.72rem', color: 'var(--text-light)' }}>{k.label}</div>
@@ -246,7 +246,7 @@ export default function AdminReports() {
                       <td style={{ fontWeight: 800, color: i < 3 ? 'var(--amber)' : 'var(--text-light)' }}>#{i + 1}</td>
                       <td><strong>{item.name}</strong></td>
                       <td>{item.sales.toLocaleString('en-US')}</td>
-                      <td><span className="currency-sym">﷼</span>{item.revenue.toFixed(2)}</td>
+                      <td><span className="currency-sym">⃁</span>{item.revenue.toFixed(2)}</td>
                       <td style={{ fontSize: '.8rem', color: 'var(--text-light)' }}>{item.cafeName}</td>
                     </tr>
                   ))}
@@ -273,7 +273,7 @@ export default function AdminReports() {
                         <td style={{ fontWeight: 800, color: i < 3 ? 'var(--amber)' : 'var(--text-light)' }}>#{i + 1}</td>
                         <td><strong>{cafe.cafeName}</strong></td>
                         <td>{cafe.orders.toLocaleString('en-US')}</td>
-                        <td><span className="currency-sym">﷼</span>{cafe.revenue.toFixed(2)}</td>
+                        <td><span className="currency-sym">⃁</span>{cafe.revenue.toFixed(2)}</td>
                         <td><span className="table-badge badge-green">{pct}%</span></td>
                       </tr>
                     );
@@ -321,7 +321,7 @@ export default function AdminReports() {
                           <td style={{ fontSize: '.75rem', fontFamily: 'monospace' }}>#{o.id?.slice(0, 8)}</td>
                           <td>{o.customer_name || '-'}</td>
                           <td>{o.cafe_name || '-'}</td>
-                          <td><span className="currency-sym">﷼</span>{Number(o.total_amount || 0).toFixed(2)}</td>
+                          <td><span className="currency-sym">⃁</span>{Number(o.total_amount || 0).toFixed(2)}</td>
                           <td><span className={`table-badge badge-${o.status === 'completed' ? 'green' : o.status === 'ready' ? 'blue' : 'amber'}`}>{o.status || '-'}</span></td>
                           <td style={{ fontSize: '.75rem' }}>{o.created_at?.slice(0, 10) || '-'}</td>
                         </tr>
@@ -384,7 +384,7 @@ export default function AdminReports() {
                       <td><strong>{c.name}</strong></td>
                       <td style={{ fontSize: '.8rem', color: 'var(--text-light)' }}>{c.email}</td>
                       <td>{c.orders}</td>
-                      <td><span className="currency-sym">﷼</span>{c.totalSpent.toFixed(2)}</td>
+                      <td><span className="currency-sym">⃁</span>{c.totalSpent.toFixed(2)}</td>
                       <td><span className={`table-badge badge-${c.tier === 'platinum' ? 'purple' : c.tier === 'gold' ? 'amber' : 'green'}`}>{c.tier}</span></td>
                     </tr>
                   ))}

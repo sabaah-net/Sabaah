@@ -157,7 +157,7 @@ export default function AdminMenus() {
                     <td><div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--latte)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.icon || '☕'}</div></td>
                     <td><strong>{item.name_ar}</strong></td>
                     <td style={{ color: 'var(--text-light)' }}>{item.name_en || '-'}</td>
-                    <td><span className="currency-sym">﷼</span>{(item.base_price).toFixed(2)}</td>
+                    <td><span className="currency-sym">⃁</span>{(item.base_price).toFixed(2)}</td>
                     <td style={{ fontSize: '.78rem', fontWeight: 700 }}>⭐ {item.points_per_item ?? 10}</td>
                     <td style={{ fontSize: '.78rem' }}>{item.cafes?.name_ar || '-'}</td>
                     <td>
@@ -243,7 +243,7 @@ export default function AdminMenus() {
                   <>
                     <span style={{ flex: 2, fontWeight: 700, fontSize: '.85rem' }}>{a.name}</span>
                     <span style={{ flex: 2, fontSize: '.8rem' }}>{a.nameEn}</span>
-                    <span style={{ width: 60, fontWeight: 600 }}>{a.price}<span className="currency-sym">﷼</span></span>
+                    <span style={{ width: 60, fontWeight: 600 }}>{a.price}<span className="currency-sym">⃁</span></span>
                     <button className="action-btn secondary" style={{ width: 'auto', padding: '4px 8px', fontSize: '.7rem', margin: 0 }}
                       onClick={() => setEditingAddonId(a.id)}>
                       ✏️
