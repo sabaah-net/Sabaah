@@ -39,8 +39,8 @@ function formatTime(d: Date | undefined, lang?: string): string {
     const ampm = h >= 12 ? 'pm' : 'am';
     const timeStr = `${h12}:${m}${ampm}`;
     if (lang === 'ar') {
-      const arabic = toArabicNumeral(`${h12}:${m}م`);
-      return arabic.replace(/م/g, 'م');
+      const arabicDigits = toArabicNumeral(`${h12}:${m}`);
+      return `${arabicDigits}م`;
     }
     return timeStr;
   } catch {
@@ -115,7 +115,7 @@ export default function PayModal({ isOpen, onClose, onPaymentSuccess }: { isOpen
       show(t('insufficient_balance', store.lang), 'error');
       return;
     }
-    store.setSelectedPickupSlot(formatTime(slots[selectedSlotIndex], store.lang));
+    store.setSelectedPickupSlot(formatTime(slots[selectedSlotIndex]));
     await store.processPayment(method, selectedAddons);
     show(t('payment_successful', store.lang), 'success');
     onClose();

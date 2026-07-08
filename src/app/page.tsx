@@ -11,6 +11,7 @@ import WalletPage from '../components/customer/WalletPage';
 import HistoryPage from '../components/customer/HistoryPage';
 import ProfilePage from '../components/customer/ProfilePage';
 import AuthPage from '../components/customer/AuthPage';
+import LandingPage from '../components/customer/LandingPage';
 import AuthModal from '../components/modals/AuthModal';
 import PayModal from '../components/modals/PayModal';
 import OrderSuccessModal from '../components/modals/OrderSuccessModal';
@@ -72,7 +73,7 @@ export default function HomePage() {
   if (!store.isLoggedIn) {
     return (
       <ToastProvider>
-        <AuthPage />
+        <LandingPage />
       </ToastProvider>
     );
   }
