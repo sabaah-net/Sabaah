@@ -989,3 +989,36 @@ const translations: Record<Lang, I18nDict> = {
     benefits: 'Innovaciones estructurales fundamentales y beneficios para el cliente que ofrecemos', next_button: 'Avanzar a la Siguiente Etapa →',
   }
 };
+
+export function t(key: string, lang: Lang): string {
+  return translations[lang]?.[key] || translations.ar[key] || key;
+}
+
+export function getGreeting(lang: Lang): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return lang === 'ar' ? 'صباح القهوة ☀️' : 'Good Morning ☀️';
+  if (hour < 17) return lang === 'ar' ? 'مساء الخير 🌤️' : 'Good Afternoon 🌤️';
+  return lang === 'ar' ? 'مساء القهوة 🌙' : 'Good Evening 🌙';
+}
+
+export const getStatusClass = (s: string): string => {
+  return s;
+};
+
+export const getStatusLabel = (s: string, lang: Lang): string => {
+  const map: Record<string, string> = {
+    pending: lang === 'ar' ? '⏳ قيد الانتظار' : '⏳ Pending',
+    preparing: lang === 'ar' ? '🔥 قيد التحضير' : '🔥 Preparing',
+    ready: lang === 'ar' ? '✅ جاهز للاستلام' : '✅ Ready',
+    completed: lang === 'ar' ? '✓ تم الاستلام' : '✓ Completed',
+    scheduled: lang === 'ar' ? '📅 مجدول' : '📅 Scheduled',
+  };
+  return map[s] || s;
+};
+
+export const generatePickupCode = (): string => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+  return code;
+};
