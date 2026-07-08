@@ -51,7 +51,7 @@ export default function TopUpModal({ isOpen, onClose }: { isOpen: boolean; onClo
 
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
           <div style={{ fontSize: '.75rem', color: 'var(--text-light)', marginBottom: 4 }}>{store.lang === 'ar' ? 'الرصيد الحالي' : 'Current Balance'}</div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--bark)' }}><span className="currency-sym">⃁</span>{store.wallet.toFixed(2)}</div>
+          <div style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--bark)' }}><span className="currency-sym">﷼</span>{store.wallet.toFixed(2)}</div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
@@ -59,7 +59,7 @@ export default function TopUpModal({ isOpen, onClose }: { isOpen: boolean; onClo
             <button key={p} className={`pay-method ${amount === p ? 'active' : ''}`}
               style={{ padding: '12px', fontSize: '1rem', fontWeight: 800 }}
               onClick={() => setAmount(p)}>
-              <span className="currency-sym">⃁</span>{p}
+              <span className="currency-sym">﷼</span>{p}
             </button>
           ))}
         </div>
@@ -74,7 +74,7 @@ export default function TopUpModal({ isOpen, onClose }: { isOpen: boolean; onClo
 
         <button className="action-btn" style={{ width: '100%', padding: 14, fontSize: '1rem', opacity: loading ? 0.6 : 1 }}
           disabled={loading || amount <= 0} onClick={handleTopUp}>
-          {loading ? (store.lang === 'ar' ? 'جاري...' : 'Processing...') : <>💳 {store.lang === 'ar' ? 'شحن' : 'Pay'} <span className="currency-sym">⃁</span>{amount.toFixed(2)}</>}
+          {loading ? (store.lang === 'ar' ? 'جاري...' : 'Processing...') : <>💳 {store.lang === 'ar' ? 'شحن' : 'Pay'} <span className="currency-sym">﷼</span>{amount.toFixed(2)}</>}
         </button>
       </div>
     </div>

@@ -209,7 +209,7 @@ INSERT INTO public.notifications (user_id, title_ar, title_en, body_ar, body_en,
   ('a0000000-0000-0000-0000-000000000001', 'تحديث التطبيق',    'App Update',        'تم إضافة ميزة الطلب الصوتي! جربها الآن', 'Voice ordering is now available! Try it now', '🔔', 'low', true),
   ('a0000000-0000-0000-0000-000000000001', 'مكافأة ولاء',      'Loyalty Reward',    'وصلت إلى 1000 نقطة! أنت الآن في الفئة الذهبية 🏅', 'You reached 1000 points! You are now Gold tier 🏅', '🏅', 'high', false),
   ('a0000000-0000-0000-0000-000000000004', 'طلب جديد',         'New Order',         'لديك طلب جديد في Brew92 - كود A7X9', 'You have a new order at Brew92 - Code A7X9', '☕', 'high', false),
-  ('a0000000-0000-0000-0000-000000000005', 'تقرير الأرباح',    'Earnings Report',   'أرباح اليوم: 345.00 ⃁ — أكمل 8 طلبات', 'Today''s earnings: 345.00 ⃁ — 8 orders completed', '💰', 'normal', false);
+  ('a0000000-0000-0000-0000-000000000005', 'تقرير الأرباح',    'Earnings Report',   'أرباح اليوم: 345.00 ﷼ — أكمل 8 طلبات', 'Today''s earnings: 345.00 ﷼ — 8 orders completed', '💰', 'normal', false);
 
 -- ============================================================
 -- 16. AUDIT LOGS

@@ -15,7 +15,7 @@ export default function WalletPage() {
         <div style={{ fontSize: '.68rem', color: 'rgba(255,255,255,.6)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 5 }}>
           {t('wallet_balance_label', store.lang)}
         </div>
-        <div className="wallet-balance"><span className="currency-sym">⃁</span>{store.wallet.toFixed(2)}</div>
+        <div className="wallet-balance"><span className="currency-sym">﷼</span>{store.wallet.toFixed(2)}</div>
         <div style={{ fontSize: '.85rem', color: 'rgba(255,255,255,.6)', marginTop: 2 }}>{t('sar_label', store.lang)}</div>
         <div className="wallet-actions">
           <button className="wallet-action-btn" onClick={openTopUp}>{t('topup_btn', store.lang)}</button>
@@ -32,7 +32,7 @@ export default function WalletPage() {
               <div style={{ fontSize: '.68rem', color: 'var(--text-light)' }}>{tx.date}</div>
             </div>
             <div style={{ fontSize: '.88rem', fontWeight: 900, color: tx.type === 'credit' ? 'var(--green)' : 'var(--red)' }}>
-              {tx.amount > 0 ? '+' : ''}<span className="currency-sym">⃁</span>{tx.amount.toFixed(2)}
+              {tx.amount > 0 ? '+' : ''}<span className="currency-sym">﷼</span>{tx.amount.toFixed(2)}
             </div>
           </div>
         ))}

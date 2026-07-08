@@ -32,7 +32,7 @@ export default function CoffeePanel({ visible, onAddToCart, selectedTypes }: Cof
           >
             <span className="icon">{item.icon}</span>
             <span className="label">{t(item.type, store.lang)}</span>
-            <span className="price"><span className="currency-sym">⃁</span>{item.price}</span>
+            <span className="price"><span className="currency-sym">﷼</span>{item.price}</span>
           </button>
         ))}
       </div>

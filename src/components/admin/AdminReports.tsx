@@ -221,10 +221,10 @@ export default function AdminReports() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
             {[
               { label: t('report_total_orders', lang), val: summary.totalOrders.toLocaleString('en-US'), color: 'var(--green)' },
-              { label: t('report_total_revenue', lang), val: `⃁ ${summary.totalRevenue.toFixed(2)}`, color: 'var(--blue)' },
-              { label: t('report_net_revenue', lang), val: `⃁ ${summary.netRevenue.toFixed(2)}`, color: 'var(--purple)' },
-              { label: t('report_avg_order', lang), val: `⃁ ${summary.avgOrderValue.toFixed(2)}`, color: 'var(--amber)' },
-              { label: 'VAT', val: `⃁ ${summary.totalVat.toFixed(2)}`, color: 'var(--red)' },
+              { label: t('report_total_revenue', lang), val: `﷼ ${summary.totalRevenue.toFixed(2)}`, color: 'var(--blue)' },
+              { label: t('report_net_revenue', lang), val: `﷼ ${summary.netRevenue.toFixed(2)}`, color: 'var(--purple)' },
+              { label: t('report_avg_order', lang), val: `﷼ ${summary.avgOrderValue.toFixed(2)}`, color: 'var(--amber)' },
+              { label: 'VAT', val: `﷼ ${summary.totalVat.toFixed(2)}`, color: 'var(--red)' },
             ].map((k, i) => (
               <div key={i} style={{ background: 'var(--foam)', borderRadius: 12, padding: 14 }}>
                 <div style={{ fontSize: '.72rem', color: 'var(--text-light)' }}>{k.label}</div>
@@ -246,7 +246,7 @@ export default function AdminReports() {
                       <td style={{ fontWeight: 800, color: i < 3 ? 'var(--amber)' : 'var(--text-light)' }}>#{i + 1}</td>
                       <td><strong>{item.name}</strong></td>
                       <td>{item.sales.toLocaleString('en-US')}</td>
-                      <td><span className="currency-sym">⃁</span>{item.revenue.toFixed(2)}</td>
+                      <td><span className="currency-sym">﷼</span>{item.revenue.toFixed(2)}</td>
                       <td style={{ fontSize: '.8rem', color: 'var(--text-light)' }}>{item.cafeName}</td>
                     </tr>
                   ))}
@@ -273,7 +273,7 @@ export default function AdminReports() {
                         <td style={{ fontWeight: 800, color: i < 3 ? 'var(--amber)' : 'var(--text-light)' }}>#{i + 1}</td>
                         <td><strong>{cafe.cafeName}</strong></td>
                         <td>{cafe.orders.toLocaleString('en-US')}</td>
-                        <td><span className="currency-sym">⃁</span>{cafe.revenue.toFixed(2)}</td>
+                        <td><span className="currency-sym">﷼</span>{cafe.revenue.toFixed(2)}</td>
                         <td><span className="table-badge badge-green">{pct}%</span></td>
                       </tr>
                     );
@@ -321,7 +321,7 @@ export default function AdminReports() {
                           <td style={{ fontSize: '.75rem', fontFamily: 'monospace' }}>#{o.id?.slice(0, 8)}</td>
                           <td>{o.customer_name || '-'}</td>
                           <td>{o.cafe_name || '-'}</td>
-                          <td><span className="currency-sym">⃁</span>{Number(o.total_amount || 0).toFixed(2)}</td>
+                          <td><span className="currency-sym">﷼</span>{Number(o.total_amount || 0).toFixed(2)}</td>
                           <td><span className={`table-badge badge-${o.status === 'completed' ? 'green' : o.status === 'ready' ? 'blue' : 'amber'}`}>{o.status || '-'}</span></td>
                           <td style={{ fontSize: '.75rem' }}>{o.created_at?.slice(0, 10) || '-'}</td>
                         </tr>
@@ -384,7 +384,7 @@ export default function AdminReports() {
                       <td><strong>{c.name}</strong></td>
                       <td style={{ fontSize: '.8rem', color: 'var(--text-light)' }}>{c.email}</td>
                       <td>{c.orders}</td>
-                      <td><span className="currency-sym">⃁</span>{c.totalSpent.toFixed(2)}</td>
+                      <td><span className="currency-sym">﷼</span>{c.totalSpent.toFixed(2)}</td>
                       <td><span className={`table-badge badge-${c.tier === 'platinum' ? 'purple' : c.tier === 'gold' ? 'amber' : 'green'}`}>{c.tier}</span></td>
                     </tr>
                   ))}
