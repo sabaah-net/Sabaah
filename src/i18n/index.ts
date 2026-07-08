@@ -14,7 +14,7 @@ const translations: Record<Lang, I18nDict> = {
     pay_modal_title: 'الدفع', amount_due: 'المبلغ المستحق', wallet_method: '💰 المحفظة', stcpay_method: '📱 STC Pay', credit_method: '💳 بطاقة ائتمان',
     insufficient_balance: 'الرصيد غير كافٍ', confirm_payment: 'تأكيد عملية الدفع', payment_successful: 'تم الدفع بنجاح ✅',
     rewards: 'المكافآت',
-    dashboard: 'لوحة التحكم', partners: 'الشركاء', menus: 'إدارة القوائم', users: 'إدارة المستخدمين',
+    dashboard: 'لوحة التحكم', partners: 'شركاء النجاح', menus: 'إدارة القوائم', users: 'إدارة المستخدمين',
     orders: 'الطلبات', notifications: 'الإشعارات', audit: 'سجل العمليات',
     financials: 'المالية', analytics: 'التحليلات', settings: 'الإعدادات', live_ops: 'العمليات المباشرة',
     search_users: 'ابحث بالاسم، البريد أو الهاتف...', no_results: 'لا توجد نتائج',
@@ -199,6 +199,8 @@ const translations: Record<Lang, I18nDict> = {
     benefit1: 'أفخر أنواع القهوة المتميزة', benefit1_desc: 'نضمن لك الحصول على أجود وأفضل محاصيل البن الفاخرة والمعدة باحترافية تامة من أشهر وأقوى المقاهي المختصة', benefit2: 'تجربة طلب سلسة وفائقة السرعة', benefit2_desc: 'واجهات مستخدم مبتكرة ومصممة بعناية فائقة لتضمن لك إتمام طلب مشروبك المفضل خلال ثوانٍ معدودة وبأقل خطوات ممكنة', benefit3: 'نظام مكافآت سخي ومستمر', benefit3_desc: 'نقدّر ولاءك الدائم لنا، لذلك نوفر لك نظام نقاط حقيقي يمنحك هدايا ومشروبات مجانية مستمرة تواكب شغفك اليومي بالقهوة', benefit4: 'عروض حصرية وخصومات مخصصة', benefit4_desc: 'استمتع بالعديد من الخصومات الدورية القوية والعروض الاستثنائية المتاحة حصرياً لأعضاء ومستخدمي منصة سبعة المتميزين',
     join_as_partner: 'هل تملك مقهى؟ انضم إلينا الآن كشريك تجاري معتمد وسجّل فرعك في المنصة',
     benefits: 'أبرز الميزات والفوائد التي نقدمها لك', next_button: 'الانتقال للخطوة التالية ←',
+    contact_us: 'تواصل معنا', full_name: 'الاسم الكامل', phone_number: 'رقم الهاتف', your_message: 'الرسالة',
+    message_sent: 'تم إرسال رسالتك!', we_contact_soon: 'سنتواصل معك قريباً', sending: 'جاري الإرسال...', send: 'إرسال', ok: 'حسناً',
   },
   en: {
     sign_in: 'Sign In', customer: '☕ Customer', partner: '🏪 Partner', admin: '🛡️ Admin',
@@ -396,6 +398,8 @@ const translations: Record<Lang, I18nDict> = {
     benefit1: 'Exclusively Curated Specialty Beans', benefit1_desc: 'We enforce hyper-strict quality metrics, partnering solely with verified micro-roasters and elite baristas utilizing award-winning roasts', benefit2: 'Frictionless Ultra-Low Latency Checkout', benefit2_desc: 'Our user interfaces are carefully written and compiled to execute transactional coffee configurations in less than three direct screen interactions', benefit3: 'Algorithmic Hyper-Rewarding Loyalty Engine', benefit3_desc: 'We convert your daily coffee dependencies into real financial perks, delivering a predictable reward matrix that keeps you continually caffeinated for less', benefit4: 'Unlocked VIP Discounts & Campaign Deals', benefit4_desc: 'Gain real-time access to exclusive regional promotions, flash discounts, and member-only menu drops completely hidden from standard consumers',
     join_as_partner: 'Own a specialized coffee merchant establishment? Onboard your branches into our high-volume network infrastructure today',
     benefits: 'Core Structural Innovations and Consumer Benefits We Deliver', next_button: 'Progress to the Next Stage Matrix →',
+    contact_us: 'Contact Us', full_name: 'Full Name', phone_number: 'Phone Number', your_message: 'Your Message',
+    message_sent: 'Message sent!', we_contact_soon: 'We will get back to you soon', sending: 'Sending...', send: 'Send', ok: 'OK',
   },
   zh: {
     sign_in: '登录', customer: '☕ 顾客', partner: '🏪 合作伙伴', admin: '🛡️ 管理员',
@@ -593,6 +597,8 @@ const translations: Record<Lang, I18nDict> = {
     benefit1: '优质咖啡', benefit1_desc: '来自最好咖啡馆的优质咖啡', benefit2: '轻松下单', benefit2_desc: '顺畅快捷的订购体验', benefit3: '奖励', benefit3_desc: '每笔订单均可获得奖励', benefit4: '独家优惠', benefit4_desc: '会员独家优惠',
     join_as_partner: '加入成为合作伙伴',
     benefits: '优势', next_button: '下一步 →',
+    contact_us: '联系我们', full_name: '全名', phone_number: '电话号码', your_message: '您的留言',
+    message_sent: '消息已发送！', we_contact_soon: '我们会尽快回复您', sending: '发送中...', send: '发送', ok: '好的',
   },
   fr: {
     sign_in: 'Connexion', customer: '☕ Client', partner: '🏪 Partenaire', admin: '🛡️ Admin',
@@ -790,6 +796,8 @@ const translations: Record<Lang, I18nDict> = {
     benefit1: 'Cafés de spécialité exclusivement sélectionnés', benefit1_desc: 'Nous appliquons des critères de qualité hyper stricts, en partenariat exclusif avec des micro-torréfacteurs vérifiés', benefit2: 'Paiement fluide à ultra-basse latence', benefit2_desc: 'Nos interfaces utilisateur sont conçues pour exécuter des configurations de café en moins de trois interactions d\'écran', benefit3: 'Moteur de fidélité algorithmique hyper avantageux', benefit3_desc: 'Nous convertissons vos habitudes de café quotidiennes en véritables avantages financiers, offrant une matrice de récompenses prévisible', benefit4: 'Remises VIP et offres de campagne débloquées', benefit4_desc: 'Bénéficiez d\'un accès en temps réel à des promotions régionales exclusives et des lancements de menus réservés aux membres',
     join_as_partner: 'Vous possédez un établissement de café spécialisé ? Intégrez vos cafés dans notre infrastructure réseau dès aujourd\'hui',
     benefits: 'Innovations structurelles fondamentales et avantages clients que nous offrons', next_button: 'Passer à l\'étape suivante →',
+    contact_us: 'Contactez-nous', full_name: 'Nom complet', phone_number: 'Numéro de téléphone', your_message: 'Votre message',
+    message_sent: 'Message envoyé !', we_contact_soon: 'Nous vous répondrons bientôt', sending: 'Envoi en cours...', send: 'Envoyer', ok: 'OK',
   },
   es: {
     sign_in: 'Iniciar Sesión', customer: '☕ Cliente', partner: '🏪 Socio', admin: '🛡️ Admin',
@@ -987,6 +995,8 @@ const translations: Record<Lang, I18nDict> = {
     benefit1: 'Cafés de Especialidad Exclusivamente Seleccionados', benefit1_desc: 'Aplicamos métricas de calidad hiperestrictas, asociándonos únicamente con microtostadores verificados', benefit2: 'Pago Fluido de Ultra Baja Latencia', benefit2_desc: 'Nuestras interfaces de usuario están diseñadas para ejecutar configuraciones de café en menos de tres interacciones de pantalla', benefit3: 'Motor de Fidelidad Algorítmico Altamente Beneficioso', benefit3_desc: 'Convertimos tus hábitos diarios de café en verdaderas ventajas financieras, ofreciendo una matriz de recompensas predecible', benefit4: 'Descuentos VIP y Ofertas de Campaña Desbloqueados', benefit4_desc: 'Obtén acceso en tiempo real a promociones regionales exclusivas y lanzamientos de menús reservados para miembros',
     join_as_partner: '¿Eres dueño de un comercio de café especializado? Integra tus sucursales en nuestra red de alto volumen hoy mismo',
     benefits: 'Innovaciones estructurales fundamentales y beneficios para el cliente que ofrecemos', next_button: 'Avanzar a la Siguiente Etapa →',
+    contact_us: 'Contáctenos', full_name: 'Nombre completo', phone_number: 'Número de teléfono', your_message: 'Su mensaje',
+    message_sent: '¡Mensaje enviado!', we_contact_soon: 'Nos comunicaremos con usted pronto', sending: 'Enviando...', send: 'Enviar', ok: 'OK',
   }
 };
 

@@ -156,15 +156,15 @@ export default function AuthPage() {
           <div style={{ fontSize: '.78rem', color: 'var(--text-light)', marginTop: 4 }}>
             {tab === 'login' ? (lang === 'ar' ? 'أهلاً بعودتك' : 'Welcome back') :
              tab === 'register' ? (lang === 'ar' ? 'أنشئ حسابك الجديد' : 'Create your new account') :
-             (lang === 'ar' ? 'سجل كشريك' : 'Register as Partner')}
+             (lang === 'ar' ? ' شركاء النجاح' : 'Register as Partner')}
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderRadius: 10, overflow: 'hidden', border: '2px solid var(--latte)' }}>
           {tabBtn('login', t('sign_in_tab', lang))}
           {tabBtn('register', t('register_tab', lang))}
-          {tabBtn('partner', 'Partner')}
-        </div>
+          {tabBtn('partner', t('partners', lang))}
+        </div> {/* <-- This closed your button container properly */}
 
         {tab === 'register' && (
           <input className="coffee-input" placeholder={t('name_placeholder', lang)} value={name} onChange={(e) => setName(e.target.value)} />
