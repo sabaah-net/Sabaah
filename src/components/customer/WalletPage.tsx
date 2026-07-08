@@ -24,7 +24,7 @@ export default function WalletPage() {
       </div>
 
       <p className="section-title">{t('recent_transactions', store.lang)}</p>
-      <div style={{ background: '#fff', borderRadius: 'var(--r-md)', padding: 14, boxShadow: 'var(--sh-sm)' }}>
+      <div style={{ background: 'var(--cream)', borderRadius: 'var(--r-md)', padding: 14, boxShadow: 'var(--sh-sm)' }}>
         {store.transactions.map((tx, i) => (
           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid var(--latte)' }}>
             <div>

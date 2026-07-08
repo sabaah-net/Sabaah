@@ -18,6 +18,8 @@ export default function CartPanel({ cart, onUpdateQty, onPlaceOrder }: CartPanel
   if (cart.length === 0) return null;
 
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const vatAmount = total * 0.15;
+  const totalWithVat = total + vatAmount;
 
   return (
     <div className="coffee-panel" style={{ marginTop: 10 }}>
@@ -47,6 +49,14 @@ export default function CartPanel({ cart, onUpdateQty, onPlaceOrder }: CartPanel
       <div className="cart-total-row">
         <span>{t('cart_total', store.lang)}</span>
         <span><span className="currency-sym">⃁</span>{total.toFixed(2)}</span>
+      </div>
+      <div className="cart-total-row" style={{ fontSize: '.75rem', color: 'var(--text-light)' }}>
+        <span>{t('th_vat', store.lang)} (15%)</span>
+        <span><span className="currency-sym">⃁</span>{vatAmount.toFixed(2)}</span>
+      </div>
+      <div className="cart-total-row" style={{ borderTop: '2px solid var(--latte)', paddingTop: 6, marginTop: 4 }}>
+        <span style={{ fontWeight: 900 }}>{t('cart_total', store.lang)} {t('vat_desc', store.lang)}</span>
+        <span style={{ fontWeight: 900, color: 'var(--amber)', fontSize: '1rem' }}><span className="currency-sym">⃁</span>{totalWithVat.toFixed(2)}</span>
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
         <button className="action-btn" style={{ flex: 1 }} onClick={onPlaceOrder}>{t('cart_checkout', store.lang)}</button>

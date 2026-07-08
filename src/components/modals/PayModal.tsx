@@ -71,7 +71,9 @@ export default function PayModal({ isOpen, onClose, onPaymentSuccess }: { isOpen
   const addonTotal = selectedAddons.reduce((s, a) => s + a.price, 0);
   const subtotalWithAddons = rawTotal + addonTotal;
   const discountAmount = subtotalWithAddons * (subDiscount / 100);
-  const total = subtotalWithAddons - discountAmount;
+  const beforeVat = subtotalWithAddons - discountAmount;
+  const vatAmount = beforeVat * 0.15;
+  const total = beforeVat + vatAmount;
   const earnedPoints = store.cart.reduce((s, i) => s + i.qty, 0) * POINTS_PER_DRINK;
 
   useEffect(() => {
@@ -210,6 +212,13 @@ export default function PayModal({ isOpen, onClose, onPaymentSuccess }: { isOpen
               <span>-<PriceTag value={discountAmount} /></span>
             </div>
           )}
+          <div style={{
+            display: 'flex', justifyContent: 'space-between',
+            padding: '3px 0', fontSize: '.75rem', color: 'var(--text-light)',
+          }}>
+            <span>{t('th_vat', store.lang)} (15%)</span>
+            <span><PriceTag value={vatAmount} /></span>
+          </div>
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
             padding: '8px 0 0', marginTop: 4,

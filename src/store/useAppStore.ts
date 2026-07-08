@@ -351,7 +351,7 @@ export const useAppStore = create<AppState>((set, get) => {
       const s = useAppStore.getState();
       const total = s.cart.reduce((sum, i) => sum + i.price * i.qty, 0);
       const addonTotal = (selectedAddons || []).reduce((sum, a) => sum + a.price, 0);
-      const grandTotal = total + addonTotal;
+      const grandTotal = (total + addonTotal) * 1.15;
       const pickupCode = Math.random().toString(36).substring(2, 6).toUpperCase();
       const orderId = `SB-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 4).toUpperCase()}`;
       const pickupTime = s.selectedPickupSlot || new Date(Date.now() + 15 * 60000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });

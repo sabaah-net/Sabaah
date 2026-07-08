@@ -40,17 +40,23 @@
   --bark: #1C110C;
   --amber: #E5924B;
   --caramel: #F0B27A;
-  --cream: #18110D;
-  --latte: #2A201A;
-  --foam: #070504;
-  --text-main: #F9F4EE;
+  --cream: #1F1814;
+  --latte: #352A22;
+  --foam: #0D0A08;
+  --text-main: #F0E8E0;
   --text-mid: #C4B5A8;
-  --text-light: #8B7B6B;
+  --text-light: #9B8B7B;
+  --green: #3AAF7A;
   --green-bg: #1A3A2A;
+  --blue: #5AAFE8;
   --blue-bg: #1A3040;
+  --red: #E74C3C;
   --red-bg: #3A1A16;
+  --purple: #9B6BD8;
   --purple-bg: #2A1A3A;
   --green-dark: #3AAF7A;
   --blue-dark: #4A9FD8;
   --red-dark: #E74C3C;
+  --gold: #D4AF37;
+  --gold-bg: #2A2410;
 }
