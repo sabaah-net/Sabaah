@@ -3,8 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { supabase, pushPendingMenuItem } from '../../lib/supabase';
 import { t } from '../../i18n';
-import { ref, update } from 'firebase/database';
-import { db } from '../../lib/firebase';
+import { ref, update, db } from '../../lib/firebase';
 
 interface MenuItemRow {
   id: string;

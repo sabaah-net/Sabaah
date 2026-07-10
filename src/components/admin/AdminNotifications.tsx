@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { createCampaign, addAuditLog, getAllProfiles } from '../../lib/supabase';
-import { ref, onValue, off, set } from 'firebase/database';
-import { db } from '../../lib/firebase';
+import { ref, onValue, off, set, db } from '../../lib/firebase';
 import { useToast } from '../shared/Toast';
 import { t } from '../../i18n';
 

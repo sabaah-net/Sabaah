@@ -1,8 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { ref, onValue, off } from 'firebase/database';
-import { db, pushSupplier, updateSupplier, removeSupplier } from '../../lib/firebase';
+import { ref, onValue, off, db, pushSupplier, updateSupplier, removeSupplier } from '../../lib/firebase';
 import type { Supplier } from '../../types';
 
 export default function AdminSuppliers() {

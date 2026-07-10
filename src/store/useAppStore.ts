@@ -17,8 +17,7 @@ import {
   pushOrder, pushNotification as fbPushNotif, pushTransaction as fbPushTxn,
   watchOrders, watchNotifications, watchTransactions, watchAllCafeStatus,
 } from '../lib/firebase';
-import { ref, onValue, off } from 'firebase/database';
-import { db } from '../lib/firebase';
+import { ref, onValue, off, db } from '../lib/firebase';
 import { t } from '../i18n';
 
 interface AppState {

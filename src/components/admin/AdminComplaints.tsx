@@ -1,8 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { ref, onValue, off } from 'firebase/database';
-import { db, watchComplaints, updateComplaint, pushComplaint } from '../../lib/firebase';
+import { ref, onValue, off, db, watchComplaints, updateComplaint, pushComplaint } from '../../lib/firebase';
 import type { Complaint } from '../../types';
 
 export default function AdminComplaints() {

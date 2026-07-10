@@ -1,8 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { ref, onValue, off } from 'firebase/database';
-import { db } from '../../lib/firebase';
+import { ref, onValue, off, db } from '../../lib/firebase';
 
 interface OrderRow {
   id: string;

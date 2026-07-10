@@ -1,8 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { ref, update } from 'firebase/database';
-import { db } from '../../lib/firebase';
+import { ref, update, db } from '../../lib/firebase';
 import { t } from '../../i18n';
 
 function formatNotifTime(n: any, lang: string): string {

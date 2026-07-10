@@ -622,7 +622,7 @@ select.coffee-input{-webkit-appearance:none;-moz-appearance:none;appearance:none
 .cart-item .price{font-size:1.15rem;font-weight:800}
 .reorder-price .price{font-size:1.1rem}
 .stat-card .price{font-size:1.1rem}
-.currency-sym { font-size: 1.15em; font-weight: 700; margin-inline-end: 1px; font-family: 'Segoe UI', 'DejaVu Sans', 'Arial Unicode MS', sans-serif; letter-spacing: 0; line-height: 1; position: relative; top: 0; }
+.currency-sym { font-size: 1.15em; font-weight: 700; margin-inline-end: 1px; font-family: 'Segoe UI', 'DejaVu Sans', 'DejaVu Sans Mono', 'Arial Unicode MS', 'Roboto', sans-serif; letter-spacing: 1px; line-height: 1.2; position: relative; top: 0; display: inline-block; }
 
 .time-wheel-container {
     background: #fff;
